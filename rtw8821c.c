@@ -966,7 +966,9 @@ static const struct rtw_intf_phy_para_table phy_para_table_8821c = {
 
 static const struct rtw_rfe_def rtw8821c_rfe_defs[] = {
 	[0] = RTW_DEF_RFE(8821c, 0, 0),
+	[1] = RTW_DEF_RFE(8821c, 0, 0),
 	[2] = RTW_DEF_RFE(8821c, 0, 0),
+	[3] = RTW_DEF_RFE(8821c, 0, 0),
 	[4] = RTW_DEF_RFE(8821c, 0, 0),
 };
 
