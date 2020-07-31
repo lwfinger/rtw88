@@ -1569,8 +1569,11 @@ int rtw_register_hw(struct rtw_dev *rtwdev, struct ieee80211_hw *hw)
 		return ret;
 	}
 
-	if (regulatory_hint(hw->wiphy, rtwdev->regd.alpha2))
-		rtw_err(rtwdev, "regulatory_hint fail\n");
+	if (!rtwdev->efuse.country_worldwide) {
+		ret = regulatory_hint(hw->wiphy, rtwdev->efuse.country_code);
+		if (ret)
+			rtw_warn(rtwdev, "failed to hint regulatory:%d\n", ret);
+	}
 
 	rtw_debugfs_init(rtwdev);
 

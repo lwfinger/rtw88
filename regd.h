@@ -64,6 +64,8 @@ enum country_code_type {
 	COUNTRY_CODE_MAX
 };
 
+#define RTW_ALPHA2_LEN 2
+
 int rtw_regd_init(struct rtw_dev *rtwdev,
 		  void (*reg_notifier)(struct wiphy *wiphy,
 				       struct regulatory_request *request));
