@@ -61,6 +61,7 @@
 #define BIT_FSPI_EN		BIT(19)
 #define BIT_EN_SIC		BIT(12)
 #define BIT_BT_AOD_GPIO3	BIT(9)
+#define BIT_PO_BT_PTA_PINS	BIT(9)
 #define BIT_BT_PTA_EN		BIT(5)
 #define BIT_WLRFE_4_5_EN	BIT(2)
 
@@ -124,6 +125,9 @@
 #define FW_READY_LEGACY		(BIT_MCUFWDL_RDY | BIT_FWDL_CHK_RPT |	       \
 				 BIT_WINTINI_RDY | BIT_RAM_DL_SEL)
 #define FW_READY_MASK		0xffff
+
+#define REG_MCU_TST_CFG		0x84
+#define VAL_FW_TRIGGER		0x1
 
 #define REG_EFUSE_ACCESS	0x00CF
 #define EFUSE_ACCESS_ON		0x69
@@ -352,11 +356,9 @@
 #define REG_AGGR_BREAK_TIME	0x051A
 #define REG_SLOT		0x051B
 #define REG_TX_PTCL_CTRL	0x0520
-#define BIT_DIS_EDCCA		BIT(15)
 #define BIT_SIFS_BK_EN		BIT(12)
 #define REG_TXPAUSE		0x0522
 #define REG_RD_CTRL		0x0524
-#define BIT_EDCCA_MSK_CNTDOWN_EN BIT(11)
 #define BIT_DIS_TXOP_CFE	BIT(10)
 #define BIT_DIS_LSIG_CFE	BIT(9)
 #define BIT_DIS_STBC_CFE	BIT(8)
@@ -616,6 +618,8 @@
 #define REG_ANAPAR	0x1c30
 #define BIT_ANAPAR_BTPS	BIT(22)
 #define REG_RSTB_SEL	0x1c38
+
+#define REG_HRCV_MSG	0x1cf
 
 #define REG_IGN_GNTBT4	0x4160
 

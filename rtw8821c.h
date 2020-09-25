@@ -160,6 +160,18 @@ _rtw_write32s_mask(struct rtw_dev *rtwdev, u32 addr, u32 mask, u32 data)
 	le32_get_bits(*((__le32 *)(phy_stat) + 0x01), GENMASK(11, 8))
 #define GET_PHY_STAT_P1_HT_RXSC(phy_stat)                                      \
 	le32_get_bits(*((__le32 *)(phy_stat) + 0x01), GENMASK(15, 12))
+#define GET_PHY_STAT_P1_RXEVM_A(phy_stat)                                      \
+	le32_get_bits(*((__le32 *)(phy_stat) + 0x04), GENMASK(7, 0))
+#define GET_PHY_STAT_P1_RXEVM_B(phy_stat)                                      \
+	le32_get_bits(*((__le32 *)(phy_stat) + 0x04), GENMASK(15, 8))
+#define GET_PHY_STAT_P1_CFO_TAIL_A(phy_stat)                                 \
+	le32_get_bits(*((__le32 *)(phy_stat) + 0x05), GENMASK(7, 0))
+#define GET_PHY_STAT_P1_CFO_TAIL_B(phy_stat)                                 \
+	le32_get_bits(*((__le32 *)(phy_stat) + 0x05), GENMASK(15, 8))
+#define GET_PHY_STAT_P1_RXSNR_A(phy_stat)                                      \
+	le32_get_bits(*((__le32 *)(phy_stat) + 0x06), GENMASK(7, 0))
+#define GET_PHY_STAT_P1_RXSNR_B(phy_stat)                                      \
+	le32_get_bits(*((__le32 *)(phy_stat) + 0x06), GENMASK(15, 8))
 
 #define REG_INIRTS_RATE_SEL 0x0480
 #define REG_HTSTFWT	0x800
@@ -186,17 +198,21 @@ _rtw_write32s_mask(struct rtw_dev *rtwdev, u32 addr, u32 mask, u32 data)
 #define REG_FAS		0x9a4
 #define REG_RXSB	0xa00
 #define REG_ADCINI	0xa04
+#define REG_PWRTH	0xa08
 #define REG_TXSF2	0xa24
 #define REG_TXSF6	0xa28
 #define REG_FA_CCK	0xa5c
 #define REG_RXDESC	0xa2c
 #define REG_ENTXCCK	0xa80
+#define REG_PWRTH2	0xaa8
+#define REG_CSRATIO	0xaaa
 #define REG_TXFILTER	0xaac
 #define REG_CNTRST	0xb58
 #define REG_AGCTR_A	0xc08
 #define REG_TXSCALE_A	0xc1c
 #define REG_TXDFIR	0xc20
 #define REG_RXIGI_A	0xc50
+#define REG_TXAGCIDX	0xc94
 #define REG_TRSW	0xca0
 #define REG_RFESEL0	0xcb0
 #define REG_RFESEL8	0xcb4
@@ -213,6 +229,20 @@ _rtw_write32s_mask(struct rtw_dev *rtwdev, u32 addr, u32 mask, u32 data)
 #define REG_CCA_CCK	0xfcc
 #define REG_ANTWT	0x1904
 #define REG_IQKFAILMSK	0x1bf0
+#define BIT_MASK_R_RFE_SEL_15	GENMASK(31, 28)
+#define BIT_SDIO_INT BIT(18)
+#define SAMPLE_RATE_MASK GENMASK(5, 0)
+#define SAMPLE_RATE	0x5
+#define BT_CNT_ENABLE	0x1
+#define BIT_BCN_QUEUE	BIT(3)
+#define BCN_PRI_EN	0x1
+#define PTA_CTRL_PIN	0x66
+#define DPDT_CTRL_PIN	0x77
+#define ANTDIC_CTRL_PIN	0x88
+#define REG_CTRL_TYPE	0x67
+#define BIT_CTRL_TYPE1	BIT(5)
+#define BIT_CTRL_TYPE2	BIT(4)
+#define CTRL_TYPE_MASK	GENMASK(15, 8)
 
 #define RF18_BAND_MASK		(BIT(16) | BIT(9) | BIT(8))
 #define RF18_BAND_2G		(0)
