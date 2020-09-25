@@ -15,6 +15,20 @@ RTL8188EE, RTL8192CE, RTL8192CU, RTL8192DE, RTL8192EE, RTL8192SE, RTL8723AE, RTL
 these should be provided by your kernel. If not, then you should go to the Backports Project
 (https://backports.wiki.kernel.org/index.php/Main_Page) to obtain the necessary code.
 
+This repo has been brought up to date with the kernel code on Sep. 25, 2020.
+
+The main changes are as follows:
+1. The methods for obtaining DMA buffers has changed. This should have no effect.
+2. The regulatory methods are changed. This may have some effect on users.
+3. The firmware loading has been more resistent against timeouts.
+4. The RX buffer size is increased.
+5. Antenna selection code was modified. This change may help the low signal problems.
+6. BlueTooth coexistence was modified.
+
+When making these changes, I tried to watch for things that might be incompatible
+with older kernels. As this kind of updating in really boring, I might have missed
+something. Please let me know of build problems.
+
 
 ### Installation instruction
 ##### Requirements
