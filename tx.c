@@ -595,9 +595,15 @@ static void rtw_txq_push(struct rtw_dev *rtwdev,
 	rcu_read_unlock();
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 9, 0)
+void rtw_tx_tasklet(unsigned long data)
+{
+	struct rtw_dev *rtwdev = (void *)data;
+#else
 void rtw_tx_tasklet(struct tasklet_struct *t)
 {
 	struct rtw_dev *rtwdev = from_tasklet(rtwdev, t, tx_tasklet);
+#endif
 	struct rtw_txq *rtwtxq, *tmp;
 
 	spin_lock_bh(&rtwdev->txq_lock);

@@ -94,7 +94,11 @@ void rtw_tx(struct rtw_dev *rtwdev,
 	    struct sk_buff *skb);
 void rtw_txq_init(struct rtw_dev *rtwdev, struct ieee80211_txq *txq);
 void rtw_txq_cleanup(struct rtw_dev *rtwdev, struct ieee80211_txq *txq);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0)
 void rtw_tx_tasklet(struct tasklet_struct *t);
+#else
+void rtw_tx_tasklet(unsigned long data);
+#endif
 void rtw_tx_pkt_info_update(struct rtw_dev *rtwdev,
 			    struct rtw_tx_pkt_info *pkt_info,
 			    struct ieee80211_sta *sta,
