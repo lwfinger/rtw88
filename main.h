@@ -84,6 +84,11 @@
 #define fallthrough do {} while (0)
 #endif
 
+#ifndef static_assert
+#define static_assert(expr, ...) __static_assert(expr, ##__VA_ARGS__, #expr)
+#define __static_assert(expr, msg, ...) _Static_assert(expr, msg)
+#endif
+
 #ifndef read_poll_timeout_atomic
 #define read_poll_timeout_atomic(op, val, cond, delay_us, timeout_us, \
                                         delay_before_read, args...) \
