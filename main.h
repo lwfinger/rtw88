@@ -80,6 +80,10 @@
 })
 #endif
 
+#ifndef fallthrough
+#define fallthrough do {} while (0)
+#endif
+
 #ifndef read_poll_timeout_atomic
 #define read_poll_timeout_atomic(op, val, cond, delay_us, timeout_us, \
                                         delay_before_read, args...) \
