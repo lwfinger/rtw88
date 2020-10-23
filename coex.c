@@ -124,7 +124,7 @@ static void rtw_coex_wl_ccklock_action(struct rtw_dev *rtwdev)
 	struct rtw_coex_stat *coex_stat = &coex->stat;
 	u8 para[6] = {0};
 
-	if (coex->stop_dm)
+	if (coex->manual_control || coex->stop_dm)
 		return;
 
 	para[0] = COEX_H2C69_WL_LEAKAP;
@@ -829,7 +829,7 @@ static void rtw_coex_ignore_wlan_act(struct rtw_dev *rtwdev, bool enable)
 {
 	struct rtw_coex *coex = &rtwdev->coex;
 
-	if (coex->stop_dm)
+	if (coex->manual_control || coex->stop_dm)
 		return;
 
 	rtw_fw_bt_ignore_wlan_action(rtwdev, enable);
@@ -1981,7 +1981,7 @@ static void rtw_coex_run_coex(struct rtw_dev *rtwdev, u8 reason)
 
 	rtw_coex_monitor_bt_enable(rtwdev);
 
-	if (coex->stop_dm)
+	if (coex->manual_control || coex->stop_dm)
 		return;
 
 	if (coex_stat->wl_under_ips)
@@ -2148,7 +2148,7 @@ void rtw_coex_ips_notify(struct rtw_dev *rtwdev, u8 type)
 	struct rtw_coex *coex = &rtwdev->coex;
 	struct rtw_coex_stat *coex_stat = &coex->stat;
 
-	if (coex->stop_dm)
+	if (coex->manual_control || coex->stop_dm)
 		return;
 
 	if (type == COEX_IPS_ENTER) {
@@ -2174,7 +2174,7 @@ void rtw_coex_lps_notify(struct rtw_dev *rtwdev, u8 type)
 	struct rtw_coex *coex = &rtwdev->coex;
 	struct rtw_coex_stat *coex_stat = &coex->stat;
 
-	if (coex->stop_dm)
+	if (coex->manual_control || coex->stop_dm)
 		return;
 
 	if (type == COEX_LPS_ENABLE) {
@@ -2205,7 +2205,7 @@ void rtw_coex_scan_notify(struct rtw_dev *rtwdev, u8 type)
 	struct rtw_coex *coex = &rtwdev->coex;
 	struct rtw_coex_stat *coex_stat = &coex->stat;
 
-	if (coex->stop_dm)
+	if (coex->manual_control || coex->stop_dm)
 		return;
 
 	coex->freeze = false;
@@ -2233,7 +2233,7 @@ void rtw_coex_switchband_notify(struct rtw_dev *rtwdev, u8 type)
 {
 	struct rtw_coex *coex = &rtwdev->coex;
 
-	if (coex->stop_dm)
+	if (coex->manual_control || coex->stop_dm)
 		return;
 
 	if (type == COEX_SWITCH_TO_5G)
@@ -2249,7 +2249,7 @@ void rtw_coex_connect_notify(struct rtw_dev *rtwdev, u8 type)
 	struct rtw_coex *coex = &rtwdev->coex;
 	struct rtw_coex_stat *coex_stat = &coex->stat;
 
-	if (coex->stop_dm)
+	if (coex->manual_control || coex->stop_dm)
 		return;
 
 	rtw_coex_write_scbd(rtwdev, COEX_SCBD_ACTIVE | COEX_SCBD_SCAN |
@@ -2290,7 +2290,7 @@ void rtw_coex_media_status_notify(struct rtw_dev *rtwdev, u8 type)
 	struct rtw_coex_stat *coex_stat = &coex->stat;
 	u8 para[6] = {0};
 
-	if (coex->stop_dm)
+	if (coex->manual_control || coex->stop_dm)
 		return;
 
 	if (type == COEX_MEDIA_CONNECT_5G) {
