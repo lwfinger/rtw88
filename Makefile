@@ -103,6 +103,7 @@ endif
 	@#copy firmware images to target folder
 	@mkdir -p $(FIRMWAREDIR)/rtw88/
 	@cp -f *.bin $(FIRMWAREDIR)/rtw88/
+	@mv $(FIRMWAREDIR)/rtw88/rtl8822cu_fw.bin $(FIRMWAREDIR)rtl_bt/.
 	@echo "Install rtw88 SUCCESS"
 
 uninstall:
