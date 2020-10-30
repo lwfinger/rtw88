@@ -1645,11 +1645,17 @@ static void rtw_coex_action_bt_hid(struct rtw_dev *rtwdev)
 			} else {
 				/* for 4/18 HID */
 				if (coex_stat->bt_418_hid_exist &&
-				    coex_stat->wl_gl_busy)
+				    coex_stat->wl_gl_busy) {
 					table_case = 12;
-				else
+					tdma_case = 4;
+				} else if (coex_stat->bt_ble_hid_exist &&
+					   coex_stat->wl_gl_busy) {
+					table_case = 32;
+					tdma_case = 9;
+				} else {
 					table_case = 10;
-				tdma_case = 4;
+					tdma_case = 4;
+				}
 			}
 		}
 	} else {
@@ -2692,6 +2698,23 @@ void rtw_coex_bt_info_notify(struct rtw_dev *rtwdev, u8 *buf, u8 length)
 						     4 * HZ);
 	}
 	coex_stat->bt_acl_busy = ((coex_stat->bt_info_lb2 & BIT(3)) == BIT(3));
+	if (coex_stat->bt_info_lb2 & BIT(5)) {
+		if (coex_stat->bt_info_hb1 & BIT(0)) {
+			/*BLE HID*/
+			coex_stat->bt_ble_hid_exist = true;
+		} else {
+			coex_stat->bt_ble_hid_exist = false;
+		}
+		coex_stat->bt_ble_exist = false;
+	} else if (coex_stat->bt_info_hb1 & BIT(0)) {
+		/*RCU*/
+		coex_stat->bt_ble_hid_exist = false;
+		coex_stat->bt_ble_exist = true;
+	} else {
+		coex_stat->bt_ble_hid_exist = false;
+		coex_stat->bt_ble_exist = false;
+	}
+
 	coex_stat->cnt_bt[COEX_CNT_BT_RETRY] = coex_stat->bt_info_lb3 & 0xf;
 	if (coex_stat->cnt_bt[COEX_CNT_BT_RETRY] >= 1)
 		coex_stat->cnt_bt[COEX_CNT_BT_POPEVENT]++;
@@ -2717,7 +2740,6 @@ void rtw_coex_bt_info_notify(struct rtw_dev *rtwdev, u8 *buf, u8 length)
 			coex_stat->bt_rssi = 0;
 	}
 
-	coex_stat->bt_ble_exist = ((coex_stat->bt_info_hb1 & BIT(0)) == BIT(0));
 	if (coex_stat->bt_info_hb1 & BIT(1))
 		coex_stat->cnt_bt[COEX_CNT_BT_REINIT]++;
 
@@ -3320,6 +3342,7 @@ void rtw_coex_display_coex_info(struct rtw_dev *rtwdev, struct seq_file *m)
 		   coex_stat->bt_hid_exist ?
 		   (coex_stat->bt_ble_exist ? "HID(RCU)," :
 		    coex_stat->bt_hid_slot >= 2 ? "HID(4/18)" :
+		    coex_stat->bt_ble_hid_exist ? "HID(BLE)" :
 		    "HID(2/18),") : "",
 		   coex_stat->bt_pan_exist ? coex_stat->bt_opp_exist ?
 		   "OPP," : "PAN," : "",
