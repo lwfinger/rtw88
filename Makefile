@@ -81,13 +81,9 @@ install: all
 ifeq (,$(wildcard ./backup_drivers.tar))
 	@echo Making backups
 	@tar cPf backup_drivers.tar $(MODDESTDIR)
-	@modprobe -rq rtwpci
-	@modprobe -rq rtw88
 	@rm -f $(MODDESTDIR)/rtw88*.ko*
 	@rm -f $(MODDESTDIR)/rtwpci.ko*
 else
-	@modprobe -rq rtwpci
-	@modprobe -rq rtw88
 	@rm -f $(MODDESTDIR)/rtw88*.ko*
 	@rm -f $(MODDESTDIR)/rtwpci.ko*
 endif
