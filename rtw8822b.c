@@ -87,7 +87,7 @@ static const u32 rtw8822b_txscale_tbl[RTW_TXSCALE_SIZE] = {
 	0x2d3, 0x2fe, 0x32b, 0x35c, 0x38e, 0x3c4, 0x3fe
 };
 
-static const u8 rtw8822b_get_swing_index(struct rtw_dev *rtwdev)
+static u8 rtw8822b_get_swing_index(struct rtw_dev *rtwdev)
 {
 	u8 i = 0;
 	u32 swing, table_value;
@@ -2150,27 +2150,23 @@ static const struct coex_table_para table_sant_8822b[] = {
 	{0x66555555, 0x6a5a5a5a}, /* case-10 */
 	{0x66555555, 0xfafafafa},
 	{0x66555555, 0x5a5a5aaa},
-	{0x66555555, 0x5a5a5aaa},
 	{0x66555555, 0x6aaa5aaa},
-	{0x66555555, 0xaaaa5aaa}, /* case-15 */
-	{0x66555555, 0xaaaaaaaa},
+	{0x66555555, 0xaaaa5aaa},
+	{0x66555555, 0xaaaaaaaa}, /* case-15 */
 	{0xffff55ff, 0xfafafafa},
 	{0xffff55ff, 0x6afa5afa},
 	{0xaaffffaa, 0xfafafafa},
-	{0xaa5555aa, 0x5a5a5a5a}, /* case-20 */
-	{0xaa5555aa, 0x6a5a5a5a},
+	{0xaa5555aa, 0x5a5a5a5a},
+	{0xaa5555aa, 0x6a5a5a5a}, /* case-20 */
 	{0xaa5555aa, 0xaaaaaaaa},
 	{0xffffffff, 0x5a5a5a5a},
 	{0xffffffff, 0x5a5a5a5a},
-	{0xffffffff, 0x55555555}, /* case-25 */
-	{0xffffffff, 0x5a5a5aaa},
+	{0xffffffff, 0x55555555},
+	{0xffffffff, 0x6a5a5aaa}, /* case-25 */
 	{0x55555555, 0x5a5a5a5a},
 	{0x55555555, 0xaaaaaaaa},
 	{0x55555555, 0x6a5a6a5a},
-	{0x66556655, 0x66556655}, /* case-30 */
-	{0x66556aaa, 0x6a5a6aaa},
-	{0xffffffff, 0x5aaa5aaa},
-	{0x56555555, 0x5a5a5aaa},
+	{0x66556655, 0x66556655},
 	{0x66556aaa, 0x6a5a6aaa}, /* case-30 */
 	{0xffffffff, 0x5aaa5aaa},
 	{0x56555555, 0x5a5a5aaa},
@@ -2511,6 +2507,7 @@ struct rtw_chip_info rtw8822b_hw_spec = {
 	.bt_desired_ver = 0x6,
 	.scbd_support = true,
 	.new_scbd10_def = false,
+	.ble_hid_profile_support = false,
 	.pstdma_type = COEX_PSTDMA_FORCE_LPSOFF,
 	.bt_rssi_type = COEX_BTRSSI_RATIO,
 	.ant_isolation = 15,

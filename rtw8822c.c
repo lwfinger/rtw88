@@ -18,6 +18,8 @@
 #include "bf.h"
 #include "efuse.h"
 
+#define IQK_DONE_8822C 0xaa
+
 static void rtw8822c_config_trx_mode(struct rtw_dev *rtwdev, u8 tx_path,
 				     u8 rx_path, bool is_tx2_path);
 
@@ -2110,20 +2112,17 @@ static void rtw8822c_do_iqk(struct rtw_dev *rtwdev)
 {
 	struct rtw_iqk_para para = {0};
 	u8 iqk_chk;
-	int counter;
+	int ret;
 
 	para.clear = 1;
 	rtw_fw_do_iqk(rtwdev, &para);
 
-	for (counter = 0; counter < 300; counter++) {
-		iqk_chk = rtw_read8(rtwdev, REG_RPT_CIP);
-		if (iqk_chk == 0xaa)
-			break;
-		msleep(20);
-	}
-	rtw_write8(rtwdev, REG_IQKSTAT, 0x0);
+	ret = read_poll_timeout(rtw_read8, iqk_chk, iqk_chk == IQK_DONE_8822C,
+				20000, 300000, false, rtwdev, REG_RPT_CIP);
+	if (ret)
+		rtw_warn(rtwdev, "failed to poll iqk status bit\n");
 
-	rtw_dbg(rtwdev, RTW_DBG_RFK, "iqk counter=%d\n", counter);
+	rtw_write8(rtwdev, REG_IQKSTAT, 0x0);
 }
 
 /* for coex */
@@ -2454,7 +2453,7 @@ static void rtw8822c_dpk_rxbb_dc_cal(struct rtw_dev *rtwdev, u8 path)
 static u8 rtw8822c_dpk_dc_corr_check(struct rtw_dev *rtwdev, u8 path)
 {
 	u16 dc_i, dc_q;
-	u8 corr_val, corr_idx;
+	u8 corr_idx;
 
 	rtw_write32(rtwdev, REG_RXSRAM_CTL, 0x000900f0);
 	dc_i = (u16)rtw_read32_mask(rtwdev, REG_STAT_RPT, GENMASK(27, 16));
@@ -2467,7 +2466,7 @@ static u8 rtw8822c_dpk_dc_corr_check(struct rtw_dev *rtwdev, u8 path)
 
 	rtw_write32(rtwdev, REG_RXSRAM_CTL, 0x000000f0);
 	corr_idx = (u8)rtw_read32_mask(rtwdev, REG_STAT_RPT, GENMASK(7, 0));
-	corr_val = (u8)rtw_read32_mask(rtwdev, REG_STAT_RPT, GENMASK(15, 8));
+	rtw_read32_mask(rtwdev, REG_STAT_RPT, GENMASK(15, 8));
 
 	if (dc_i > 200 || dc_q > 200 || corr_idx < 40 || corr_idx > 65)
 		return 1;
@@ -3454,6 +3453,10 @@ rtw8822c_phy_cck_pd_set_reg(struct rtw_dev *rtwdev,
 			 rtw8822c_cck_pd_reg[bw][nrx].reg_cs,
 			 rtw8822c_cck_pd_reg[bw][nrx].mask_cs,
 			 cs);
+
+	rtw_dbg(rtwdev, RTW_DBG_PHY,
+		"is_linked=%d, bw=%d, nrx=%d, cs_ratio=0x%x, pd_th=0x%x\n",
+		rtw_is_assoc(rtwdev), bw, nrx, cs, pd);
 }
 
 static void rtw8822c_phy_cck_pd_set(struct rtw_dev *rtwdev, u8 new_lvl)
@@ -3466,6 +3469,10 @@ static void rtw8822c_phy_cck_pd_set(struct rtw_dev *rtwdev, u8 new_lvl)
 
 	nrx = (u8)rtw_read32_mask(rtwdev, 0x1a2c, 0x60000);
 	bw = (u8)rtw_read32_mask(rtwdev, 0x9b0, 0xc);
+
+	rtw_dbg(rtwdev, RTW_DBG_PHY, "lv: (%d) -> (%d) bw=%d nr=%d cck_fa_avg=%d\n",
+		dm_info->cck_pd_lv[bw][nrx], new_lvl, bw, nrx,
+		dm_info->cck_fa_avg);
 
 	if (dm_info->cck_pd_lv[bw][nrx] == new_lvl)
 		return;
@@ -4019,10 +4026,7 @@ static const struct coex_table_para table_sant_8822c[] = {
 	{0x55555555, 0xaaaaaaaa},
 	{0x55555555, 0x6a5a6a5a},
 	{0x66556655, 0x66556655},
-	{0x66556aaa, 0x6a5a6aaa}, /* case-30 */
-	{0xffffffff, 0x5aaa5aaa},
-	{0x56555555, 0x5a5a5aaa},
-	{0x66556aaa, 0x6a5a6aaa}, /* case-30 */
+	{0x66556aaa, 0x6a5a6aaa}, /*case-30*/
 	{0xffffffff, 0x5aaa5aaa},
 	{0x56555555, 0x5a5a5aaa},
 };
@@ -4360,6 +4364,7 @@ struct rtw_chip_info rtw8822c_hw_spec = {
 	.bt_desired_ver = 0x1c,
 	.scbd_support = true,
 	.new_scbd10_def = true,
+	.ble_hid_profile_support = true,
 	.pstdma_type = COEX_PSTDMA_FORCE_LPSOFF,
 	.bt_rssi_type = COEX_BTRSSI_DBM,
 	.ant_isolation = 15,

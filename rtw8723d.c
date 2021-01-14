@@ -192,6 +192,7 @@ static void rtw8723d_phy_set_param(struct rtw_dev *rtwdev)
 	rtw_write32(rtwdev, REG_LTR_CTRL_BASIC + 4, WLAN_LTR_CTRL2);
 
 	rtw_phy_init(rtwdev);
+	rtwdev->dm_info.cck_pd_default = rtw_read8(rtwdev, REG_CSRATIO) & 0x1f;
 
 	rtw_write16_set(rtwdev, REG_TXDMA_OFFSET_CHK, BIT_DROP_DATA_EN);
 
@@ -1498,6 +1499,34 @@ out:
 	rtw_dbg(rtwdev, RTW_DBG_RFK, "[IQK] finished\n");
 }
 
+static void rtw8723d_phy_cck_pd_set(struct rtw_dev *rtwdev, u8 new_lvl)
+{
+	struct rtw_dm_info *dm_info = &rtwdev->dm_info;
+	u8 pd[CCK_PD_LV_MAX] = {3, 7, 13, 13, 13};
+	u8 cck_n_rx;
+
+	rtw_dbg(rtwdev, RTW_DBG_PHY, "lv: (%d) -> (%d)\n",
+		dm_info->cck_pd_lv[RTW_CHANNEL_WIDTH_20][RF_PATH_A], new_lvl);
+
+	if (dm_info->cck_pd_lv[RTW_CHANNEL_WIDTH_20][RF_PATH_A] == new_lvl)
+		return;
+
+	cck_n_rx = (rtw_read8_mask(rtwdev, REG_CCK0_FAREPORT, BIT_CCK0_2RX) &&
+		    rtw_read8_mask(rtwdev, REG_CCK0_FAREPORT, BIT_CCK0_MRC)) ? 2 : 1;
+	rtw_dbg(rtwdev, RTW_DBG_PHY,
+		"is_linked=%d, lv=%d, n_rx=%d, cs_ratio=0x%x, pd_th=0x%x, cck_fa_avg=%d\n",
+		rtw_is_assoc(rtwdev), new_lvl, cck_n_rx,
+		dm_info->cck_pd_default + new_lvl * 2,
+		pd[new_lvl], dm_info->cck_fa_avg);
+
+	dm_info->cck_fa_avg = CCK_FA_AVG_RESET;
+
+	dm_info->cck_pd_lv[RTW_CHANNEL_WIDTH_20][RF_PATH_A] = new_lvl;
+	rtw_write32_mask(rtwdev, REG_PWRTH, 0x3f0000, pd[new_lvl]);
+	rtw_write32_mask(rtwdev, REG_PWRTH2, 0x1f0000,
+			 dm_info->cck_pd_default + new_lvl * 2);
+}
+
 /* for coex */
 static void rtw8723d_coex_cfg_init(struct rtw_dev *rtwdev)
 {
@@ -1931,6 +1960,7 @@ static struct rtw_chip_ops rtw8723d_ops = {
 	.efuse_grant		= rtw8723d_efuse_grant,
 	.false_alarm_statistics	= rtw8723d_false_alarm_statistics,
 	.phy_calibration	= rtw8723d_phy_calibration,
+	.cck_pd_set		= rtw8723d_phy_cck_pd_set,
 	.pwr_track		= rtw8723d_pwr_track,
 	.config_bfee		= NULL,
 	.set_gid_table		= NULL,
@@ -1979,7 +2009,7 @@ static const struct coex_table_para table_sant_8723d[] = {
 	{0x66556655, 0x66556655},
 	{0x66556aaa, 0x6a5a6aaa}, /* case-30 */
 	{0xffffffff, 0x5aaa5aaa},
-	{0x56555555, 0x5a5a5aaa}
+	{0x56555555, 0x5a5a5aaa},
 };
 
 /* Non-Shared-Antenna Coex Table */
@@ -2722,6 +2752,7 @@ struct rtw_chip_info rtw8723d_hw_spec = {
 	.bt_desired_ver = 0x2f,
 	.scbd_support = true,
 	.new_scbd10_def = true,
+	.ble_hid_profile_support = false,
 	.pstdma_type = COEX_PSTDMA_FORCE_LPSOFF,
 	.bt_rssi_type = COEX_BTRSSI_RATIO,
 	.ant_isolation = 15,

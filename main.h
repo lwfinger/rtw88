@@ -1252,6 +1252,7 @@ struct rtw_chip_info {
 	u8 bt_desired_ver;
 	bool scbd_support;
 	bool new_scbd10_def; /* true: fix 2M(8822c) */
+	bool ble_hid_profile_support;
 	u8 pstdma_type; /* 0: LPSoff, 1:LPSon */
 	u8 bt_rssi_type;
 	u8 ant_isolation;
@@ -1276,6 +1277,7 @@ struct rtw_chip_info {
 	const struct coex_5g_afh_map *afh_5g;
 	const struct rtw_hw_reg *btg_reg;
 	const struct rtw_reg_domain *coex_info_hw_regs;
+	u32 wl_fw_desired_ver;
 };
 
 enum rtw_coex_bt_state_cnt {
@@ -1297,6 +1299,7 @@ enum rtw_coex_bt_state_cnt {
 };
 
 enum rtw_coex_wl_state_cnt {
+	COEX_CNT_WL_SCANAP,
 	COEX_CNT_WL_CONNPKT,
 	COEX_CNT_WL_COEXRUN,
 	COEX_CNT_WL_NOISY0,
@@ -1382,6 +1385,8 @@ struct rtw_coex_stat {
 	bool bt_fix_2M;
 	bool bt_setup_link;
 	bool bt_multi_link;
+	bool bt_multi_link_pre;
+	bool bt_multi_link_remain;
 	bool bt_a2dp_sink;
 	bool bt_a2dp_active;
 	bool bt_reenable;
@@ -1408,9 +1413,15 @@ struct rtw_coex_stat {
 	bool wl_cck_lock_pre;
 	bool wl_cck_lock_ever;
 	bool wl_connecting;
+	bool wl_slot_toggle;
+	bool wl_slot_toggle_change; /* if toggle to no-toggle */
 
 	u32 bt_supported_version;
 	u32 bt_supported_feature;
+	u32 hi_pri_tx;
+	u32 hi_pri_rx;
+	u32 lo_pri_tx;
+	u32 lo_pri_rx;
 	u32 patch_ver;
 	u16 bt_reg_vendor_ae;
 	u16 bt_reg_vendor_ac;
@@ -1432,12 +1443,20 @@ struct rtw_coex_stat {
 	u8 bt_a2dp_bitpool;
 	u8 bt_iqk_state;
 
+	u16 wl_beacon_interval;
 	u8 wl_noisy_level;
 	u8 wl_fw_dbg_info[10];
 	u8 wl_fw_dbg_info_pre[10];
+	u8 wl_rx_rate;
+	u8 wl_tx_rate;
+	u8 wl_rts_rx_rate;
 	u8 wl_coex_mode;
+	u8 wl_iot_peer;
 	u8 ampdu_max_time;
 	u8 wl_tput_dir;
+
+	u8 wl_toggle_para[6];
+	u8 wl_toggle_interval;
 
 	u16 score_board;
 	u16 retry_limit;
@@ -1478,6 +1497,9 @@ struct rtw_coex {
 	struct delayed_work wl_remain_work;
 	struct delayed_work bt_remain_work;
 	struct delayed_work wl_connecting_work;
+	struct delayed_work bt_multi_link_remain_work;
+	struct delayed_work wl_ccklock_work;
+
 };
 
 #define DPK_RF_REG_NUM 7

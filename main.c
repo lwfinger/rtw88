@@ -67,6 +67,7 @@ static struct ieee80211_channel rtw_channeltable_5g[] = {
 	{.center_freq = 5660, .hw_value = 132,},
 	{.center_freq = 5680, .hw_value = 136,},
 	{.center_freq = 5700, .hw_value = 140,},
+	{.center_freq = 5720, .hw_value = 144,},
 	{.center_freq = 5745, .hw_value = 149,},
 	{.center_freq = 5765, .hw_value = 153,},
 	{.center_freq = 5785, .hw_value = 157,},
@@ -1154,6 +1155,8 @@ void rtw_core_stop(struct rtw_dev *rtwdev)
 	cancel_delayed_work_sync(&coex->wl_remain_work);
 	cancel_delayed_work_sync(&coex->bt_remain_work);
 	cancel_delayed_work_sync(&coex->wl_connecting_work);
+	cancel_delayed_work_sync(&coex->bt_multi_link_remain_work);
+	cancel_delayed_work_sync(&coex->wl_ccklock_work);
 
 	mutex_lock(&rtwdev->mutex);
 
@@ -1273,7 +1276,6 @@ static void rtw_set_supported_band(struct ieee80211_hw *hw,
 
 err_out:
 	rtw_err(rtwdev, "failed to set supported band\n");
-	kfree(sband);
 }
 
 static void rtw_unset_supported_band(struct ieee80211_hw *hw,
@@ -1671,6 +1673,9 @@ int rtw_core_init(struct rtw_dev *rtwdev)
 	INIT_DELAYED_WORK(&coex->wl_remain_work, rtw_coex_wl_remain_work);
 	INIT_DELAYED_WORK(&coex->bt_remain_work, rtw_coex_bt_remain_work);
 	INIT_DELAYED_WORK(&coex->wl_connecting_work, rtw_coex_wl_connecting_work);
+	INIT_DELAYED_WORK(&coex->bt_multi_link_remain_work,
+			  rtw_coex_bt_multi_link_remain_work);
+	INIT_DELAYED_WORK(&coex->wl_ccklock_work, rtw_coex_wl_ccklock_work);
 	INIT_WORK(&rtwdev->c2h_work, rtw_c2h_work);
 	INIT_WORK(&rtwdev->fw_recovery_work, rtw_fw_recovery_work);
 	INIT_WORK(&rtwdev->ba_work, rtw_txq_ba_work);

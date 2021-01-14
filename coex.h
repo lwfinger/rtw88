@@ -5,6 +5,7 @@
 #ifndef __RTW_COEX_H__
 #define __RTW_COEX_H__
 
+#define COEX_CCK_2	0x1
 #define COEX_RESP_ACK_BY_WL_FW	0x1
 #define COEX_REQUEST_TIMEOUT	msecs_to_jiffies(10)
 
@@ -21,8 +22,16 @@
 #define COEX_H2C69_TDMA_SLOT	0xb
 #define PARA1_H2C69_TDMA_4SLOT	0xc1
 #define PARA1_H2C69_TDMA_2SLOT	0x1
+#define PARA1_H2C69_TBTT_TIMES	GENMASK(5, 0)
+#define PARA1_H2C69_TBTT_DIV100	BIT(7)
+
+#define COEX_H2C69_TOGGLE_TABLE_A 0xd
+#define COEX_H2C69_TOGGLE_TABLE_B 0x7
 
 #define TDMA_4SLOT	BIT(8)
+
+#define TDMA_TIMER_TYPE_2SLOT 0
+#define TDMA_TIMER_TYPE_4SLOT 3
 
 #define COEX_RSSI_STEP		4
 
@@ -380,6 +389,8 @@ void rtw_coex_defreeze_work(struct work_struct *work);
 void rtw_coex_wl_remain_work(struct work_struct *work);
 void rtw_coex_bt_remain_work(struct work_struct *work);
 void rtw_coex_wl_connecting_work(struct work_struct *work);
+void rtw_coex_bt_multi_link_remain_work(struct work_struct *work);
+void rtw_coex_wl_ccklock_work(struct work_struct *work);
 
 void rtw_coex_power_on_setting(struct rtw_dev *rtwdev);
 void rtw_coex_init_hw_config(struct rtw_dev *rtwdev, bool wifi_only);

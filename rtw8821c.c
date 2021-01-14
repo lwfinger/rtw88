@@ -1020,19 +1020,24 @@ static void rtw8821c_phy_cck_pd_set(struct rtw_dev *rtwdev, u8 new_lvl)
 {
 	struct rtw_dm_info *dm_info = &rtwdev->dm_info;
 	u8 pd[CCK_PD_LV_MAX] = {3, 7, 13, 13, 13};
+	u8 cck_n_rx;
 
-	if (dm_info->min_rssi > 60) {
-		new_lvl = 4;
-		pd[4] = 0x1d;
-		goto set_cck_pd;
-	}
+	rtw_dbg(rtwdev, RTW_DBG_PHY, "lv: (%d) -> (%d)\n",
+		dm_info->cck_pd_lv[RTW_CHANNEL_WIDTH_20][RF_PATH_A], new_lvl);
 
 	if (dm_info->cck_pd_lv[RTW_CHANNEL_WIDTH_20][RF_PATH_A] == new_lvl)
 		return;
 
+	cck_n_rx = (rtw_read8_mask(rtwdev, REG_CCK0_FAREPORT, BIT_CCK0_2RX) &&
+		    rtw_read8_mask(rtwdev, REG_CCK0_FAREPORT, BIT_CCK0_MRC)) ? 2 : 1;
+	rtw_dbg(rtwdev, RTW_DBG_PHY,
+		"is_linked=%d, lv=%d, n_rx=%d, cs_ratio=0x%x, pd_th=0x%x, cck_fa_avg=%d\n",
+		rtw_is_assoc(rtwdev), new_lvl, cck_n_rx,
+		dm_info->cck_pd_default + new_lvl * 2,
+		pd[new_lvl], dm_info->cck_fa_avg);
+
 	dm_info->cck_fa_avg = CCK_FA_AVG_RESET;
 
-set_cck_pd:
 	dm_info->cck_pd_lv[RTW_CHANNEL_WIDTH_20][RF_PATH_A] = new_lvl;
 	rtw_write32_mask(rtwdev, REG_PWRTH, 0x3f0000, pd[new_lvl]);
 	rtw_write32_mask(rtwdev, REG_PWRTH2, 0x1f0000,
@@ -1818,6 +1823,7 @@ struct rtw_chip_info rtw8821c_hw_spec = {
 	.bt_desired_ver = 0x46,
 	.scbd_support = true,
 	.new_scbd10_def = false,
+	.ble_hid_profile_support = false,
 	.pstdma_type = COEX_PSTDMA_FORCE_LPSOFF,
 	.bt_rssi_type = COEX_BTRSSI_RATIO,
 	.ant_isolation = 15,
