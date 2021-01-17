@@ -51,6 +51,7 @@
 #define RTK_PCI_RXBD_DESA_MPDUQ	0x338
 
 #define TRX_BD_IDX_MASK		GENMASK(11, 0)
+#define TRX_BD_HW_IDX_MASK	GENMASK(27, 16)
 
 /* BCNQ is specialized for rsvd page, does not need to specify a number */
 #define RTK_PCI_TXBD_NUM_H2CQ	0x1328
@@ -204,6 +205,10 @@ struct rtw_pci {
 	spinlock_t irq_lock;
 	u32 irq_mask[4];
 	bool irq_enabled;
+
+	/* napi structure */
+	struct net_device netdev;
+	struct napi_struct napi;
 
 	u16 rx_tag;
 	DECLARE_BITMAP(tx_queued, RTK_MAX_TX_QUEUE_NUM);

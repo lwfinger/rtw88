@@ -24,6 +24,7 @@
 #endif
 #include <linux/iopoll.h>
 #include <linux/interrupt.h>
+#include <linux/workqueue.h>
 
 #include "util.h"
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
@@ -34,6 +35,7 @@
 #define NUM_NL80211_BANDS IEEE80211_NUM_BANDS
 #endif
 
+#define RTW_NAPI_WEIGHT_NUM		32
 #define RTW_MAX_MAC_ID_NUM		32
 #define RTW_MAX_SEC_CAM_NUM		32
 #define MAX_PG_CAM_BACKUP_NUM		8
@@ -1566,6 +1568,9 @@ struct rtw_iqk_info {
 	} result;
 };
 
+#define RRSR_INIT_2G 0x15f
+#define RRSR_INIT_5G 0x150
+
 struct rtw_dm_info {
 	u32 cck_fa_cnt;
 	u32 ofdm_fa_cnt;
@@ -1596,6 +1601,8 @@ struct rtw_dm_info {
 	u8 cck_gi_l_bnd;
 
 	u8 tx_rate;
+	u32 rrsr_val_init;
+	u32 rrsr_mask_min;
 	u8 thermal_avg[RTW_RF_PATH_MAX];
 	u8 thermal_meter_k;
 	s8 delta_power_index[RTW_RF_PATH_MAX];
@@ -1837,7 +1844,8 @@ struct rtw_dev {
 	/* used to protect txqs list */
 	spinlock_t txq_lock;
 	struct list_head txqs;
-	struct tasklet_struct tx_tasklet;
+	struct workqueue_struct *tx_wq;
+	struct work_struct tx_work;
 	struct work_struct ba_work;
 
 	struct rtw_tx_report tx_report;
