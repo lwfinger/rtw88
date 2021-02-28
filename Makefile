@@ -90,8 +90,9 @@ endif
 
 	@mkdir -p $(MODDESTDIR)
 	@install -p -D -m 644 *.ko $(MODDESTDIR)	
-	@mkdir -p /lib/firmware/rtw88
-	@cp *.bin /lib/firmware/rtw88/.
+	@#copy firmware images to target folder
+	@mkdir -p $(FIRMWAREDIR)/rtw88/
+	@cp -f *.bin $(FIRMWAREDIR)/rtw88/
 ifeq ($(COMPRESS_GZIP), y)
 	@gzip -f $(MODDESTDIR)/*.ko
 endif
@@ -101,10 +102,6 @@ endif
 
 	@depmod -a $(KVER)
 
-	@#copy firmware images to target folder
-	@mkdir -p $(FIRMWAREDIR)/rtw88/
-	@cp -f *.bin $(FIRMWAREDIR)/rtw88/
-	@mv $(FIRMWAREDIR)/rtw88/rtl8822cu_fw.bin $(FIRMWAREDIR)rtl_bt/.
 	@echo "Install rtw88 SUCCESS"
 
 uninstall:
@@ -112,7 +109,6 @@ uninstall:
 	@modprobe -r rtw_8822ce
 	@modprobe -r rtw_8723de
 	@rm -f $(MODDESTDIR)/rtw_*.ko
-	@rm -f $(MODDESTDIR)/rtw_core.ko
 ifneq (,$(wildcard ./backup_drivers.tar))
 	@echo Restoring backups
 	@tar xPf backup_drivers.tar
