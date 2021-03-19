@@ -2127,7 +2127,7 @@ static void rtw8822c_do_lck(struct rtw_dev *rtwdev)
 
 	rtw_write_rf(rtwdev, RF_PATH_A, RF_SYN_CTRL, RFREG_MASK, 0x80010);
 	rtw_write_rf(rtwdev, RF_PATH_A, RF_SYN_PFD, RFREG_MASK, 0x1F0FA);
-	fsleep(1);
+	ssleep(1);
 	rtw_write_rf(rtwdev, RF_PATH_A, RF_AAC_CTRL, RFREG_MASK, 0x80000);
 	rtw_write_rf(rtwdev, RF_PATH_A, RF_SYN_AAC, RFREG_MASK, 0x80001);
 	read_poll_timeout(rtw_read_rf, val, val != 0x1, 1000, 100000,
@@ -2137,7 +2137,7 @@ static void rtw8822c_do_lck(struct rtw_dev *rtwdev)
 
 	rtw_write_rf(rtwdev, RF_PATH_A, RF_FAST_LCK, RFREG_MASK, 0x0f000);
 	rtw_write_rf(rtwdev, RF_PATH_A, RF_FAST_LCK, RFREG_MASK, 0x4f000);
-	fsleep(1);
+	ssleep(1);
 	rtw_write_rf(rtwdev, RF_PATH_A, RF_FAST_LCK, RFREG_MASK, 0x0f000);
 }
 
