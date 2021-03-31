@@ -134,7 +134,7 @@ static inline int rtw_check_supported_rfe(struct rtw_dev *rtwdev)
 			rtwdev->efuse.rfe_option);
 		return -ENODEV;
 	}
-	rtw_dbg(rtwdev, RTW_DBG_PHY, "use rfe_def[%d]\n", rtwdev->efuse.rfe_option);
+	dev_printk(KERN_INFO, rtwdev->dev, "use rfe_def[%d]\n", rtwdev->efuse.rfe_option);
 
 	return 0;
 }
