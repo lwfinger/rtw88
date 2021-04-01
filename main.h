@@ -589,7 +589,7 @@ struct rtw_5g_txpwr_idx {
 struct rtw_txpwr_idx {
 	struct rtw_2g_txpwr_idx pwr_idx_2g;
 	struct rtw_5g_txpwr_idx pwr_idx_5g;
-};
+} __packed;
 
 struct rtw_timer_list {
 	struct timer_list timer;
