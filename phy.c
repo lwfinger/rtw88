@@ -1652,7 +1652,7 @@ void rtw_phy_load_tables(struct rtw_dev *rtwdev)
 EXPORT_SYMBOL(rtw_phy_load_tables);
 
 static u8 rtw_get_channel_group(u8 channel, u8 rate)
-{_
+{
 	switch (channel) {
 	default:
 		WARN_ON(1);
