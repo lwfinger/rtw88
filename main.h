@@ -495,6 +495,9 @@ enum rtw_wow_flags {
 
 /* the power index is represented by differences, which cck-1s & ht40-1s are
  * the base values, so for 1s's differences, there are only ht20 & ofdm
+ *
+ * NOTE: These structs match the layout of EFUSE, thus they may not be
+ * changed! They are marked with __packed directive.
  */
 struct rtw_2g_1s_pwr_idx_diff {
 #ifdef __LITTLE_ENDIAN
@@ -527,7 +530,7 @@ struct rtw_2g_txpwr_idx {
 	struct rtw_2g_ns_pwr_idx_diff ht_2s_diff;
 	struct rtw_2g_ns_pwr_idx_diff ht_3s_diff;
 	struct rtw_2g_ns_pwr_idx_diff ht_4s_diff;
-};
+} __packed;
 
 struct rtw_5g_ht_1s_pwr_idx_diff {
 #ifdef __LITTLE_ENDIAN
@@ -584,12 +587,14 @@ struct rtw_5g_txpwr_idx {
 	struct rtw_5g_vht_ns_pwr_idx_diff vht_2s_diff;
 	struct rtw_5g_vht_ns_pwr_idx_diff vht_3s_diff;
 	struct rtw_5g_vht_ns_pwr_idx_diff vht_4s_diff;
-};
+} __packed;
 
 struct rtw_txpwr_idx {
 	struct rtw_2g_txpwr_idx pwr_idx_2g;
 	struct rtw_5g_txpwr_idx pwr_idx_5g;
 } __packed;
+
+/* End of critical section */
 
 struct rtw_timer_list {
 	struct timer_list timer;
