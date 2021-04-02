@@ -48,7 +48,7 @@ static inline void fsleep(unsigned long usecs)
 #define NUM_NL80211_BANDS IEEE80211_NUM_BANDS
 #endif
 
-#define RTW_NAPI_WEIGHT_NUM		32
+#define RTW_NAPI_WEIGHT_NUM		64
 #define RTW_MAX_MAC_ID_NUM		32
 #define RTW_MAX_SEC_CAM_NUM		32
 #define MAX_PG_CAM_BACKUP_NUM		8
@@ -453,7 +453,6 @@ enum rtw_flags {
 	RTW_FLAG_BUSY_TRAFFIC,
 	RTW_FLAG_WOWLAN,
 	RTW_FLAG_RESTARTING,
-	RTW_FLAG_USE_LOWEST_RATE,
 
 	NUM_OF_RTW_FLAGS,
 };
@@ -722,7 +721,6 @@ struct rtw_rx_pkt_stat {
 
 	struct rtw_sta_info *si;
 	struct ieee80211_vif *vif;
-	struct ieee80211_hdr *hdr;
 };
 
 DECLARE_EWMA(tp, 10, 2);
@@ -936,8 +934,6 @@ struct rtw_chip_ops {
 			      struct ieee80211_bss_conf *conf);
 	void (*cfg_csi_rate)(struct rtw_dev *rtwdev, u8 rssi, u8 cur_rate,
 			     u8 fixrate_en, u8 *new_rate);
-	void (*cfo_init)(struct rtw_dev *rtwdev);
-	void (*cfo_track)(struct rtw_dev *rtwdev);
 
 	/* for coex */
 	void (*coex_set_init)(struct rtw_dev *rtwdev);
@@ -1267,7 +1263,6 @@ struct rtw_chip_info {
 	bool en_dis_dpd;
 	u16 dpd_ratemask;
 	u8 iqk_threshold;
-	u8 lck_threshold;
 	const struct rtw_pwr_track_tbl *pwr_track_tbl;
 
 	u8 bfer_su_max_num;
@@ -1599,15 +1594,6 @@ struct rtw_iqk_info {
 	} result;
 };
 
-struct rtw_cfo_track {
-	bool is_adjust;
-	u8 crystal_cap;
-	s32 cfo_tail[RTW_RF_PATH_MAX];
-	s32 cfo_cnt[RTW_RF_PATH_MAX];
-	u32 packet_count;
-	u32 packet_count_pre;
-};
-
 #define RRSR_INIT_2G 0x15f
 #define RRSR_INIT_5G 0x150
 
@@ -1645,7 +1631,6 @@ struct rtw_dm_info {
 	u32 rrsr_mask_min;
 	u8 thermal_avg[RTW_RF_PATH_MAX];
 	u8 thermal_meter_k;
-	u8 thermal_meter_lck;
 	s8 delta_power_index[RTW_RF_PATH_MAX];
 	s8 delta_power_index_last[RTW_RF_PATH_MAX];
 	u8 default_ofdm_index;
@@ -1661,7 +1646,6 @@ struct rtw_dm_info {
 	u8 dack_dck[RTW_RF_PATH_MAX][2][DACK_DCK_BACKUP_NUM];
 
 	struct rtw_dpk_info dpk_info;
-	struct rtw_cfo_track cfo_track;
 
 	/* [bandwidth 0:20M/1:40M][number of path] */
 	u8 cck_pd_lv[2][RTW_RF_PATH_MAX];

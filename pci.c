@@ -488,13 +488,14 @@ static void rtw_pci_reset_trx_ring(struct rtw_dev *rtwdev)
 }
 
 static void rtw_pci_enable_interrupt(struct rtw_dev *rtwdev,
-				     struct rtw_pci *rtwpci)
+				     struct rtw_pci *rtwpci, bool exclude_rx)
 {
 	unsigned long flags;
+	u32 imr0_unmask = exclude_rx ? IMR_ROK : 0;
 
 	spin_lock_irqsave(&rtwpci->hwirq_lock, flags);
 
-	rtw_write32(rtwdev, RTK_PCI_HIMR0, rtwpci->irq_mask[0]);
+	rtw_write32(rtwdev, RTK_PCI_HIMR0, rtwpci->irq_mask[0] & ~imr0_unmask);
 	rtw_write32(rtwdev, RTK_PCI_HIMR1, rtwpci->irq_mask[1]);
 	if (rtw_chip_wcpu_11ac(rtwdev))
 		rtw_write32(rtwdev, RTK_PCI_HIMR3, rtwpci->irq_mask[3]);
@@ -555,13 +556,36 @@ static void rtw_pci_dma_release(struct rtw_dev *rtwdev, struct rtw_pci *rtwpci)
 	}
 }
 
+static void rtw_pci_napi_start(struct rtw_dev *rtwdev)
+{
+	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
+
+	if (test_and_set_bit(RTW_PCI_FLAG_NAPI_RUNNING, rtwpci->flags))
+		return;
+
+	napi_enable(&rtwpci->napi);
+}
+
+static void rtw_pci_napi_stop(struct rtw_dev *rtwdev)
+{
+	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
+
+	if (!test_and_clear_bit(RTW_PCI_FLAG_NAPI_RUNNING, rtwpci->flags))
+		return;
+
+	napi_synchronize(&rtwpci->napi);
+	napi_disable(&rtwpci->napi);
+}
+
 static int rtw_pci_start(struct rtw_dev *rtwdev)
 {
 	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
 
 	spin_lock_bh(&rtwpci->irq_lock);
-	rtw_pci_enable_interrupt(rtwdev, rtwpci);
+	rtw_pci_enable_interrupt(rtwdev, rtwpci, false);
 	spin_unlock_bh(&rtwpci->irq_lock);
+
+	rtw_pci_napi_start(rtwdev);
 
 	return 0;
 }
@@ -569,6 +593,8 @@ static int rtw_pci_start(struct rtw_dev *rtwdev)
 static void rtw_pci_stop(struct rtw_dev *rtwdev)
 {
 	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
+
+	rtw_pci_napi_stop(rtwdev);
 
 	spin_lock_bh(&rtwpci->irq_lock);
 	rtw_pci_disable_interrupt(rtwdev, rtwpci);
@@ -645,8 +671,6 @@ static u8 ac_to_hwq[] = {
 	[IEEE80211_AC_BK] = RTW_TX_QUEUE_BK,
 };
 
-static_assert(ARRAY_SIZE(ac_to_hwq) == IEEE80211_NUM_ACS);
-
 static u8 rtw_hw_queue_mapping(struct sk_buff *skb)
 {
 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
@@ -701,72 +725,6 @@ static void rtw_pci_dma_check(struct rtw_dev *rtwdev,
 		rtw_warn(rtwdev, "pci bus timeout, check dma status\n");
 
 	rtwpci->rx_tag = (rtwpci->rx_tag + 1) % RX_TAG_MAX;
-}
-
-static u32 __pci_get_hw_tx_ring_rp(struct rtw_dev *rtwdev, u8 pci_q)
-{
-	u32 bd_idx_addr = rtw_pci_tx_queue_idx_addr[pci_q];
-	u32 bd_idx = rtw_read16(rtwdev, bd_idx_addr + 2);
-
-	return FIELD_GET(TRX_BD_IDX_MASK, bd_idx);
-}
-
-static void __pci_flush_queue(struct rtw_dev *rtwdev, u8 pci_q, bool drop)
-{
-	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
-	struct rtw_pci_tx_ring *ring = &rtwpci->tx_rings[pci_q];
-	u32 cur_rp;
-	u8 i;
-
-	/* Because the time taked by the I/O in __pci_get_hw_tx_ring_rp is a
-	 * bit dynamic, it's hard to define a reasonable fixed total timeout to
-	 * use read_poll_timeout* helper. Instead, we can ensure a reasonable
-	 * polling times, so we just use for loop with udelay here.
-	 */
-	for (i = 0; i < 30; i++) {
-		cur_rp = __pci_get_hw_tx_ring_rp(rtwdev, pci_q);
-		if (cur_rp == ring->r.wp)
-			return;
-
-		udelay(1);
-	}
-
-	if (!drop)
-		rtw_warn(rtwdev, "timed out to flush pci tx ring[%d]\n", pci_q);
-}
-
-static void __rtw_pci_flush_queues(struct rtw_dev *rtwdev, u32 pci_queues,
-				   bool drop)
-{
-	u8 q;
-
-	for (q = 0; q < RTK_MAX_TX_QUEUE_NUM; q++) {
-		/* It may be not necessary to flush BCN and H2C tx queues. */
-		if (q == RTW_TX_QUEUE_BCN || q == RTW_TX_QUEUE_H2C)
-			continue;
-
-		if (pci_queues & BIT(q))
-			__pci_flush_queue(rtwdev, q, drop);
-	}
-}
-
-static void rtw_pci_flush_queues(struct rtw_dev *rtwdev, u32 queues, bool drop)
-{
-	u32 pci_queues = 0;
-	u8 i;
-
-	/* If all of the hardware queues are requested to flush,
-	 * flush all of the pci queues.
-	 */
-	if (queues == BIT(rtwdev->hw->queues) - 1) {
-		pci_queues = BIT(RTK_MAX_TX_QUEUE_NUM) - 1;
-	} else {
-		for (i = 0; i < rtwdev->hw->queues; i++)
-			if (queues & BIT(i))
-				pci_queues |= BIT(ac_to_hwq[i]);
-	}
-
-	__rtw_pci_flush_queues(rtwdev, pci_queues, drop);
 }
 
 static void rtw_pci_tx_kick_off_queue(struct rtw_dev *rtwdev, u8 queue)
@@ -1012,8 +970,7 @@ static void rtw_pci_rx_isr(struct rtw_dev *rtwdev)
 }
 
 static int rtw_pci_get_hw_rx_ring_nr(struct rtw_dev *rtwdev,
-				     struct rtw_pci *rtwpci,
-				     u32 *rp, u32 *wp)
+				     struct rtw_pci *rtwpci)
 {
 	struct rtw_pci_rx_ring *ring;
 	int count = 0;
@@ -1027,24 +984,19 @@ static int rtw_pci_get_hw_rx_ring_nr(struct rtw_dev *rtwdev,
 	else
 		count = ring->r.len - (ring->r.wp - cur_wp);
 
-	if (rp)
-		*rp = ring->r.rp;
-	if (wp)
-		*wp = cur_wp;
-
 	return count;
 }
 
 static u32 rtw_pci_rx_napi(struct rtw_dev *rtwdev, struct rtw_pci *rtwpci,
-			   u8 hw_queue)
+			   u8 hw_queue, u32 limit)
 {
 	struct rtw_chip_info *chip = rtwdev->chip;
 	struct napi_struct *napi = &rtwpci->napi;
-	struct rtw_pci_rx_ring *ring;
+	struct rtw_pci_rx_ring *ring = &rtwpci->rx_rings[RTW_RX_QUEUE_MPDU];
 	struct rtw_rx_pkt_stat pkt_stat;
 	struct ieee80211_rx_status rx_status;
 	struct sk_buff *skb, *new;
-	u32 cur_wp, cur_rp;
+	u32 cur_rp = ring->r.rp;
 	u32 count, rx_done = 0;
 	u32 pkt_offset;
 	u32 pkt_desc_sz = chip->rx_pkt_desc_sz;
@@ -1053,8 +1005,8 @@ static u32 rtw_pci_rx_napi(struct rtw_dev *rtwdev, struct rtw_pci *rtwpci,
 	u8 *rx_desc;
 	dma_addr_t dma;
 
-	ring = &rtwpci->rx_rings[RTW_RX_QUEUE_MPDU];
-	count = rtw_pci_get_hw_rx_ring_nr(rtwdev, rtwpci, &cur_rp, &cur_wp);
+	count = rtw_pci_get_hw_rx_ring_nr(rtwdev, rtwpci);
+	count = min(count, limit);
 
 	while (count--) {
 		rtw_pci_dma_check(rtwdev, ring, cur_rp);
@@ -1103,7 +1055,10 @@ next_rp:
 	}
 
 	ring->r.rp = cur_rp;
-	ring->r.wp = cur_wp;
+	/* 'rp', the last position we have read, is seen as previous posistion
+	 * of 'wp' that is used to calculate 'count' next time.
+	 */
+	ring->r.wp = cur_rp;
 	rtw_write16(rtwdev, RTK_PCI_RXBD_IDX_MPDUQ, ring->r.rp);
 
 	return rx_done;
@@ -1156,6 +1111,7 @@ static irqreturn_t rtw_pci_interrupt_threadfn(int irq, void *dev)
 	struct rtw_dev *rtwdev = dev;
 	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
 	u32 irq_status[4];
+	bool rx = false;
 
 	spin_lock_bh(&rtwpci->irq_lock);
 	rtw_pci_irq_recognized(rtwdev, rtwpci, irq_status);
@@ -1174,13 +1130,15 @@ static irqreturn_t rtw_pci_interrupt_threadfn(int irq, void *dev)
 		rtw_pci_tx_isr(rtwdev, rtwpci, RTW_TX_QUEUE_VI);
 	if (irq_status[3] & IMR_H2CDOK)
 		rtw_pci_tx_isr(rtwdev, rtwpci, RTW_TX_QUEUE_H2C);
-	if (irq_status[0] & IMR_ROK)
+	if (irq_status[0] & IMR_ROK) {
 		rtw_pci_rx_isr(rtwdev);
+		rx = true;
+	}
 	if (unlikely(irq_status[0] & IMR_C2HCMD))
 		rtw_fw_c2h_cmd_isr(rtwdev);
 
 	/* all of the jobs for this interrupt have been done */
-	rtw_pci_enable_interrupt(rtwdev, rtwpci);
+	rtw_pci_enable_interrupt(rtwdev, rtwpci, rx);
 	spin_unlock_bh(&rtwpci->irq_lock);
 
 	return IRQ_HANDLED;
@@ -1532,7 +1490,6 @@ static void rtw_pci_destroy(struct rtw_dev *rtwdev, struct pci_dev *pdev)
 static struct rtw_hci_ops rtw_pci_ops = {
 	.tx_write = rtw_pci_tx_write,
 	.tx_kick_off = rtw_pci_tx_kick_off,
-	.flush_queues = rtw_pci_flush_queues,
 	.setup = rtw_pci_setup,
 	.start = rtw_pci_start,
 	.stop = rtw_pci_stop,
@@ -1592,20 +1549,23 @@ static int rtw_pci_napi_poll(struct napi_struct *napi, int budget)
 	while (work_done < budget) {
 		u32 work_done_once;
 
-		work_done_once = rtw_pci_rx_napi(rtwdev, rtwpci,
-						 RTW_RX_QUEUE_MPDU);
+		work_done_once = rtw_pci_rx_napi(rtwdev, rtwpci, RTW_RX_QUEUE_MPDU,
+						 budget - work_done);
 		if (work_done_once == 0)
 			break;
 		work_done += work_done_once;
 	}
 	if (work_done < budget) {
 		napi_complete_done(napi, work_done);
+		spin_lock_bh(&rtwpci->irq_lock);
+		rtw_pci_enable_interrupt(rtwdev, rtwpci, false);
+		spin_unlock_bh(&rtwpci->irq_lock);
 		/* When ISR happens during polling and before napi_complete
 		 * while no further data is received. Data on the dma_ring will
 		 * not be processed immediately. Check whether dma ring is
 		 * empty and perform napi_schedule accordingly.
 		 */
-		if (rtw_pci_get_hw_rx_ring_nr(rtwdev, rtwpci, NULL, NULL))
+		if (rtw_pci_get_hw_rx_ring_nr(rtwdev, rtwpci))
 			napi_schedule(napi);
 	}
 
@@ -1619,15 +1579,13 @@ static void rtw_pci_napi_init(struct rtw_dev *rtwdev)
 	init_dummy_netdev(&rtwpci->netdev);
 	netif_napi_add(&rtwpci->netdev, &rtwpci->napi, rtw_pci_napi_poll,
 		       RTW_NAPI_WEIGHT_NUM);
-	napi_enable(&rtwpci->napi);
 }
 
 static void rtw_pci_napi_deinit(struct rtw_dev *rtwdev)
 {
 	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
 
-	napi_synchronize(&rtwpci->napi);
-	napi_disable(&rtwpci->napi);
+	rtw_pci_napi_stop(rtwdev);
 	netif_napi_del(&rtwpci->napi);
 }
 
@@ -1673,6 +1631,8 @@ int rtw_pci_probe(struct pci_dev *pdev,
 		goto err_pci_declaim;
 	}
 
+	rtw_pci_napi_init(rtwdev);
+
 	ret = rtw_chip_info_setup(rtwdev);
 	if (ret) {
 		rtw_err(rtwdev, "failed to setup chip information\n");
@@ -1693,11 +1653,10 @@ int rtw_pci_probe(struct pci_dev *pdev,
 		goto err_destroy_pci;
 	}
 
-	rtw_pci_napi_init(rtwdev);
-
 	return 0;
 
 err_destroy_pci:
+	rtw_pci_napi_deinit(rtwdev);
 	rtw_pci_destroy(rtwdev, pdev);
 
 err_pci_declaim:
