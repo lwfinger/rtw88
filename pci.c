@@ -1690,7 +1690,7 @@ static int disable_pci_caps(const struct dmi_system_id *dmi)
 }
 
 static const struct dmi_system_id rtw88_pci_quirks[] = {
-	{
+        {
 		.callback = disable_pci_caps,
 		.ident = "Protempo Ltd L116HTN6SPW",
 		.matches = {
@@ -1698,8 +1698,17 @@ static const struct dmi_system_id rtw88_pci_quirks[] = {
 			DMI_MATCH(DMI_PRODUCT_NAME, "L116HTN6SPW"),
 		},
 		.driver_data = (void *)BIT(QUIRK_DIS_PCI_CAP_ASPM),
+	},	
+	{
+		.callback = disable_pci_caps,
+		.ident = "HP HP Pavilion Laptop 14-ce0xxx",
+		.matches = {
+			DMI_MATCH(DMI_SYS_VENDOR, "HP"),
+			DMI_MATCH(DMI_PRODUCT_NAME, "HP Pavilion Laptop 14-ce0xxx"),
+		},
+		.driver_data = (void *)BIT(QUIRK_DIS_PCI_CAP_ASPM),
 	},
-	{}
+        {}
 };
 
 int rtw_pci_probe(struct pci_dev *pdev,
