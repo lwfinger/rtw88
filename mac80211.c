@@ -658,7 +658,11 @@ static void rtw_ops_sw_scan_complete(struct ieee80211_hw *hw,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
 static void rtw_ops_mgd_prepare_tx(struct ieee80211_hw *hw,
 				   struct ieee80211_vif *vif,
+    #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,14,0))
+				   struct ieee80211_prep_tx_info *info)
+    #else
 				   u16 duration)
+    #endif
 #else
 static void rtw_ops_mgd_prepare_tx(struct ieee80211_hw *hw,
 				   struct ieee80211_vif *vif)
