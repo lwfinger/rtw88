@@ -252,7 +252,6 @@ static void rtw_tx_pkt_info_update_rate(struct rtw_dev *rtwdev,
 		pkt_info->rate_id = RTW_RATEID_G;
 		pkt_info->rate = DESC_RATE6M;
 	}
-
 	pkt_info->use_rate = true;
 	pkt_info->dis_rate_fallback = true;
 }
