@@ -120,7 +120,7 @@ endif
 	@echo "Uninstall rtw88 SUCCESS"
 
 clean:
-	@rm -fr *.mod.c *.mod *.o .*.cmd .*.o.cmd *.ko *~ .*.o.d .cache.mk
+	@rm -fr *.mod.c *.mod *.cmd *.o .*.cmd *.ko *~ .*.o.d .cache.mk
 	@rm -fr .tmp_versions
 	@rm -fr Modules.symvers
 	@rm -fr Module.symvers
