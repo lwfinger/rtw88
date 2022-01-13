@@ -44,7 +44,8 @@ rtw_core-objs += main.o \
 	   sec.o \
 	   wow.o \
 	   bf.o \
-	   regd.o
+	   regd.o \
+	   sar.o
 
 obj-m       += rtw_8822b.o
 rtw_8822b-objs                := rtw8822b.o rtw8822b_table.o
