@@ -2050,6 +2050,7 @@ struct rtw_dev {
 	/* c2h cmd queue & handler work */
 	struct sk_buff_head c2h_queue;
 	struct work_struct c2h_work;
+	struct work_struct ips_work;
 	struct work_struct fw_recovery_work;
 
 	/* used to protect txqs list */
@@ -2214,6 +2215,7 @@ int rtw_dump_fw(struct rtw_dev *rtwdev, const u32 ocp_src, u32 size,
 int rtw_dump_reg(struct rtw_dev *rtwdev, const u32 addr, const u32 size);
 void rtw_core_scan_start(struct rtw_dev *rtwdev, struct rtw_vif *rtwvif,
 			 const u8 *mac_addr, bool hw_scan);
-void rtw_core_scan_complete(struct rtw_dev *rtwdev, struct ieee80211_vif *vif);
+void rtw_core_scan_complete(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
+			    bool hw_scan);
 
 #endif
