@@ -31,7 +31,7 @@
 #include <linux/etherdevice.h>
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0) && RHEL_RELEASE_CODE < RHEL_RELEASE_VERSION(8,0)
 /* see Documentation/timers/timers-howto.rst for the thresholds */
 static inline void fsleep(unsigned long usecs)
 {
