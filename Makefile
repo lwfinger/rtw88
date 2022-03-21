@@ -18,6 +18,9 @@ endif
 ifneq ("","$(wildcard $(MODDESTDIR)/*.ko.xz)")
 COMPRESS_XZ := y
 endif
+ifeq ("","$(wildcard MOK.der)")
+NO_SKIP_SIGN := y
+endif
 
 EXTRA_CFLAGS += -O2
 EXTRA_CFLAGS += -DCONFIG_RTW88_8822BE=1
@@ -127,3 +130,24 @@ clean:
 	@rm -fr Module.symvers
 	@rm -fr Module.markers
 	@rm -fr modules.order
+
+sign:
+ifeq ($(NO_SKIP_SIGN), y)
+	@openssl req -new -x509 -newkey rsa:2048 -keyout MOK.priv -outform DER -out MOK.der -nodes -days 36500 -subj "/CN=Custom MOK/"
+	@mokutil --import MOK.der
+else
+	echo "Skipping key creation"
+endif
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_pci.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_core.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723d.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723de.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822b.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822be.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821c.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821ce.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822c.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822ce.ko
+
+sign-install: all sign install
+

@@ -48,6 +48,29 @@ cd rtw88
 make
 sudo make install
 ```
+##### Installation with module signing for SecureBoot
+For all distros:
+```bash
+git clone git://github.com/lwfinger/rtw88.git
+cd rtw88
+make
+sudo make sign-install
+```
+You will be promted a password, please keep it in mind and use it in next steps.
+Reboot to activate the new installed module.
+In the MOK managerment screen:
+1. Select "Enroll key" and enroll the key created by above sign-install step
+2. When promted, enter the password you entered when create sign key. 
+3. If you enter wrong password, your computer won't not bebootable. In this case,
+   use the BOOT menu from your BIOS, to boot into your OS then do below steps:
+```bash
+sudo mokutil --reset
+```
+Restart your computer
+Use BOOT menu from BIOS to boot into your OS
+In the MOK managerment screen, select reset MOK list
+Reboot then retry from the step make sign-install
+
 ##### Blacklisting (needed if you want to use these modules)
 Some distros provide `RTL8723DE` drivers. To use this driver, that one MUST be
 blacklisted. How to do that is left as an exercise as learning that will be very beneficial.
