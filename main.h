@@ -969,6 +969,8 @@ struct rtw_chip_ops {
 			       enum rtw_bb_path tx_path_1ss,
 			       enum rtw_bb_path tx_path_cck,
 			       bool is_tx2_path);
+	void (*config_txrx_mode)(struct rtw_dev *rtwdev, u8 tx_path,
+				 u8 rx_path, bool is_tx2_path);
 
 	/* for coex */
 	void (*coex_set_init)(struct rtw_dev *rtwdev);
@@ -1335,6 +1337,7 @@ struct rtw_chip_info {
 	bool scbd_support;
 	bool new_scbd10_def; /* true: fix 2M(8822c) */
 	bool ble_hid_profile_support;
+	bool wl_mimo_ps_support;
 	u8 pstdma_type; /* 0: LPSoff, 1:LPSon */
 	u8 bt_rssi_type;
 	u8 ant_isolation;
@@ -1447,6 +1450,42 @@ struct rtw_coex_dm {
 #define COEX_BTINFO_LENGTH_MAX	10
 #define COEX_BTINFO_LENGTH	7
 
+#define COEX_BT_HIDINFO_LIST	0x0
+#define COEX_BT_HIDINFO_A	0x1
+#define COEX_BT_HIDINFO_NAME	3
+
+#define COEX_BT_HIDINFO_LENGTH	6
+#define COEX_BT_HIDINFO_HANDLE_NUM	4
+#define COEX_BT_HIDINFO_C2H_HANDLE	0
+#define COEX_BT_HIDINFO_C2H_VENDOR	1
+#define COEX_BT_BLE_HANDLE_THRS	0x10
+#define COEX_BT_HIDINFO_NOTCON	0xff
+
+struct rtw_coex_hid {
+	u8 hid_handle;
+	u8 hid_vendor;
+	u8 hid_name[COEX_BT_HIDINFO_NAME];
+	bool hid_info_completed;
+	bool is_game_hid;
+};
+
+struct rtw_coex_hid_handle_list {
+	u8 cmd_id;
+	u8 len;
+	u8 subid;
+	u8 handle_cnt;
+	u8 handle[COEX_BT_HIDINFO_HANDLE_NUM];
+} __packed;
+
+struct rtw_coex_hid_info_a {
+	u8 cmd_id;
+	u8 len;
+	u8 subid;
+	u8 handle;
+	u8 vendor;
+	u8 name[COEX_BT_HIDINFO_NAME];
+} __packed;
+
 struct rtw_coex_stat {
 	bool bt_disabled;
 	bool bt_disabled_pre;
@@ -1477,6 +1516,8 @@ struct rtw_coex_stat {
 	bool bt_slave;
 	bool bt_418_hid_exist;
 	bool bt_ble_hid_exist;
+	bool bt_game_hid_exist;
+	bool bt_hid_handle_cnt;
 	bool bt_mailbox_reply;
 
 	bool wl_under_lps;
@@ -1497,6 +1538,7 @@ struct rtw_coex_stat {
 	bool wl_connecting;
 	bool wl_slot_toggle;
 	bool wl_slot_toggle_change; /* if toggle to no-toggle */
+	bool wl_mimo_ps;
 
 	u32 bt_supported_version;
 	u32 bt_supported_feature;
@@ -1554,6 +1596,9 @@ struct rtw_coex_stat {
 
 	u32 darfrc;
 	u32 darfrch;
+
+	struct rtw_coex_hid hid_info[COEX_BT_HIDINFO_HANDLE_NUM];
+	struct rtw_coex_hid_handle_list hid_handle_list;
 };
 
 struct rtw_coex {
@@ -1962,6 +2007,7 @@ struct rtw_hal {
 	u32 antenna_tx;
 	u32 antenna_rx;
 	u8 bfee_sts_cap;
+	bool txrx_1ss;
 
 	/* protect tx power section */
 	struct mutex tx_power_mutex;
@@ -2199,6 +2245,10 @@ void rtw_tx_report_purge_timer(void *ctx);
 void rtw_tx_report_purge_timer(struct timer_list *t);
 #endif
 void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si);
+void rtw_core_scan_start(struct rtw_dev *rtwdev, struct rtw_vif *rtwvif,
+			 const u8 *mac_addr, bool hw_scan);
+void rtw_core_scan_complete(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
+			    bool hw_scan);
 int rtw_core_start(struct rtw_dev *rtwdev);
 void rtw_core_stop(struct rtw_dev *rtwdev);
 int rtw_chip_info_setup(struct rtw_dev *rtwdev);
@@ -2218,9 +2268,5 @@ void rtw_core_fw_scan_notify(struct rtw_dev *rtwdev, bool start);
 int rtw_dump_fw(struct rtw_dev *rtwdev, const u32 ocp_src, u32 size,
 		u32 fwcd_item);
 int rtw_dump_reg(struct rtw_dev *rtwdev, const u32 addr, const u32 size);
-void rtw_core_scan_start(struct rtw_dev *rtwdev, struct rtw_vif *rtwvif,
-			 const u8 *mac_addr, bool hw_scan);
-void rtw_core_scan_complete(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
-			    bool hw_scan);
-
+void rtw_set_txrx_1ss(struct rtw_dev *rtwdev, bool config_1ss);
 #endif
