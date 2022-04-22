@@ -675,6 +675,7 @@ struct rtw_tx_pkt_info {
 	u32 tx_pkt_size;
 	u8 offset;
 	u8 pkt_offset;
+	u8 tim_offset;
 	u8 mac_id;
 	u8 rate_id;
 	u8 rate;
@@ -848,7 +849,6 @@ struct rtw_sta_info {
 	u8 ldpc_en:2;
 	bool sgi_enable;
 	bool vht_enable;
-	bool updated;
 	u8 init_ra_lv;
 	u64 ra_mask;
 
@@ -2227,6 +2227,7 @@ static inline int rtw_chip_dump_fw_crash(struct rtw_dev *rtwdev)
 }
 
 void rtw_set_rx_freq_band(struct rtw_rx_pkt_stat *pkt_stat, u8 channel);
+void rtw_set_dtim_period(struct rtw_dev *rtwdev, int dtim_period);
 void rtw_get_channel_params(struct cfg80211_chan_def *chandef,
 			    struct rtw_channel_params *ch_param);
 bool check_hw_ready(struct rtw_dev *rtwdev, u32 addr, u32 mask, u32 target);
@@ -2244,7 +2245,8 @@ void rtw_tx_report_purge_timer(void *ctx);
 #else
 void rtw_tx_report_purge_timer(struct timer_list *t);
 #endif
-void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si);
+void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si,
+			 bool reset_ra_mask);
 void rtw_core_scan_start(struct rtw_dev *rtwdev, struct rtw_vif *rtwvif,
 			 const u8 *mac_addr, bool hw_scan);
 void rtw_core_scan_complete(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
