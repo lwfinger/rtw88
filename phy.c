@@ -10,7 +10,9 @@
 #include "phy.h"
 #include "debug.h"
 #include "regd.h"
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
 #include "sar.h"
+#endif
 
 struct phy_cfg_pair {
 	u32 addr;

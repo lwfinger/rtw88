@@ -13,7 +13,9 @@
 #include "bf.h"
 #include "debug.h"
 #include "wow.h"
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
 #include "sar.h"
+#endif
 
 static void rtw_ops_tx(struct ieee80211_hw *hw,
 		       struct ieee80211_tx_control *control,
@@ -894,6 +896,7 @@ static void rtw_ops_cancel_hw_scan(struct ieee80211_hw *hw,
 	mutex_unlock(&rtwdev->mutex);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
 static int rtw_ops_set_sar_specs(struct ieee80211_hw *hw,
 				 const struct cfg80211_sar_specs *sar)
 {
@@ -903,6 +906,7 @@ static int rtw_ops_set_sar_specs(struct ieee80211_hw *hw,
 
 	return 0;
 }
+#endif
 
 static void rtw_ops_sta_rc_update(struct ieee80211_hw *hw,
 				  struct ieee80211_vif *vif,

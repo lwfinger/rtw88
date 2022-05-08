@@ -2,11 +2,12 @@
 /* Copyright(c) 2018-2021  Realtek Corporation
  */
 
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
 #include "sar.h"
 #include "phy.h"
 #include "debug.h"
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
 s8 rtw_query_sar(struct rtw_dev *rtwdev, const struct rtw_sar_arg *arg)
 {
 	const struct rtw_hal *hal = &rtwdev->hal;

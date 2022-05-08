@@ -1480,12 +1480,15 @@ static void rtw_pci_interface_cfg(struct rtw_dev *rtwdev)
 
 static void rtw_pci_phy_cfg(struct rtw_dev *rtwdev)
 {
+	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
 	struct rtw_chip_info *chip = rtwdev->chip;
+	struct pci_dev *pdev = rtwpci->pdev;
 	const struct rtw_intf_phy_para *para;
 	u16 cut;
 	u16 value;
 	u16 offset;
 	int i;
+	int ret;
 
 	cut = BIT(0) << rtwdev->hal.cut_version;
 
@@ -1518,6 +1521,15 @@ static void rtw_pci_phy_cfg(struct rtw_dev *rtwdev)
 	}
 
 	rtw_pci_link_cfg(rtwdev);
+
+	/* Disable 8821ce completion timeout by default */
+	if (chip->id == RTW_CHIP_TYPE_8821C) {
+		ret = pcie_capability_set_word(pdev, PCI_EXP_DEVCTL2,
+					       PCI_EXP_DEVCTL2_COMP_TMOUT_DIS);
+		if (ret)
+			rtw_err(rtwdev, "failed to set PCI cap, ret = %d\n",
+				ret);
+	}
 }
 
 static int __maybe_unused rtw_pci_suspend(struct device *dev)
@@ -1704,7 +1716,7 @@ static void rtw_pci_napi_init(struct rtw_dev *rtwdev)
 
 	init_dummy_netdev(&rtwpci->netdev);
 	netif_napi_add(&rtwpci->netdev, &rtwpci->napi, rtw_pci_napi_poll,
-		       RTW_NAPI_WEIGHT_NUM);
+		       NAPI_POLL_WEIGHT);
 }
 
 static void rtw_pci_napi_deinit(struct rtw_dev *rtwdev)

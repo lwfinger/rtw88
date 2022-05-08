@@ -36,7 +36,7 @@ void rtw_bf_assoc(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
 	struct rtw_bf_info *bfinfo = &rtwdev->bf_info;
 	struct rtw_chip_info *chip = rtwdev->chip;
 	struct ieee80211_sta *sta;
-	struct ieee80211_sta_vht_cap *vht_cap = NULL;
+	struct ieee80211_sta_vht_cap *vht_cap;
 	struct ieee80211_sta_vht_cap *ic_vht_cap;
 	const u8 *bssid = bss_conf->bssid;
 	u32 sound_dim;
@@ -55,11 +55,7 @@ void rtw_bf_assoc(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
 	}
 
 	ic_vht_cap = &hw->wiphy->bands[NL80211_BAND_5GHZ]->vht_cap;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
-	vht_cap = &sta->deflink.vht_cap;
-#else
 	vht_cap = &sta->vht_cap;
-#endif
 
 	if ((ic_vht_cap->cap & IEEE80211_VHT_CAP_MU_BEAMFORMEE_CAPABLE) &&
 	    (vht_cap->cap & IEEE80211_VHT_CAP_MU_BEAMFORMER_CAPABLE)) {

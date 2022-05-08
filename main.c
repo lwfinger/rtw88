@@ -910,7 +910,7 @@ static void rtw_hw_config_rf_ant_num(struct rtw_dev *rtwdev, u8 hw_ant_num)
 static u64 get_vht_ra_mask(struct ieee80211_sta *sta)
 {
 	u64 ra_mask = 0;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 	u16 mcs_map = le16_to_cpu(sta->deflink.vht_cap.vht_mcs.rx_mcs_map);
 #else
 	u16 mcs_map = le16_to_cpu(sta->vht_cap.vht_mcs.rx_mcs_map);
@@ -1123,7 +1123,7 @@ void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si,
 	struct rtw_efuse *efuse = &rtwdev->efuse;
 	struct rtw_hal *hal = &rtwdev->hal;
 	u8 wireless_set;
-	u8 bw_mode = 0;
+	u8 bw_mode;
 	u8 rate_id;
 	u8 rf_type = RF_1T1R;
 	u8 stbc_en = 0;
@@ -1134,26 +1134,27 @@ void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si,
 	bool is_vht_enable = false;
 	bool is_support_sgi = false;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 	if (sta->deflink.vht_cap.vht_supported) {
 #else
 	if (sta->vht_cap.vht_supported) {
 #endif
 		is_vht_enable = true;
 		ra_mask |= get_vht_ra_mask(sta);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 		if (sta->deflink.vht_cap.cap & IEEE80211_VHT_CAP_RXSTBC_MASK)
 #else
 		if (sta->vht_cap.cap & IEEE80211_VHT_CAP_RXSTBC_MASK)
 #endif
 			stbc_en = VHT_STBC_EN;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 		if (sta->deflink.vht_cap.cap & IEEE80211_VHT_CAP_RXLDPC)
 #else
 		if (sta->vht_cap.cap & IEEE80211_VHT_CAP_RXLDPC)
 #endif
 			stbc_en = VHT_STBC_EN;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+			ldpc_en = VHT_LDPC_EN;
 	} else if (sta->deflink.ht_cap.ht_supported) {
 		ra_mask |= (sta->deflink.ht_cap.mcs.rx_mask[1] << 20) |
 			   (sta->deflink.ht_cap.mcs.rx_mask[0] << 12);
@@ -1176,20 +1177,20 @@ void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si,
 		ra_mask &= RA_MASK_VHT_RATES_1SS | RA_MASK_HT_RATES_1SS;
 
 	if (hal->current_band_type == RTW_BAND_5G) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 		ra_mask |= (u64)sta->deflink.supp_rates[NL80211_BAND_5GHZ] << 4;
 #else
 		ra_mask |= (u64)sta->supp_rates[NL80211_BAND_5GHZ] << 4;
 #endif
 		ra_mask_bak = ra_mask;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 		if (sta->deflink.vht_cap.vht_supported) {
 #else
 		if (sta->vht_cap.vht_supported) {
 #endif
 			ra_mask &= RA_MASK_VHT_RATES | RA_MASK_OFDM_IN_VHT;
 			wireless_set = WIRELESS_OFDM | WIRELESS_VHT;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 		} else if (sta->deflink.ht_cap.ht_supported) {
 #else
 		} else if (sta->ht_cap.ht_supported) {
@@ -1201,13 +1202,13 @@ void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si,
 		}
 		dm_info->rrsr_val_init = RRSR_INIT_5G;
 	} else if (hal->current_band_type == RTW_BAND_2G) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 		ra_mask |= sta->deflink.supp_rates[NL80211_BAND_2GHZ];
 #else
 		ra_mask |= sta->supp_rates[NL80211_BAND_2GHZ];
 #endif
 		ra_mask_bak = ra_mask;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 		if (sta->deflink.vht_cap.vht_supported) {
 #else
 		if (sta->vht_cap.vht_supported) {
@@ -1216,7 +1217,7 @@ void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si,
 				   RA_MASK_OFDM_IN_VHT;
 			wireless_set = WIRELESS_CCK | WIRELESS_OFDM |
 				       WIRELESS_HT | WIRELESS_VHT;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 		} else if (sta->deflink.ht_cap.ht_supported) {
 #else
 		} else if (sta->ht_cap.ht_supported) {
@@ -1225,7 +1226,7 @@ void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si,
 				   RA_MASK_OFDM_IN_HT_2G;
 			wireless_set = WIRELESS_CCK | WIRELESS_OFDM |
 				       WIRELESS_HT;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 		} else if (sta->deflink.supp_rates[0] <= 0xf) {
 #else
 		} else if (sta->supp_rates[0] <= 0xf) {
@@ -1242,14 +1243,14 @@ void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si,
 		wireless_set = 0;
 	}
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 	switch (sta->deflink.bandwidth) {
 #else
 	switch (sta->bandwidth) {
 #endif
 	case IEEE80211_STA_RX_BW_80:
 		bw_mode = RTW_CHANNEL_WIDTH_80;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 		is_support_sgi = sta->deflink.vht_cap.vht_supported &&
 				 (sta->deflink.vht_cap.cap & IEEE80211_VHT_CAP_SHORT_GI_80);
 #else
@@ -1260,7 +1261,7 @@ void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si,
 		break;
 	case IEEE80211_STA_RX_BW_40:
 		bw_mode = RTW_CHANNEL_WIDTH_40;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 		is_support_sgi = sta->deflink.ht_cap.ht_supported &&
 				 (sta->deflink.ht_cap.cap & IEEE80211_HT_CAP_SGI_40);
 #else
@@ -1271,7 +1272,7 @@ void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si,
 		break;
 	default:
 		bw_mode = RTW_CHANNEL_WIDTH_20;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 		is_support_sgi = sta->deflink.ht_cap.ht_supported &&
 				 (sta->deflink.ht_cap.cap & IEEE80211_HT_CAP_SGI_20);
 #else
@@ -1282,14 +1283,14 @@ void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si,
 		break;
 	}
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 	if (sta->deflink.vht_cap.vht_supported && ra_mask & 0xffc00000) {
 #else
 	if (sta->vht_cap.vht_supported && ra_mask & 0xffc00000) {
 #endif
 		tx_num = 2;
 		rf_type = RF_2T2R;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 	} else if (sta->deflink.ht_cap.ht_supported && ra_mask & 0xfff00000) {
 #else
 	} else if (sta->ht_cap.ht_supported && ra_mask & 0xfff00000) {
@@ -1548,6 +1549,7 @@ static void rtw_init_ht_cap(struct rtw_dev *rtwdev,
 			    struct ieee80211_sta_ht_cap *ht_cap)
 {
 	struct rtw_efuse *efuse = &rtwdev->efuse;
+	struct rtw_chip_info *chip = rtwdev->chip;
 
 	ht_cap->ht_supported = true;
 	ht_cap->cap = 0;
@@ -1565,7 +1567,7 @@ static void rtw_init_ht_cap(struct rtw_dev *rtwdev,
 				IEEE80211_HT_CAP_DSSSCCK40 |
 				IEEE80211_HT_CAP_SGI_40;
 	ht_cap->ampdu_factor = IEEE80211_HT_MAX_AMPDU_64K;
-	ht_cap->ampdu_density = IEEE80211_HT_MPDU_DENSITY_16;
+	ht_cap->ampdu_density = chip->ampdu_density;
 	ht_cap->mcs.tx_params = IEEE80211_HT_MCS_TX_DEFINED;
 	if (efuse->hw_cap.nss > 1) {
 		ht_cap->mcs.rx_mask[0] = 0xFF;

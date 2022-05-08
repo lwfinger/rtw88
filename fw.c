@@ -655,7 +655,7 @@ void rtw_fw_beacon_filter_config(struct rtw_dev *rtwdev, bool connect,
 	s32 threshold = bss_conf->cqm_rssi_thold + rssi_offset;
 	u8 h2c_pkt[H2C_PKT_SIZE] = {0};
 
-	if (!rtw_fw_feature_check(&rtwdev->fw, FW_FEATURE_BCN_FILTER) || !si)
+	if (!rtw_fw_feature_check(&rtwdev->fw, FW_FEATURE_BCN_FILTER))
 		return;
 
 	if (!connect) {
@@ -665,6 +665,10 @@ void rtw_fw_beacon_filter_config(struct rtw_dev *rtwdev, bool connect,
 
 		return;
 	}
+
+	if (!si)
+		return;
+
 	SET_H2C_CMD_ID_CLASS(h2c_pkt, H2C_CMD_BCN_FILTER_OFFLOAD_P0);
 	ether_addr_copy(&h2c_pkt[1], bss_conf->bssid);
 	rtw_fw_send_h2c_command(rtwdev, h2c_pkt);
@@ -1053,7 +1057,7 @@ static struct sk_buff *rtw_get_rsvd_page_skb(struct ieee80211_hw *hw,
 	struct rtw_vif *rtwvif;
 	struct sk_buff *skb_new;
 	struct cfg80211_ssid *ssid;
-	u16 tim_offset;
+	u16 tim_offset = 0;
 
 	if (rsvd_pkt->type == RSVD_DUMMY) {
 		skb_new = alloc_skb(1, GFP_KERNEL);
@@ -2066,7 +2070,10 @@ void rtw_hw_scan_complete(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
 	struct cfg80211_scan_info info = {
 		.aborted = aborted,
 	};
+	struct rtw_hw_scan_info *scan_info = &rtwdev->scan_info;
+	struct rtw_hal *hal = &rtwdev->hal;
 	struct rtw_vif *rtwvif;
+	u8 chan = scan_info->op_chan;
 
 	if (!vif)
 		return;
@@ -2076,10 +2083,14 @@ void rtw_hw_scan_complete(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
 
 	rtw_core_scan_complete(rtwdev, vif, true);
 
+	rtwvif = (struct rtw_vif *)vif->drv_priv;
+	if (rtwvif->net_type == RTW_NET_MGD_LINKED) {
+		hal->current_channel = chan;
+		hal->current_band_type = chan > 14 ? RTW_BAND_5G : RTW_BAND_2G;
+	}
 	ieee80211_wake_queues(rtwdev->hw);
 	ieee80211_scan_completed(rtwdev->hw, &info);
 
-	rtwvif = (struct rtw_vif *)vif->drv_priv;
 	rtwvif->scan_req = NULL;
 	rtwvif->scan_ies = NULL;
 	rtwdev->scan_info.scanning_vif = NULL;
@@ -2187,6 +2198,9 @@ void rtw_hw_scan_chan_switch(struct rtw_dev *rtwdev, struct sk_buff *skb)
 	struct rtw_c2h_cmd *c2h;
 	enum rtw_scan_notify_id id;
 	u8 chan, status;
+
+	if (!test_bit(RTW_FLAG_SCANNING, rtwdev->flags))
+		return;
 
 	c2h = get_c2h_from_skb(skb);
 	chan = GET_CHAN_SWITCH_CENTRAL_CH(c2h->payload);
