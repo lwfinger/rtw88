@@ -55,7 +55,11 @@ void rtw_bf_assoc(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
 	}
 
 	ic_vht_cap = &hw->wiphy->bands[NL80211_BAND_5GHZ]->vht_cap;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 19, 0)
 	vht_cap = &sta->vht_cap;
+#else
+	vht_cap = &sta->deflink.vht_cap;
+#endif
 
 	if ((ic_vht_cap->cap & IEEE80211_VHT_CAP_MU_BEAMFORMEE_CAPABLE) &&
 	    (vht_cap->cap & IEEE80211_VHT_CAP_MU_BEAMFORMER_CAPABLE)) {
