@@ -2,7 +2,7 @@ rtw88
 ===========
 ### A repo for the newest Realtek rtlwifi codes.
 
-This code will build on any kernel 4.19 and newer as long as the distro has not modified
+This code will build on any kernel 5.4 and newer as long as the distro has not modified
 any of the kernel APIs. IF YOU RUN UBUNTU, YOU CAN BE ASSURED THAT THE APIs HAVE CHANGED.
 NO, I WILL NOT MODIFY THE SOURCE FOR YOU. YOU ARE ON YOUR OWN!!!!!
 
