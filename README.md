@@ -29,6 +29,9 @@ When making these changes, I tried to watch for things that might be incompatibl
 with older kernels. As this kind of updating in really boring, I might have missed
 something. Please let me know of build problems.
 
+If you see a line such as:
+make[1]: *** /lib/modules/5.17.5-300.fc36.x86_64/build: No such file or directory. Stop.
+that indicates that you have NOT installed the kernel headers. Use the following instructions for that step.
 
 ### Installation instruction
 ##### Requirements
