@@ -71,7 +71,11 @@ void rtw_bf_assoc(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
 		ether_addr_copy(bfee->mac_addr, bssid);
 		bfee->role = RTW_BFEE_MU;
 		bfee->p_aid = (bssid[5] << 1) | (bssid[4] >> 7);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0)
+		bfee->aid = vif->cfg.aid;
+#else
 		bfee->aid = bss_conf->aid;
+#endif
 		bfinfo->bfer_mu_cnt++;
 
 		rtw_chip_config_bfee(rtwdev, rtwvif, bfee, true);
