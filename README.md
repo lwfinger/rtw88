@@ -88,6 +88,14 @@ conflicting drivers. The correct ones are:
 
 If you have other modules installed, see if you blacklisted them correctly.
 
+##### Problem with recovery after sleep or hibernation
+Some BIOSs have trouble changing power state from D3hot to D0. If you have this problem, then
+
+sudo cp suspend_rtw8822be /usr/lib/systemd/system-sleep/.
+
+That script will unload the driver before sleep or hibernation, and reload it following resumption.
+f you have some device other than the 8822be, edit the script before copying it.
+
 ##### How to disable/enable a Kernel module
  ```bash
 sudo modprobe -r rtw_8723de         #This unloads the module
