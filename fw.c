@@ -14,6 +14,8 @@
 #include "util.h"
 #include "wow.h"
 #include "ps.h"
+#include "phy.h"
+#include "mac.h"
 
 static void rtw_fw_c2h_cmd_handle_ext(struct rtw_dev *rtwdev,
 				      struct sk_buff *skb)
@@ -597,6 +599,7 @@ void rtw_fw_send_ra_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
 	bool reset_ra_mask = true;
 #endif
+
 	SET_H2C_CMD_ID_CLASS(h2c_pkt, H2C_CMD_RA_INFO);
 
 	SET_RA_INFO_MACID(h2c_pkt, si->mac_id);
@@ -910,7 +913,7 @@ void rtw_send_rsvd_page_h2c(struct rtw_dev *rtwdev)
 static struct sk_buff *rtw_nlo_info_get(struct ieee80211_hw *hw)
 {
 	struct rtw_dev *rtwdev = hw->priv;
-	struct rtw_chip_info *chip = rtwdev->chip;
+	const struct rtw_chip_info *chip = rtwdev->chip;
 	struct rtw_pno_request *pno_req = &rtwdev->wow.pno_req;
 	struct rtw_nlo_info_hdr *nlo_hdr;
 	struct cfg80211_ssid *ssid;
@@ -965,7 +968,7 @@ static struct sk_buff *rtw_nlo_info_get(struct ieee80211_hw *hw)
 static struct sk_buff *rtw_cs_channel_info_get(struct ieee80211_hw *hw)
 {
 	struct rtw_dev *rtwdev = hw->priv;
-	struct rtw_chip_info *chip = rtwdev->chip;
+	const struct rtw_chip_info *chip = rtwdev->chip;
 	struct rtw_pno_request *pno_req = &rtwdev->wow.pno_req;
 	struct ieee80211_channel *channels = pno_req->channels;
 	struct sk_buff *skb;
@@ -999,7 +1002,7 @@ static struct sk_buff *rtw_cs_channel_info_get(struct ieee80211_hw *hw)
 static struct sk_buff *rtw_lps_pg_dpk_get(struct ieee80211_hw *hw)
 {
 	struct rtw_dev *rtwdev = hw->priv;
-	struct rtw_chip_info *chip = rtwdev->chip;
+	const struct rtw_chip_info *chip = rtwdev->chip;
 	struct rtw_dpk_info *dpk_info = &rtwdev->dm_info.dpk_info;
 	struct rtw_lps_pg_dpk_hdr *dpk_hdr;
 	struct sk_buff *skb;
@@ -1024,7 +1027,7 @@ static struct sk_buff *rtw_lps_pg_dpk_get(struct ieee80211_hw *hw)
 static struct sk_buff *rtw_lps_pg_info_get(struct ieee80211_hw *hw)
 {
 	struct rtw_dev *rtwdev = hw->priv;
-	struct rtw_chip_info *chip = rtwdev->chip;
+	const struct rtw_chip_info *chip = rtwdev->chip;
 	struct rtw_lps_conf *conf = &rtwdev->lps_conf;
 	struct rtw_lps_pg_info_hdr *pg_info_hdr;
 	struct rtw_wow_param *rtw_wow = &rtwdev->wow;
@@ -1140,7 +1143,7 @@ static void rtw_fill_rsvd_page_desc(struct rtw_dev *rtwdev, struct sk_buff *skb,
 				    enum rtw_rsvd_packet_type type)
 {
 	struct rtw_tx_pkt_info pkt_info = {0};
-	struct rtw_chip_info *chip = rtwdev->chip;
+	const struct rtw_chip_info *chip = rtwdev->chip;
 	u8 *pkt_desc;
 
 	rtw_tx_rsvd_page_pkt_info_update(rtwdev, &pkt_info, skb, type);
@@ -1451,7 +1454,7 @@ static int  __rtw_build_rsvd_page_from_vifs(struct rtw_dev *rtwdev)
 static u8 *rtw_build_rsvd_page(struct rtw_dev *rtwdev, u32 *size)
 {
 	struct ieee80211_hw *hw = rtwdev->hw;
-	struct rtw_chip_info *chip = rtwdev->chip;
+	const struct rtw_chip_info *chip = rtwdev->chip;
 	struct sk_buff *iter;
 	struct rtw_rsvd_page *rsvd_pkt;
 	u32 page = 0;
@@ -1620,6 +1623,16 @@ free:
 	return ret;
 }
 
+void rtw_fw_update_beacon_work(struct work_struct *work)
+{
+	struct rtw_dev *rtwdev = container_of(work, struct rtw_dev,
+					      update_beacon_work);
+
+	mutex_lock(&rtwdev->mutex);
+	rtw_fw_download_rsvd_page(rtwdev);
+	mutex_unlock(&rtwdev->mutex);
+}
+
 static void rtw_fw_read_fifo_page(struct rtw_dev *rtwdev, u32 offset, u32 size,
 				  u32 *buf, u32 residue, u16 start_pg)
 {
@@ -1655,7 +1668,7 @@ out:
 static void rtw_fw_read_fifo(struct rtw_dev *rtwdev, enum rtw_fw_fifo_sel sel,
 			     u32 offset, u32 size, u32 *buf)
 {
-	struct rtw_chip_info *chip = rtwdev->chip;
+	const struct rtw_chip_info *chip = rtwdev->chip;
 	u32 start_pg, residue;
 
 	if (sel >= RTW_FW_FIFO_MAX) {
@@ -1714,7 +1727,7 @@ int rtw_fw_dump_fifo(struct rtw_dev *rtwdev, u8 fifo_sel, u32 addr, u32 size,
 static void __rtw_fw_update_pkt(struct rtw_dev *rtwdev, u8 pkt_id, u16 size,
 				u8 location)
 {
-	struct rtw_chip_info *chip = rtwdev->chip;
+	const struct rtw_chip_info *chip = rtwdev->chip;
 	u8 h2c_pkt[H2C_PKT_SIZE] = {0};
 	u16 total_size = H2C_PKT_HDR_SIZE + H2C_PKT_UPDATE_PKT_LEN;
 
@@ -1826,8 +1839,8 @@ static int rtw_append_probe_req_ie(struct rtw_dev *rtwdev, struct sk_buff *skb,
 				   struct sk_buff_head *list, u8 *bands,
 				   struct rtw_vif *rtwvif)
 {
+	const struct rtw_chip_info *chip = rtwdev->chip;
 	struct ieee80211_scan_ies *ies = rtwvif->scan_ies;
-	struct rtw_chip_info *chip = rtwdev->chip;
 	struct sk_buff *new;
 	u8 idx;
 
@@ -1849,15 +1862,22 @@ static int rtw_append_probe_req_ie(struct rtw_dev *rtwdev, struct sk_buff *skb,
 static int _rtw_hw_scan_update_probe_req(struct rtw_dev *rtwdev, u8 num_probes,
 					 struct sk_buff_head *probe_req_list)
 {
-	struct rtw_chip_info *chip = rtwdev->chip;
+	const struct rtw_chip_info *chip = rtwdev->chip;
 	struct sk_buff *skb, *tmp;
 	u8 page_offset = 1, *buf, page_size = chip->page_size;
-	u8 pages = page_offset + num_probes * RTW_PROBE_PG_CNT;
 	u16 pg_addr = rtwdev->fifo.rsvd_h2c_info_addr, loc;
 	u16 buf_offset = page_size * page_offset;
 	u8 tx_desc_sz = chip->tx_pkt_desc_sz;
+	u8 page_cnt, pages;
 	unsigned int pkt_len;
 	int ret;
+
+	if (rtw_fw_feature_ext_check(&rtwdev->fw, FW_FEATURE_EXT_OLD_PAGE_NUM))
+		page_cnt = RTW_OLD_PROBE_PG_CNT;
+	else
+		page_cnt = RTW_PROBE_PG_CNT;
+
+	pages = page_offset + num_probes * page_cnt;
 
 	buf = kzalloc(page_size * pages, GFP_KERNEL);
 	if (!buf)
@@ -1867,7 +1887,7 @@ static int _rtw_hw_scan_update_probe_req(struct rtw_dev *rtwdev, u8 num_probes,
 	skb_queue_walk_safe(probe_req_list, skb, tmp) {
 		skb_unlink(skb, probe_req_list);
 		rtw_fill_rsvd_page_desc(rtwdev, skb, RSVD_PROBE_REQ);
-		if (skb->len > page_size * RTW_PROBE_PG_CNT) {
+		if (skb->len > page_size * page_cnt) {
 			ret = -EINVAL;
 			goto out;
 		}
@@ -1877,8 +1897,8 @@ static int _rtw_hw_scan_update_probe_req(struct rtw_dev *rtwdev, u8 num_probes,
 		loc = pg_addr - rtwdev->fifo.rsvd_boundary + page_offset;
 		__rtw_fw_update_pkt(rtwdev, RTW_PACKET_PROBE_REQ, pkt_len, loc);
 
-		buf_offset += RTW_PROBE_PG_CNT * page_size;
-		page_offset += RTW_PROBE_PG_CNT;
+		buf_offset += page_cnt * page_size;
+		page_offset += page_cnt;
 		kfree_skb(skb);
 	}
 
@@ -2056,6 +2076,9 @@ void rtw_hw_scan_start(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
 	rtwvif->scan_req = req;
 
 	ieee80211_stop_queues(rtwdev->hw);
+	rtw_leave_lps_deep(rtwdev);
+	rtw_hci_flush_all_queues(rtwdev, false);
+	rtw_mac_flush_all_queues(rtwdev, false);
 	if (req->flags & NL80211_SCAN_FLAG_RANDOM_ADDR)
 		get_random_mask_addr(mac_addr, req->mac_addr,
 				     req->mac_addr_mask);
@@ -2088,10 +2111,9 @@ void rtw_hw_scan_complete(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
 	rtw_core_scan_complete(rtwdev, vif, true);
 
 	rtwvif = (struct rtw_vif *)vif->drv_priv;
-	if (rtwvif->net_type == RTW_NET_MGD_LINKED) {
-		hal->current_channel = chan;
-		hal->current_band_type = chan > 14 ? RTW_BAND_5G : RTW_BAND_2G;
-	}
+	if (chan)
+		rtw_store_op_chan(rtwdev, false);
+	rtw_phy_set_tx_power_level(rtwdev, hal->current_channel);
 	ieee80211_wake_queues(rtwdev->hw);
 	ieee80211_scan_completed(rtwdev->hw, &info);
 
@@ -2132,6 +2154,7 @@ int rtw_hw_scan_offload(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
 			bool enable)
 {
 	struct rtw_vif *rtwvif = vif ? (struct rtw_vif *)vif->drv_priv : NULL;
+	struct rtw_hw_scan_info *scan_info = &rtwdev->scan_info;
 	struct rtw_ch_switch_option cs_option = {0};
 	struct rtw_chan_list chan_list = {0};
 	int ret = 0;
@@ -2140,7 +2163,7 @@ int rtw_hw_scan_offload(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
 		return -EINVAL;
 
 	cs_option.switch_en = enable;
-	cs_option.back_op_en = rtwvif->net_type == RTW_NET_MGD_LINKED;
+	cs_option.back_op_en = scan_info->op_chan != 0;
 	if (enable) {
 		ret = rtw_hw_scan_prehandle(rtwdev, rtwvif, &chan_list);
 		if (ret)
@@ -2179,14 +2202,33 @@ void rtw_hw_scan_status_report(struct rtw_dev *rtwdev, struct sk_buff *skb)
 		rtw_dbg(rtwdev, RTW_DBG_HW_SCAN, "HW scan aborted with code: %d\n", rc);
 }
 
-void rtw_store_op_chan(struct rtw_dev *rtwdev)
+void rtw_store_op_chan(struct rtw_dev *rtwdev, bool backup)
 {
 	struct rtw_hw_scan_info *scan_info = &rtwdev->scan_info;
 	struct rtw_hal *hal = &rtwdev->hal;
+	u8 band;
 
-	scan_info->op_chan = hal->current_channel;
-	scan_info->op_bw = hal->current_band_width;
-	scan_info->op_pri_ch_idx = hal->current_primary_channel_index;
+	if (backup) {
+		scan_info->op_chan = hal->current_channel;
+		scan_info->op_bw = hal->current_band_width;
+		scan_info->op_pri_ch_idx = hal->current_primary_channel_index;
+		scan_info->op_pri_ch = hal->primary_channel;
+	} else {
+		band = scan_info->op_chan > 14 ? RTW_BAND_5G : RTW_BAND_2G;
+		rtw_update_channel(rtwdev, scan_info->op_chan,
+				   scan_info->op_pri_ch,
+				   band, scan_info->op_bw);
+	}
+}
+
+void rtw_clear_op_chan(struct rtw_dev *rtwdev)
+{
+	struct rtw_hw_scan_info *scan_info = &rtwdev->scan_info;
+
+	scan_info->op_chan = 0;
+	scan_info->op_bw = 0;
+	scan_info->op_pri_ch_idx = 0;
+	scan_info->op_pri_ch = 0;
 }
 
 static bool rtw_is_op_chan(struct rtw_dev *rtwdev, u8 channel)
@@ -2201,7 +2243,7 @@ void rtw_hw_scan_chan_switch(struct rtw_dev *rtwdev, struct sk_buff *skb)
 	struct rtw_hal *hal = &rtwdev->hal;
 	struct rtw_c2h_cmd *c2h;
 	enum rtw_scan_notify_id id;
-	u8 chan, status;
+	u8 chan, band, status;
 
 	if (!test_bit(RTW_FLAG_SCANNING, rtwdev->flags))
 		return;
@@ -2212,10 +2254,13 @@ void rtw_hw_scan_chan_switch(struct rtw_dev *rtwdev, struct sk_buff *skb)
 	status = GET_CHAN_SWITCH_STATUS(c2h->payload);
 
 	if (id == RTW_SCAN_NOTIFY_ID_POSTSWITCH) {
-		if (rtw_is_op_chan(rtwdev, chan))
+		band = chan > 14 ? RTW_BAND_5G : RTW_BAND_2G;
+		rtw_update_channel(rtwdev, chan, chan, band,
+				   RTW_CHANNEL_WIDTH_20);
+		if (rtw_is_op_chan(rtwdev, chan)) {
+			rtw_store_op_chan(rtwdev, false);
 			ieee80211_wake_queues(rtwdev->hw);
-		hal->current_channel = chan;
-		hal->current_band_type = chan > 14 ? RTW_BAND_5G : RTW_BAND_2G;
+		}
 	} else if (id == RTW_SCAN_NOTIFY_ID_PRESWITCH) {
 		if (IS_CH_5G_BAND(chan)) {
 			rtw_coex_switchband_notify(rtwdev, COEX_SWITCH_TO_5G);
@@ -2228,7 +2273,12 @@ void rtw_hw_scan_chan_switch(struct rtw_dev *rtwdev, struct sk_buff *skb)
 				chan_type = COEX_SWITCH_TO_24G_NOFORSCAN;
 			rtw_coex_switchband_notify(rtwdev, chan_type);
 		}
-		if (rtw_is_op_chan(rtwdev, chan))
+		/* The channel of C2H RTW_SCAN_NOTIFY_ID_PRESWITCH is next
+		 * channel that hardware will switch. We need to stop queue
+		 * if next channel is non-op channel.
+		 */
+		if (!rtw_is_op_chan(rtwdev, chan) &&
+		    rtw_is_op_chan(rtwdev, hal->current_channel))
 			ieee80211_stop_queues(rtwdev->hw);
 	}
 
