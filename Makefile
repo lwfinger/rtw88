@@ -11,6 +11,7 @@ MODDESTDIR := /lib/modules/$(KVER)/kernel/drivers/net/wireless/realtek/rtw88
 else
 MODDESTDIR := /lib/modules/$(KVER)/kernel/drivers/net/wireless/rtw88
 endif
+
 #Handle the compression option for modules in 3.18+
 ifneq ("","$(wildcard $(MODDESTDIR)/*.ko.gz)")
 COMPRESS_GZIP := y

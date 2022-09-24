@@ -118,7 +118,11 @@ legacy:
 	si->ra_report.desc_rate = rate;
 	si->ra_report.bit_rate = bit_rate;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+	sta->deflink.agg.max_rc_amsdu_len = get_max_amsdu_len(bit_rate);
+#else
 	sta->max_rc_amsdu_len = get_max_amsdu_len(bit_rate);
+#endif
 }
 
 static void rtw_fw_ra_report_handle(struct rtw_dev *rtwdev, u8 *payload,
@@ -1094,14 +1098,22 @@ static struct sk_buff *rtw_get_rsvd_page_skb(struct ieee80211_hw *hw,
 		break;
 	case RSVD_NULL:
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 17)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+		skb_new = ieee80211_nullfunc_get(hw, vif, -1, false);
+#else
 		skb_new = ieee80211_nullfunc_get(hw, vif, false);
+#endif
 #else
 		skb_new = ieee80211_nullfunc_get(hw, vif);
 #endif
 		break;
 	case RSVD_QOS_NULL:
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 17)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+		skb_new = ieee80211_nullfunc_get(hw, vif, -1, true);
+#else
 		skb_new = ieee80211_nullfunc_get(hw, vif, true);
+#endif
 #else
 		skb_new = ieee80211_nullfunc_get(hw, vif);
 #endif
