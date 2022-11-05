@@ -41,7 +41,22 @@ You can install them with the following command, on **Ubuntu**:
 sudo apt-get update
 sudo apt-get install make gcc linux-headers-$(uname -r) build-essential git
 ```
-If any of the packets above are not found check if your distro installs them like that. 
+For **Fedora**: You can install them with the following command
+```bash
+sudo dnf install kernel-headers kernel-devel
+sudo dnf group install "C Development Tools and Libraries"
+```
+For **openSUSE**: Install necessary headers with
+```bash
+sudo zypper install make gcc kernel-devel kernel-default-devel git libopenssl-devel
+```
+For **Arch**: After installing the necessary kernel headers and base-devel,
+```bash
+git clone https://aur.archlinux.org/rtw89-dkms-git.git
+cd rtw89-dkms-git
+makepkg -sri
+```
+If any of the packages above are not found check if your distro installs them like that.
 
 ##### Installation
 For all distros:
