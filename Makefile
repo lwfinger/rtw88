@@ -75,6 +75,9 @@ rtw_8821c-objs		:= rtw8821c.o rtw8821c_table.o
 obj-m	+= rtw_8821ce.o
 rtw_8821ce-objs		:= rtw8821ce.o
 
+obj-m	+= rtw88_8821cu.o
+rtw88_8821cu-objs		:= rtw8821cu.o
+
 obj-m         += rtw_pci.o
 rtw_pci-objs                  := pci.o
 
