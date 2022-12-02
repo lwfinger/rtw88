@@ -88,7 +88,10 @@ obj-m	+= rtw88_8821cu.o
 rtw88_8821cu-objs		:= rtw8821cu.o
 
 obj-m         += rtw_pci.o
-rtw_pci-objs                  := pci.o
+rtw_pci-objs		:= pci.o
+
+obj-m			+= rtw88_usb.o
+rtwusb-objs		:= usb.o
 
 obj-m         += rtw88_usb.o
 rtw88_usb-objs                := usb.o
