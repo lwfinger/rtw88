@@ -28,9 +28,9 @@ EXTRA_CFLAGS += -DCONFIG_RTW88_8822BE=1
 EXTRA_CFLAGS += -DCONFIG_RTW88_8821CE=1
 EXTRA_CFLAGS += -DCONFIG_RTW88_8822CE=1
 EXTRA_CFLAGS += -DCONFIG_RTW88_8723DE=1
-EXTRA_CFLAGS += -DCONFIG_RTW88_DEBUG=1
-EXTRA_CFLAGS += -DCONFIG_RTW88_DEBUGFS=1
-EXTRA_CFLAGS += -DCONFIG_RTW88_REGD_USER_REG_HINTS
+#EXTRA_CFLAGS += -DCONFIG_RTW88_DEBUG=1
+#EXTRA_CFLAGS += -DCONFIG_RTW88_DEBUGFS=1
+#EXTRA_CFLAGS += -DCONFIG_RTW88_REGD_USER_REG_HINTS
 
 obj-m	+= rtw_core.o
 rtw_core-objs += main.o \
@@ -98,16 +98,6 @@ ccflags-y += -D__CHECK_ENDIAN__
 all: 
 	$(MAKE) -C $(KSRC) M=$(PWD) modules
 install: all
-ifeq (,$(wildcard ./backup_drivers.tar))
-	@echo Making backups
-	@tar cPf backup_drivers.tar $(MODDESTDIR)
-	@rm -f $(MODDESTDIR)/rtw88*.ko*
-	@rm -f $(MODDESTDIR)/rtwpci.ko*
-else
-	@rm -f $(MODDESTDIR)/rtw88*.ko*
-	@rm -f $(MODDESTDIR)/rtwpci.ko*
-endif
-
 	@mkdir -p $(MODDESTDIR)
 	@install -p -D -m 644 *.ko $(MODDESTDIR)	
 	@#copy firmware images to target folder
@@ -129,11 +119,6 @@ uninstall:
 	@modprobe -r rtw_8822ce
 	@modprobe -r rtw_8723de
 	@rm -f $(MODDESTDIR)/rtw_*.ko
-ifneq (,$(wildcard ./backup_drivers.tar))
-	@echo Restoring backups
-	@tar xPf backup_drivers.tar
-	@rm backup_drivers.tar
-endif
 	
 	@depmod -a
 	

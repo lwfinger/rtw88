@@ -8,9 +8,6 @@
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
 #include "compiler.h"
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
-#include "sch_generic.h"
-#endif
 #endif
 #include <net/mac80211.h>
 #include <linux/vmalloc.h>
