@@ -105,7 +105,7 @@ _rtw_write32s_mask(struct rtw_dev *rtwdev, u32 addr, u32 mask, u32 data)
 	rtw_write32_mask(rtwdev, addr + 0x200, mask, data);
 }
 
-extern struct rtw_chip_info rtw8821c_hw_spec;
+extern const struct rtw_chip_info rtw8821c_hw_spec;
 
 #define rtw_write32s_mask(rtwdev, addr, mask, data)			       \
 	do {								       \

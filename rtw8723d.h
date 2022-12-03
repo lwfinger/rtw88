@@ -83,7 +83,7 @@ struct rtw8723d_efuse {
 	};
 };
 
-extern struct rtw_chip_info rtw8723d_hw_spec;
+extern const struct rtw_chip_info rtw8723d_hw_spec;
 
 /* phy status page0 */
 #define GET_PHY_STAT_P0_PWDB(phy_stat)                                         \
