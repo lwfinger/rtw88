@@ -2,9 +2,7 @@ rtw88
 ===========
 ### A repo for the newest Realtek rtlwifi codes.
 
-This code will build on any kernel 5.4 and newer as long as the distro has not modified
-any of the kernel APIs. IF YOU RUN UBUNTU, YOU CAN BE ASSURED THAT THE APIs HAVE CHANGED.
-NO, I WILL NOT MODIFY THE SOURCE FOR YOU. YOU ARE ON YOUR OWN!!!!!
+This code builds on Linux kernel 5.4 and newer. If your Linux distribution already has a version of the RTW88 kernel driver (the one for PCI adapters only), you need to remove it while you are using this out-of-tree kernel driver. Therefore, check if you have a folder `/lib/modules/MY_KERNEL_RELEASE/kernel/drivers/net/wireless/realtek/rtw88/`. If you do have it, you need to move the folder to your home folder and run `sudo depmod -a` to notify your system of the change. This applies to Ubuntu 22.04 LTS and probably some other Linux distributions. If you forget to remove the folder, you will get kernel errors about `rtw88_usb: disagrees about version of symbol...`.
 
 This repository includes drivers for the following cards:
 
