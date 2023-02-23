@@ -225,9 +225,6 @@ static int rtw_pwr_seq_parser(struct rtw_dev *rtwdev,
 	case RTW_HCI_TYPE_SDIO:
 		intf_mask = RTW_PWR_INTF_SDIO_MSK;
 		break;
-	case RTW_HCI_TYPE_SDIO:
-		intf_mask = RTW_PWR_INTF_SDIO_MSK;
-		break;
 	default:
 		return -EINVAL;
 	}
