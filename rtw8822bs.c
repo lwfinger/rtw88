@@ -2,10 +2,10 @@
 /* Copyright(c) Jernej Skrabec <jernej.skrabec@gmail.com>
  */
 
-#include <linux/mmc/sdio_func.h>
-#include <linux/mmc/sdio_ids.h>
-#include <linux/module.h>
 #include "sdio.h"
+#include <linux/mmc/sdio_func.h>
+#include "sdio_ids.h"
+#include <linux/module.h>
 #include "rtw8822b.h"
 
 static const struct sdio_device_id rtw_8822bs_id_table[] =  {
