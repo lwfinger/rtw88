@@ -28,8 +28,8 @@ EXTRA_CFLAGS += -DCONFIG_RTW88_8822BE=1
 EXTRA_CFLAGS += -DCONFIG_RTW88_8821CE=1
 EXTRA_CFLAGS += -DCONFIG_RTW88_8822CE=1
 EXTRA_CFLAGS += -DCONFIG_RTW88_8723DE=1
-#EXTRA_CFLAGS += -DCONFIG_RTW88_DEBUG=1
-#EXTRA_CFLAGS += -DCONFIG_RTW88_DEBUGFS=1
+EXTRA_CFLAGS += -DCONFIG_RTW88_DEBUG=1
+EXTRA_CFLAGS += -DCONFIG_RTW88_DEBUGFS=1
 #EXTRA_CFLAGS += -DCONFIG_RTW88_REGD_USER_REG_HINTS
 
 obj-m	+= rtw_core.o
@@ -160,10 +160,16 @@ endif
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723de.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822b.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822be.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822bu.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822bs.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821c.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821ce.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821cu.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821cs.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822c.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822ce.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822cu.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822cs.ko
 
 sign-install: all sign install
 

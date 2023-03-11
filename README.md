@@ -1,6 +1,6 @@
 rtw88
 ===========
-### A repo for the newest Realtek rtlwifi codes.
+### A repo for the newest Realtek wifi 5 codes.
 
 This code will build on any kernel 5.4 and newer as long as the distro has not modified
 any of the kernel APIs. IF YOU RUN UBUNTU, YOU CAN BE ASSURED THAT THE APIs HAVE CHANGED.
@@ -8,26 +8,22 @@ NO, I WILL NOT MODIFY THE SOURCE FOR YOU. YOU ARE ON YOUR OWN!!!!!
 
 This repository includes drivers for the following cards:
 
-RTL8822BE, RTL8822CE, RTL8821CE, and RTL8723DE
+RTW8822BE, RTW8822CE, RTW8821CE, and RTW8723DE  (All PCIe)
+RTW8822BU, RTW8822CU, RTW8821CU, and RTW88723DU (All USB)
+RTW8822BS, RTW8822CS, and RTW8821CS   (All SDIO)
+
+The SDIO drivers have not yet been included in the kernel, but they appear to work
+and are now included here to help with testing. With these changes, only the RTW8723DS
+member of the Realtek Wifi 5 (802.11ac) chips is not supported with rtw88.
 
 If you are looking for a driver for chips such as 
 RTL8188EE, RTL8192CE, RTL8192CU, RTL8192DE, RTL8192EE, RTL8192SE, RTL8723AE, RTL8723BE, or RTL8821AE,
 these should be provided by your kernel. If not, then you should go to the Backports Project
 (https://backports.wiki.kernel.org/index.php/Main_Page) to obtain the necessary code.
 
-This repo has been brought up to date with the kernel code on Sep. 25, 2020.
+This repo has been brought up to date with the kernel code on Mar 15, 2023.
 
-The main changes are as follows:
-1. The methods for obtaining DMA buffers has changed. This should have no effect.
-2. The regulatory methods are changed. This may have some effect on users.
-3. The firmware loading has been more resistent against timeouts.
-4. The RX buffer size is increased.
-5. Antenna selection code was modified. This change may help the low signal problems.
-6. BlueTooth coexistence was modified.
-
-When making these changes, I tried to watch for things that might be incompatible
-with older kernels. As this kind of updating in really boring, I might have missed
-something. Please let me know of build problems.
+Please let me know of build problems.
 
 If you see a line such as:
 make[1]: *** /lib/modules/5.17.5-300.fc36.x86_64/build: No such file or directory. Stop.
@@ -99,7 +95,8 @@ Here is a useful [link](https://askubuntu.com/questions/110341/how-to-blacklist-
 
 Once you have reached this point, then reboot. Use the command `lsmod | grep rtw` and check if there are any
 conflicting drivers. The correct ones are:
-- `rtw_8723de  rtw_8723d  rtw_8822be  rtw_8822b  rtw_8822ce  rtw_8822c  rtw_core  and rtw_pci`
+- `rtw_8723de rtw_8723du rtw_8723d  rtw_8822be  rtw_8822bu rtw8822bs rtw_8822b  rtw_8822ce  rtw_8822cu rtw_8822cs
+   rtw_8821ce rtw_8821cu rtw_8821cs rtw_8822c  rtw_core  and rtw_pci`
 
 If you have other modules installed, see if you blacklisted them correctly.
 
