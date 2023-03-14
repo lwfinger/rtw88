@@ -2,10 +2,10 @@
 /* Copyright(c) Martin Blumenstingl <martin.blumenstingl@googlemail.com>
  */
 
-#include <linux/mmc/sdio_func.h>
-#include <linux/mmc/sdio_ids.h>
-#include <linux/module.h>
 #include "sdio.h"
+#include <linux/mmc/sdio_func.h>
+#include "sdio_ids.h"
+#include <linux/module.h>
 #include "rtw8822c.h"
 
 static const struct sdio_device_id rtw_8822cs_id_table[] =  {
