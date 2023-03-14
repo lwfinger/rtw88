@@ -3,7 +3,7 @@
  */
 
 #include <linux/mmc/sdio_func.h>
-#include <linux/mmc/sdio_ids.h>
+#include "sdio_ids.h"
 #include <linux/module.h>
 #include "sdio.h"
 #include "rtw8821c.h"

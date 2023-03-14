@@ -91,7 +91,7 @@ obj-m	+= rtw_8821ce.o
 rtw_8821ce-objs		:= rtw8821ce.o
 
 obj-m	   += rtw_8821cs.o
-rtw_8821cs-objs		:= rtw8822bs.o
+rtw_8821cs-objs		:= rtw8822cs.o
 
 obj-m	+= rtw_8821cu.o
 rtw_8821cu-objs		:= rtw8821cu.o
