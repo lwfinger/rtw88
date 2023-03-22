@@ -84,6 +84,9 @@ rtw_8723de-objs               := rtw8723de.o
 obj-m      += rtw_8723du.o
 rtw_8723du-objs		:= rtw8723du.o
 
+obj-m      += rtw_8723ds.o
+rtw_8723ds-objs		:= rtw8723ds.o
+
 obj-m	+= rtw_8821c.o
 rtw_8821c-objs		:= rtw8821c.o rtw8821c_table.o
 
