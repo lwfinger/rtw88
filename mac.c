@@ -303,11 +303,6 @@ static int rtw_mac_power_switch(struct rtw_dev *rtwdev, bool pwr_on)
 		rtw_write32(rtwdev, REG_SDIO_HIMR, 0);
 	}
 
-	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_SDIO) {
-		imr = rtw_read32(rtwdev, REG_SDIO_HIMR);
-		rtw_write32(rtwdev, REG_SDIO_HIMR, 0);
-	}
-
 	if (!pwr_on)
 		clear_bit(RTW_FLAG_POWERON, rtwdev->flags);
 
@@ -490,9 +485,6 @@ static void download_firmware_reg_backup(struct rtw_dev *rtwdev,
 	bckp_idx++;
 	rtw_write16(rtwdev, REG_FIFOPAGE_INFO_1, 0x200);
 	rtw_write32(rtwdev, REG_RQPN_CTRL_2, bckp[bckp_idx - 1].val);
-
-	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_SDIO)
-		rtw_read32(rtwdev, REG_SDIO_FREE_TXPG);
 
 	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_SDIO)
 		rtw_read32(rtwdev, REG_SDIO_FREE_TXPG);

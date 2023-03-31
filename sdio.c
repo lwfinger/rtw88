@@ -9,13 +9,14 @@
 #include <linux/module.h>
 #include <linux/mmc/host.h>
 #include <linux/mmc/sdio_func.h>
-#include "sdio.h"
-#include "reg.h"
-#include "tx.h"
-#include "rx.h"
+#include "main.h"
+#include "debug.h"
 #include "fw.h"
 #include "ps.h"
-#include "debug.h"
+#include "reg.h"
+#include "rx.h"
+#include "sdio.h"
+#include "tx.h"
 
 #define RTW_SDIO_INDIRECT_RW_RETRIES		50
 
@@ -125,7 +126,7 @@ static u8 rtw_sdio_read_indirect8(struct rtw_dev *rtwdev, u32 addr,
 static int rtw_sdio_read_indirect_bytes(struct rtw_dev *rtwdev, u32 addr,
 					u8 *buf, int count)
 {
-	int i, ret;
+	int i, ret = 0;
 
 	for (i = 0; i < count; i++) {
 		buf[i] = rtw_sdio_read_indirect8(rtwdev, addr + i, &ret);
@@ -530,35 +531,24 @@ static void rtw_sdio_enable_rx_aggregation(struct rtw_dev *rtwdev)
 {
 	u8 size, timeout;
 
-	if (rtwdev->chip->id == RTW_CHIP_TYPE_8822C) {
-		/* Disable RX aggregation because it hurts the RX performance
-		 * on RTL8822CS chips. It's not clear why that is because the
-		 * vendor driver explicitly mentions that for RTL8822CS RX
-		 * aggregation should always be enabled.
-		 */
-		rtw_write32_clr(rtwdev, REG_RXDMA_AGG_PG_TH, BIT_EN_PRE_CALC);
-		rtw_write8_clr(rtwdev, REG_TXDMA_PQ_MAP, BIT_RXDMA_AGG_EN);
-		rtw_write8_clr(rtwdev, REG_RXDMA_MODE, BIT_DMA_MODE);
+	if (rtw_chip_wcpu_11n(rtwdev)) {
+		size = 0x6;
+		timeout = 0x6;
 	} else {
-		if (rtw_chip_wcpu_11n(rtwdev)) {
-			size = 0x6;
-			timeout = 0x6;
-		} else {
-			size = 0xff;
-			timeout = 0x1;
-		}
-
-		/* Make the firmware honor the size limit configured below */
-		rtw_write32_set(rtwdev, REG_RXDMA_AGG_PG_TH, BIT_EN_PRE_CALC);
-
-		rtw_write8_set(rtwdev, REG_TXDMA_PQ_MAP, BIT_RXDMA_AGG_EN);
-
-		rtw_write16(rtwdev, REG_RXDMA_AGG_PG_TH,
-			    FIELD_PREP(BIT_RXDMA_AGG_PG_TH, size) |
-			    FIELD_PREP(BIT_DMA_AGG_TO_V1, timeout));
-
-		rtw_write8_set(rtwdev, REG_RXDMA_MODE, BIT_DMA_MODE);
+		size = 0xff;
+		timeout = 0x1;
 	}
+
+	/* Make the firmware honor the size limit configured below */
+	rtw_write32_set(rtwdev, REG_RXDMA_AGG_PG_TH, BIT_EN_PRE_CALC);
+
+	rtw_write8_set(rtwdev, REG_TXDMA_PQ_MAP, BIT_RXDMA_AGG_EN);
+
+	rtw_write16(rtwdev, REG_RXDMA_AGG_PG_TH,
+		    FIELD_PREP(BIT_RXDMA_AGG_PG_TH, size) |
+		    FIELD_PREP(BIT_DMA_AGG_TO_V1, timeout));
+
+	rtw_write8_set(rtwdev, REG_RXDMA_MODE, BIT_DMA_MODE);
 }
 
 static void rtw_sdio_enable_interrupt(struct rtw_dev *rtwdev)
@@ -801,7 +791,7 @@ static void rtw_sdio_rx_skb(struct rtw_dev *rtwdev, struct sk_buff *skb,
 			    u32 pkt_offset, struct rtw_rx_pkt_stat *pkt_stat,
 			    struct ieee80211_rx_status *rx_status)
 {
-	memcpy(IEEE80211_SKB_RXCB(skb), rx_status, sizeof(*rx_status));
+	*IEEE80211_SKB_RXCB(skb) = *rx_status;
 
 	if (pkt_stat->is_c2h) {
 		skb_put(skb, pkt_stat->pkt_len + pkt_offset);
@@ -883,9 +873,9 @@ static void rtw_sdio_rxfifo_recv(struct rtw_dev *rtwdev, u32 rx_len)
 
 static void rtw_sdio_rx_isr(struct rtw_dev *rtwdev)
 {
-	u32 rx_len;
+	u32 rx_len, total_rx_bytes = 0;
 
-	while (true) {
+	while (total_rx_bytes < SZ_64K) {
 		if (rtw_chip_wcpu_11n(rtwdev))
 			rx_len = rtw_read16(rtwdev, REG_SDIO_RX0_REQ_LEN);
 		else
@@ -895,6 +885,8 @@ static void rtw_sdio_rx_isr(struct rtw_dev *rtwdev)
 			break;
 
 		rtw_sdio_rxfifo_recv(rtwdev, rx_len);
+
+		total_rx_bytes += rx_len;
 	}
 }
 
@@ -923,7 +915,16 @@ static void rtw_sdio_handle_interrupt(struct sdio_func *sdio_func)
 
 static int __maybe_unused rtw_sdio_suspend(struct device *dev)
 {
-	return 0;
+	struct sdio_func *func = dev_to_sdio_func(dev);
+	struct ieee80211_hw *hw = dev_get_drvdata(dev);
+	struct rtw_dev *rtwdev = hw->priv;
+	int ret;
+
+	ret = sdio_set_host_pm_flags(func, MMC_PM_KEEP_POWER);
+	if (ret)
+		rtw_err(rtwdev, "Failed to host PM flag MMC_PM_KEEP_POWER");
+
+	return ret;
 }
 
 static int __maybe_unused rtw_sdio_resume(struct device *dev)

@@ -6,8 +6,6 @@
 #ifndef __REG_SDIO_H_
 #define __REG_SDIO_H_
 
-#include "main.h"
-
 /* I/O bus domain address mapping */
 #define SDIO_LOCAL_OFFSET			0x10250000
 #define WLAN_IOREG_OFFSET			0x10260000

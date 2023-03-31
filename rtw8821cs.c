@@ -5,8 +5,9 @@
 #include <linux/mmc/sdio_func.h>
 #include "sdio_ids.h"
 #include <linux/module.h>
-#include "sdio.h"
+#include "main.h"
 #include "rtw8821c.h"
+#include "sdio.h"
 
 static const struct sdio_device_id rtw_8821cs_id_table[] =  {
 	{
