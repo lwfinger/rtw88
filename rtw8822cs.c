@@ -4,8 +4,8 @@
 
 #include <linux/mmc/sdio_func.h>
 #include "sdio_ids.h"
-#include "main.h"
 #include <linux/module.h>
+#include "main.h"
 #include "rtw8822c.h"
 #include "sdio.h"
 
