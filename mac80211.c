@@ -467,6 +467,7 @@ static int rtw_ops_start_ap(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
 	const struct rtw_chip_info *chip = rtwdev->chip;
 
 	mutex_lock(&rtwdev->mutex);
+	rtwdev->ap_active = true;
 	chip->ops->phy_calibration(rtwdev);
 	mutex_unlock(&rtwdev->mutex);
 
@@ -474,15 +475,29 @@ static int rtw_ops_start_ap(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
 }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+static void rtw_ops_stop_ap(struct ieee80211_hw *hw,
+			    struct ieee80211_vif *vif,
+			    struct ieee80211_bss_conf *link_conf)
+#else
+static void rtw_ops_stop_ap(struct ieee80211_hw *hw,
+			    struct ieee80211_vif *vif)
+#endif
+{
+	struct rtw_dev *rtwdev = hw->priv;
+
+	mutex_lock(&rtwdev->mutex);
+	rtwdev->ap_active = false;
+	mutex_unlock(&rtwdev->mutex);
+}
+
 static int rtw_ops_conf_tx(struct ieee80211_hw *hw,
 			   struct ieee80211_vif *vif,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
 			   unsigned int link_id, u16 ac,
-                           const struct ieee80211_tx_queue_params *params)
 #else
-static int rtw_ops_conf_tx(struct ieee80211_hw *hw,
-			   struct ieee80211_vif *vif, u16 ac,
-			   const struct ieee80211_tx_queue_params *params)
+			   u16 ac,
 #endif
+			   const struct ieee80211_tx_queue_params *params)
 {
 	struct rtw_dev *rtwdev = hw->priv;
 	struct rtw_vif *rtwvif = (struct rtw_vif *)vif->drv_priv;
@@ -905,6 +920,9 @@ static int rtw_ops_hw_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 	if (test_bit(RTW_FLAG_SCANNING, rtwdev->flags))
 		return -EBUSY;
 
+	if (rtwdev->ap_active)
+		return -EOPNOTSUPP;
+
 	mutex_lock(&rtwdev->mutex);
 	rtw_hw_scan_start(rtwdev, vif, req);
 	ret = rtw_hw_scan_offload(rtwdev, vif, true);
@@ -970,6 +988,7 @@ const struct ieee80211_ops rtw_ops = {
 	.configure_filter	= rtw_ops_configure_filter,
 	.bss_info_changed	= rtw_ops_bss_info_changed,
 	.start_ap		= rtw_ops_start_ap,
+	.stop_ap		= rtw_ops_stop_ap,
 	.conf_tx		= rtw_ops_conf_tx,
 	.sta_add		= rtw_ops_sta_add,
 	.sta_remove		= rtw_ops_sta_remove,
