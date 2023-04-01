@@ -1031,7 +1031,7 @@ static void __rtw_mac_flush_prio_queue(struct rtw_dev *rtwdev,
 	 * And it requires like ~2secs to flush the full priority queue.
 	 */
 	if (!drop)
-		rtw_warn_once(rtwdev, "timed out to flush queue %d\n", prio_queue);
+		rtw_warn(rtwdev, "timed out to flush queue %d\n", prio_queue);
 }
 
 static void rtw_mac_flush_prio_queues(struct rtw_dev *rtwdev,
@@ -1119,7 +1119,7 @@ static int set_trx_fifo_info(struct rtw_dev *rtwdev)
 	u8 csi_buf_pg_num = chip->csi_buf_pg_num;
 
 	/* config rsvd page num */
-	fifo->rsvd_drv_pg_num = 8;
+	fifo->rsvd_drv_pg_num = chip->rsvd_drv_pg_num;
 	fifo->txff_pg_num = chip->txff_size >> 7;
 	if (rtw_chip_wcpu_11n(rtwdev))
 		fifo->rsvd_pg_num = fifo->rsvd_drv_pg_num;
