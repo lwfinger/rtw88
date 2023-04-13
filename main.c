@@ -103,26 +103,6 @@ static struct ieee80211_rate rtw_ratetable[] = {
 	{.bitrate = 540, .hw_value = 0x0b,},
 };
 
-static const struct ieee80211_iface_limit rtw_iface_limits[] = {
-	{
-		.max = 1,
-		.types = BIT(NL80211_IFTYPE_STATION),
-	},
-	{
-		.max = 1,
-		.types = BIT(NL80211_IFTYPE_AP),
-	}
-};
-
-static const struct ieee80211_iface_combination rtw_iface_combs[] = {
-	{
-		.limits = rtw_iface_limits,
-		.n_limits = ARRAY_SIZE(rtw_iface_limits),
-		.max_interfaces = 2,
-		.num_different_channels = 1,
-	}
-};
-
 u16 rtw_desc_to_bitrate(u8 desc_rate)
 {
 	struct ieee80211_rate rate;
@@ -281,7 +261,7 @@ static void rtw_watch_dog_work(struct work_struct *work)
 	 * threshold.
 	 */
 	if (rtwdev->ps_enabled && data.rtwvif && !ps_active &&
-	    !rtwdev->beacon_loss && !rtwdev->ap_active)
+	    !rtwdev->beacon_loss)
 		rtw_enter_lps(rtwdev, data.rtwvif->port);
 
 	rtwdev->watch_dog_cnt++;
@@ -639,7 +619,6 @@ free:
 	rcu_read_unlock();
 	rtw_iterate_stas_atomic(rtwdev, rtw_reset_sta_iter, rtwdev);
 	rtw_iterate_vifs_atomic(rtwdev, rtw_reset_vif_iter, rtwdev);
-	bitmap_zero(rtwdev->hw_port, RTW_PORT_NUM);
 	rtw_enter_ips(rtwdev);
 }
 
@@ -2334,11 +2313,6 @@ int rtw_register_hw(struct rtw_dev *rtwdev, struct ieee80211_hw *hw)
 	hw->wiphy->max_scan_ssids = RTW_SCAN_MAX_SSIDS;
 	hw->wiphy->max_scan_ie_len = rtw_get_max_scan_ie_len(rtwdev);
 
-	if (rtwdev->chip->id == RTW_CHIP_TYPE_8822C) {
-		hw->wiphy->iface_combinations = rtw_iface_combs;
-		hw->wiphy->n_iface_combinations = ARRAY_SIZE(rtw_iface_combs);
-	}
-
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0)
 	wiphy_ext_feature_set(hw->wiphy, NL80211_EXT_FEATURE_CAN_REPLACE_PTK0);
 #endif
@@ -2391,85 +2365,6 @@ void rtw_unregister_hw(struct rtw_dev *rtwdev, struct ieee80211_hw *hw)
 	rtw_unset_supported_band(hw, chip);
 }
 EXPORT_SYMBOL(rtw_unregister_hw);
-
-static
-void rtw_swap_reg_nbytes(struct rtw_dev *rtwdev, const struct rtw_hw_reg *reg1,
-			 const struct rtw_hw_reg *reg2, u8 nbytes)
-{
-	u8 i;
-
-	for (i = 0; i < nbytes; i++) {
-		u8 v1 = rtw_read8(rtwdev, reg1->addr + i);
-		u8 v2 = rtw_read8(rtwdev, reg2->addr + i);
-
-		rtw_write8(rtwdev, reg1->addr + i, v2);
-		rtw_write8(rtwdev, reg2->addr + i, v1);
-	}
-}
-
-static
-void rtw_swap_reg_mask(struct rtw_dev *rtwdev, const struct rtw_hw_reg *reg1,
-		       const struct rtw_hw_reg *reg2)
-{
-	u32 v1, v2;
-
-	v1 = rtw_read32_mask(rtwdev, reg1->addr, reg1->mask);
-	v2 = rtw_read32_mask(rtwdev, reg2->addr, reg2->mask);
-	rtw_write32_mask(rtwdev, reg2->addr, reg2->mask, v1);
-	rtw_write32_mask(rtwdev, reg1->addr, reg1->mask, v2);
-}
-
-struct rtw_iter_port_switch_data {
-	struct rtw_dev *rtwdev;
-	struct rtw_vif *rtwvif_ap;
-};
-
-static void rtw_port_switch_iter(void *data, u8 *mac, struct ieee80211_vif *vif)
-{
-	struct rtw_iter_port_switch_data *iter_data = data;
-	struct rtw_dev *rtwdev = iter_data->rtwdev;
-	struct rtw_vif *rtwvif_target = (struct rtw_vif *)vif->drv_priv;
-	struct rtw_vif *rtwvif_ap = iter_data->rtwvif_ap;
-	const struct rtw_hw_reg *reg1, *reg2;
-
-	if (rtwvif_target->port != RTW_PORT_0)
-		return;
-
-	rtw_info(rtwdev, "AP port switch from %d -> %d\n", rtwvif_ap->port,
-		 rtwvif_target->port);
-
-	reg1 = &rtwvif_ap->conf->net_type;
-	reg2 = &rtwvif_target->conf->net_type;
-	rtw_swap_reg_mask(rtwdev, reg1, reg2);
-
-	reg1 = &rtwvif_ap->conf->mac_addr;
-	reg2 = &rtwvif_target->conf->mac_addr;
-	rtw_swap_reg_nbytes(rtwdev, reg1, reg2, ETH_ALEN);
-
-	reg1 = &rtwvif_ap->conf->bssid;
-	reg2 = &rtwvif_target->conf->bssid;
-	rtw_swap_reg_nbytes(rtwdev, reg1, reg2, ETH_ALEN);
-
-	reg1 = &rtwvif_ap->conf->bcn_ctrl;
-	reg2 = &rtwvif_target->conf->bcn_ctrl;
-	rtw_swap_reg_nbytes(rtwdev, reg1, reg2, 1);
-
-	swap(rtwvif_target->port, rtwvif_ap->port);
-	swap(rtwvif_target->conf, rtwvif_ap->conf);
-}
-
-void rtw_core_port_switch(struct rtw_dev *rtwdev, struct ieee80211_vif *vif)
-{
-	struct rtw_vif *rtwvif = (struct rtw_vif *)vif->drv_priv;
-	struct rtw_iter_port_switch_data iter_data;
-
-	if (vif->type != NL80211_IFTYPE_AP || rtwvif->port == RTW_PORT_0)
-		return;
-
-	iter_data.rtwdev = rtwdev;
-	iter_data.rtwvif_ap = rtwvif;
-	rtw_iterate_vifs(rtwdev, rtw_port_switch_iter, &iter_data);
-}
 
 MODULE_AUTHOR("Realtek Corporation");
 MODULE_DESCRIPTION("Realtek 802.11ac wireless core module");

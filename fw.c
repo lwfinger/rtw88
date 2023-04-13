@@ -1424,10 +1424,6 @@ static void rtw_build_rsvd_page_iter(void *data, u8 *mac,
 	struct rtw_vif *rtwvif = (struct rtw_vif *)vif->drv_priv;
 	struct rtw_rsvd_page *rsvd_pkt;
 
-	/* AP not yet started, don't gather its rsvd pages */
-	if (vif->type == NL80211_IFTYPE_AP && !rtwdev->ap_active)
-		return;
-
 	list_for_each_entry(rsvd_pkt, &rtwvif->rsvd_page_list, vif_list) {
 		if (rsvd_pkt->type == RSVD_BEACON)
 			list_add(&rsvd_pkt->build_list,
@@ -1649,7 +1645,6 @@ void rtw_fw_update_beacon_work(struct work_struct *work)
 
 	mutex_lock(&rtwdev->mutex);
 	rtw_fw_download_rsvd_page(rtwdev);
-	rtw_send_rsvd_page_h2c(rtwdev);
 	mutex_unlock(&rtwdev->mutex);
 }
 
@@ -2194,10 +2189,8 @@ out:
 	return ret;
 }
 
-void rtw_hw_scan_abort(struct rtw_dev *rtwdev)
+void rtw_hw_scan_abort(struct rtw_dev *rtwdev, struct ieee80211_vif *vif)
 {
-	struct ieee80211_vif *vif = rtwdev->scan_info.scanning_vif;
-
 	if (!rtw_fw_feature_check(&rtwdev->fw, FW_FEATURE_SCAN_OFFLOAD))
 		return;
 

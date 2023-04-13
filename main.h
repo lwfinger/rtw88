@@ -50,13 +50,11 @@ static inline void fsleep(unsigned long usecs)
 #define NUM_NL80211_BANDS IEEE80211_NUM_BANDS
 #endif
 
-#define RTW_NAPI_WEIGHT_NUM		64
 #define RTW_MAX_MAC_ID_NUM		32
 #define RTW_MAX_SEC_CAM_NUM		32
 #define MAX_PG_CAM_BACKUP_NUM		8
 
 #define RTW_SCAN_MAX_SSIDS		4
-#define RTW_SCAN_MAX_IE_LEN		128
 
 #define RTW_MAX_PATTERN_NUM		12
 #define RTW_MAX_PATTERN_MASK_SIZE	16
@@ -487,15 +485,6 @@ enum rtw_snr {
 	RTW_SNR_2SS_D,
 	/* keep it last */
 	RTW_SNR_NUM
-};
-
-enum rtw_port {
-	RTW_PORT_0 = 0,
-	RTW_PORT_1 = 1,
-	RTW_PORT_2 = 2,
-	RTW_PORT_3 = 3,
-	RTW_PORT_4 = 4,
-	RTW_PORT_NUM
 };
 
 enum rtw_wow_flags {
@@ -1271,7 +1260,6 @@ struct rtw_chip_info {
 	u32 txff_size;
 	u32 rxff_size;
 	u32 fw_rxff_size;
-	u16 rsvd_drv_pg_num;
 	u8 band;
 	u8 page_size;
 	u8 csi_buf_pg_num;
@@ -2140,7 +2128,6 @@ struct rtw_dev {
 	u8 sta_cnt;
 	u32 rts_threshold;
 
-	DECLARE_BITMAP(hw_port, RTW_PORT_NUM);
 	DECLARE_BITMAP(mac_id_map, RTW_MAX_MAC_ID_NUM);
 	DECLARE_BITMAP(flags, NUM_OF_RTW_FLAGS);
 
@@ -2152,7 +2139,6 @@ struct rtw_dev {
 
 	bool need_rfk;
 	struct completion fw_scan_density;
-	bool ap_active;
 
 	/* hci related data, must be last */
 	u8 priv[] __aligned(sizeof(void *));
