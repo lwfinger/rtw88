@@ -2195,6 +2195,12 @@ int rtw_hw_scan_offload(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
 	}
 	rtw_fw_set_scan_offload(rtwdev, &cs_option, rtwvif, &chan_list);
 out:
+	if (rtwdev->ap_active) {
+		ret = rtw_download_beacon(rtwdev);
+		if (ret)
+			rtw_err(rtwdev, "HW scan download beacon failed\n");
+	}
+
 	return ret;
 }
 
@@ -2286,6 +2292,7 @@ void rtw_hw_scan_chan_switch(struct rtw_dev *rtwdev, struct sk_buff *skb)
 		if (rtw_is_op_chan(rtwdev, chan)) {
 			rtw_store_op_chan(rtwdev, false);
 			ieee80211_wake_queues(rtwdev->hw);
+			rtw_core_enable_beacon(rtwdev, true);
 		}
 	} else if (id == RTW_SCAN_NOTIFY_ID_PRESWITCH) {
 		if (IS_CH_5G_BAND(chan)) {
@@ -2304,8 +2311,10 @@ void rtw_hw_scan_chan_switch(struct rtw_dev *rtwdev, struct sk_buff *skb)
 		 * if next channel is non-op channel.
 		 */
 		if (!rtw_is_op_chan(rtwdev, chan) &&
-		    rtw_is_op_chan(rtwdev, hal->current_channel))
+		    rtw_is_op_chan(rtwdev, hal->current_channel)) {
+			rtw_core_enable_beacon(rtwdev, false);
 			ieee80211_stop_queues(rtwdev->hw);
+		}
 	}
 
 	rtw_dbg(rtwdev, RTW_DBG_HW_SCAN,
