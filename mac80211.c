@@ -407,7 +407,7 @@ static void rtw_ops_bss_info_changed(struct ieee80211_hw *hw,
 			 * when disconnected by peer
 			 */
 			if (test_bit(RTW_FLAG_SCANNING, rtwdev->flags))
-				rtw_hw_scan_abort(rtwdev, vif);
+				rtw_hw_scan_abort(rtwdev);
 
 		}
 
@@ -921,7 +921,7 @@ static int rtw_ops_hw_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 	rtw_hw_scan_start(rtwdev, vif, req);
 	ret = rtw_hw_scan_offload(rtwdev, vif, true);
 	if (ret) {
-		rtw_hw_scan_abort(rtwdev, vif);
+		rtw_hw_scan_abort(rtwdev);
 		rtw_err(rtwdev, "HW scan failed with status: %d\n", ret);
 	}
 	mutex_unlock(&rtwdev->mutex);
@@ -941,7 +941,7 @@ static void rtw_ops_cancel_hw_scan(struct ieee80211_hw *hw,
 		return;
 
 	mutex_lock(&rtwdev->mutex);
-	rtw_hw_scan_abort(rtwdev, vif);
+	rtw_hw_scan_abort(rtwdev);
 	mutex_unlock(&rtwdev->mutex);
 }
 
