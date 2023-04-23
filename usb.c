@@ -134,22 +134,6 @@ static int dma_mapping_to_ep(enum rtw_dma_mapping dma_mapping)
 	}
 }
 
-static int dma_mapping_to_ep(enum rtw_dma_mapping dma_mapping)
-{
-	switch (dma_mapping) {
-	case RTW_DMA_MAPPING_HIGH:
-		return 0;
-	case RTW_DMA_MAPPING_NORMAL:
-		return 1;
-	case RTW_DMA_MAPPING_LOW:
-		return 2;
-	case RTW_DMA_MAPPING_EXTRA:
-		return 3;
-	default:
-		return -EINVAL;
-	}
-}
-
 static int rtw_usb_parse(struct rtw_dev *rtwdev,
 			 struct usb_interface *interface)
 {
@@ -301,9 +285,6 @@ static int rtw_usb_write_port(struct rtw_dev *rtwdev, u8 qsel, struct sk_buff *s
 	unsigned int pipe;
 	int ret;
 	int ep = qsel_to_ep(rtwusb, qsel);
-
-	if (ep < 0)
-		return ep;
 
 	if (ep < 0)
 		return ep;
