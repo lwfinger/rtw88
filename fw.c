@@ -1428,10 +1428,6 @@ static void rtw_build_rsvd_page_iter(void *data, u8 *mac,
 	if (vif->type == NL80211_IFTYPE_AP && !rtwdev->ap_active)
 		return;
 
-	/* AP not yet started, don't gather its rsvd pages */
-	if (vif->type == NL80211_IFTYPE_AP && !rtwdev->ap_active)
-		return;
-
 	list_for_each_entry(rsvd_pkt, &rtwvif->rsvd_page_list, vif_list) {
 		if (rsvd_pkt->type == RSVD_BEACON)
 			list_add(&rsvd_pkt->build_list,
