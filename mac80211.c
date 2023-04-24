@@ -477,9 +477,14 @@ static int rtw_ops_start_ap(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
 	return 0;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
 static void rtw_ops_stop_ap(struct ieee80211_hw *hw,
 			    struct ieee80211_vif *vif,
 			    struct ieee80211_bss_conf *link_conf)
+#else
+static void rtw_ops_stop_ap(struct ieee80211_hw *hw,
+			    struct ieee80211_vif *vif)
+#endif
 {
 	struct rtw_dev *rtwdev = hw->priv;
 
