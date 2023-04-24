@@ -8,7 +8,7 @@ else
 fi
 
 DRV_NAME=rtl8821ce
-DRV_VERSION=v5.5.2_alt
+DRV_VERSION=v5.12.0.5-0-g5b27a3f.20220615_beta
 
 dkms remove ${DRV_NAME}/${DRV_VERSION} --all
 rm -rf /usr/src/${DRV_NAME}-${DRV_VERSION}
