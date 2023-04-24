@@ -2484,7 +2484,11 @@ static void rtw_check_sta_active_iter(void *data, u8 *mac,
 	if (vif->type != NL80211_IFTYPE_STATION)
 		return;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0)
 	if (vif->cfg.assoc || !is_zero_ether_addr(rtwvif->bssid))
+#else
+	if (vif->bss_conf.assoc || !is_zero_ether_addr(rtwvif->bssid))
+#endif
 		*active = true;
 }
 
