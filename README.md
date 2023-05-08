@@ -9,19 +9,18 @@ NO, I WILL NOT MODIFY THE SOURCE FOR YOU. YOU ARE ON YOUR OWN!!!!!
 This repository includes drivers for the following cards:
 
 RTW8822BE, RTW8822CE, RTW8821CE, and RTW8723DE  (All PCIe)
-RTW8822BU, RTW8822CU, RTW8821CU, and RTW88723DU (All USB)
-RTW8822BS, RTW8822CS, and RTW8821CS   (All SDIO)
+RTW8822BU, RTW8822CU, RTW8821CU, and RTW8723DU (All USB)
+RTW8822BS, RTW8822CS, RTW8821CS, and RTW8723DS  (All SDIO)
 
 The SDIO drivers have not yet been included in the kernel, but they appear to work
-and are now included here to help with testing. With these changes, only the RTW8723DS
-member of the Realtek Wifi 5 (802.11ac) chips is not supported with rtw88.
+and are now included here to help with testing.
 
 If you are looking for a driver for chips such as 
 RTL8188EE, RTL8192CE, RTL8192CU, RTL8192DE, RTL8192EE, RTL8192SE, RTL8723AE, RTL8723BE, or RTL8821AE,
 these should be provided by your kernel. If not, then you should go to the Backports Project
 (https://backports.wiki.kernel.org/index.php/Main_Page) to obtain the necessary code.
 
-This repo has been brought up to date with the kernel code on Mar 15, 2023.
+This repo has been brought up to date with the kernel code on May 07, 2023.
 
 Please let me know of build problems.
 
@@ -96,7 +95,7 @@ Here is a useful [link](https://askubuntu.com/questions/110341/how-to-blacklist-
 Once you have reached this point, then reboot. Use the command `lsmod | grep rtw` and check if there are any
 conflicting drivers. The correct ones are:
 - `rtw_8723de rtw_8723du rtw_8723d  rtw_8822be  rtw_8822bu rtw8822bs rtw_8822b  rtw_8822ce  rtw_8822cu rtw_8822cs
-   rtw_8821ce rtw_8821cu rtw_8821cs rtw_8822c  rtw_core  and rtw_pci`
+   rtw_8821ce rtw_8821cu rtw_8821cs rtw_8822c rtw_8723ds rtw_core  and rtw_pci`
 
 If you have other modules installed, see if you blacklisted them correctly.
 

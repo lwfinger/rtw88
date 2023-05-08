@@ -216,12 +216,6 @@ static void rtw8723du_efuse_parsing(struct rtw_efuse *efuse,
 	ether_addr_copy(efuse->addr, map->u.mac_addr);
 }
 
-static void rtw8723ds_efuse_parsing(struct rtw_efuse *efuse,
-				    struct rtw8723d_efuse *map)
-{
-	ether_addr_copy(efuse->addr, map->s.mac_addr);
-}
-
 static int rtw8723d_read_efuse(struct rtw_dev *rtwdev, u8 *log_map)
 {
 	struct rtw_efuse *efuse = &rtwdev->efuse;
