@@ -922,7 +922,7 @@ static void rtw_sdio_rx_skb(struct rtw_dev *rtwdev, struct sk_buff *skb,
 		if (skb->tail > skb->end) {
 			pr_warn_once("c2h skb overrun\n");
 			kfree_skb(skb);	/* drop skb) */
-`			return;
+			return;
 		}
 		skb_put(skb, pkt_stat->pkt_len + pkt_offset);
 		rtw_fw_c2h_cmd_rx_irqsafe(rtwdev, pkt_offset, skb);
