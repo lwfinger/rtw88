@@ -918,22 +918,17 @@ static void rtw_sdio_rx_skb(struct rtw_dev *rtwdev, struct sk_buff *skb,
 {
 	*IEEE80211_SKB_RXCB(skb) = *rx_status;
 
-	if (pkt_stat->is_c2h) {
-		if (skb->tail > skb->end) {
-			pr_warn_once("c2h skb overrun\n");
-			kfree_skb(skb);	/* drop skb) */
-			return;
-		}
+	/* fix Hardware RX data error, drop whole recv_buffer */
+	if (!(rtwdev->hal.rcr & BIT_ACRC32) && pkt_stat->crc_err) {
+		kfree_skb(skb);
+		return;
+	}
+ 	if (pkt_stat->is_c2h) {
 		skb_put(skb, pkt_stat->pkt_len + pkt_offset);
 		rtw_fw_c2h_cmd_rx_irqsafe(rtwdev, pkt_offset, skb);
 		return;
 	}
 
-	if (skb->tail > skb->end) {
-		pr_warn_once("skb overrun\n");
-		kfree_skb(skb);	/* drop skb) */
-		return;
-	}
 	skb_put(skb, pkt_stat->pkt_len);
 	skb_reserve(skb, pkt_offset);
 
