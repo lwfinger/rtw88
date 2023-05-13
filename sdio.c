@@ -972,7 +972,13 @@ static void rtw_sdio_rxfifo_recv(struct rtw_dev *rtwdev, u32 rx_len)
 		curr_pkt_len = ALIGN(pkt_offset + pkt_stat.pkt_len,
 				     RTW_SDIO_DATA_PTR_ALIGN);
 
-		if ((curr_pkt_len + pkt_desc_sz) >= rx_len) {
+		if ((curr_pkt_len + pkt_desc_sz) > rx_len) {
+			dev_warn(rtwdev->dev, "Invalid RX packet size!");
+			dev_kfree_skb_any(skb);
+			return;
+		}
+
+		if ((curr_pkt_len + pkt_desc_sz) == rx_len) {
 			/* Use the original skb (with it's adjusted offset)
 			 * when processing the last (or even the only) entry to
 			 * have it's memory freed automatically.
