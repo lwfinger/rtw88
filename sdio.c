@@ -966,14 +966,15 @@ static void rtw_sdio_rxfifo_recv(struct rtw_dev *rtwdev, u32 rx_len)
 		rx_desc = skb->data;
 		chip->ops->query_rx_desc(rtwdev, rx_desc, &pkt_stat,
 					 &rx_status);
-		pkt_offset = pkt_desc_sz + pkt_stat.drv_info_sz +
-			     pkt_stat.shift;
+		pkt_offset = pkt_desc_sz;
+		if (!pkt_stat.is_c2h)
+			pkt_offset += pkt_stat.drv_info_sz + pkt_stat.shift;
 
 		curr_pkt_len = ALIGN(pkt_offset + pkt_stat.pkt_len,
 				     RTW_SDIO_DATA_PTR_ALIGN);
 
 		if ((curr_pkt_len + pkt_desc_sz) > rx_len) {
-			dev_warn(rtwdev->dev, "Invalid RX packet size!, curr_pkt_len + pkt_desc_sz %d. rx_len &d",
+			dev_warn(rtwdev->dev, "Invalid RX packet size!, curr_pkt_len + pkt_desc_sz %d. rx_len %d",
 				 curr_pkt_len + pkt_desc_sz, rx_len);
 			dev_kfree_skb_any(skb);
 			return;
