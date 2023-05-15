@@ -973,7 +973,8 @@ static void rtw_sdio_rxfifo_recv(struct rtw_dev *rtwdev, u32 rx_len)
 				     RTW_SDIO_DATA_PTR_ALIGN);
 
 		if ((curr_pkt_len + pkt_desc_sz) > rx_len) {
-			dev_warn(rtwdev->dev, "Invalid RX packet size!");
+			dev_warn(rtwdev->dev, "Invalid RX packet size!, curr_pkt_len + pkt_desc_sz %d. rx_len &d",
+				 curr_pkt_len + pkt_desc_sz, rx_len);
 			dev_kfree_skb_any(skb);
 			return;
 		}
