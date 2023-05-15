@@ -716,7 +716,7 @@ static int rtw_sdio_setup(struct rtw_dev *rtwdev)
 
 static int rtw_sdio_start(struct rtw_dev *rtwdev)
 {
-	rtw_sdio_enable_rx_aggregation(rtwdev);
+//	rtw_sdio_enable_rx_aggregation(rtwdev);
 	rtw_sdio_enable_interrupt(rtwdev);
 
 	return 0;
