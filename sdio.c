@@ -716,7 +716,7 @@ static int rtw_sdio_setup(struct rtw_dev *rtwdev)
 
 static int rtw_sdio_start(struct rtw_dev *rtwdev)
 {
-//	rtw_sdio_enable_rx_aggregation(rtwdev);
+	rtw_sdio_enable_rx_aggregation(rtwdev);
 	rtw_sdio_enable_interrupt(rtwdev);
 
 	return 0;
@@ -918,12 +918,7 @@ static void rtw_sdio_rx_skb(struct rtw_dev *rtwdev, struct sk_buff *skb,
 {
 	*IEEE80211_SKB_RXCB(skb) = *rx_status;
 
-	/* fix Hardware RX data error, drop whole recv_buffer */
-	if (!(rtwdev->hal.rcr & BIT_ACRC32) && pkt_stat->crc_err) {
-		kfree_skb(skb);
-		return;
-	}
- 	if (pkt_stat->is_c2h) {
+	if (pkt_stat->is_c2h) {
 		skb_put(skb, pkt_stat->pkt_len + pkt_offset);
 		rtw_fw_c2h_cmd_rx_irqsafe(rtwdev, pkt_offset, skb);
 		return;
@@ -966,14 +961,13 @@ static void rtw_sdio_rxfifo_recv(struct rtw_dev *rtwdev, u32 rx_len)
 		rx_desc = skb->data;
 		chip->ops->query_rx_desc(rtwdev, rx_desc, &pkt_stat,
 					 &rx_status);
-		pkt_offset = pkt_desc_sz;
-		if (!pkt_stat.is_c2h)
-			pkt_offset += pkt_stat.drv_info_sz + pkt_stat.shift;
+		pkt_offset = pkt_desc_sz + pkt_stat.drv_info_sz +
+			     pkt_stat.shift;
 
 		curr_pkt_len = ALIGN(pkt_offset + pkt_stat.pkt_len,
 				     RTW_SDIO_DATA_PTR_ALIGN);
 
-		if ((curr_pkt_len + pkt_desc_sz) == rx_len) {
+		if ((curr_pkt_len + pkt_desc_sz) >= rx_len) {
 			/* Use the original skb (with it's adjusted offset)
 			 * when processing the last (or even the only) entry to
 			 * have it's memory freed automatically.
@@ -1006,7 +1000,7 @@ static void rtw_sdio_rx_isr(struct rtw_dev *rtwdev)
 {
 	u32 rx_len, hisr, total_rx_bytes = 0;
 
-	while (total_rx_bytes < SZ_64K) {
+	do {
 		if (rtw_chip_wcpu_11n(rtwdev))
 			rx_len = rtw_read16(rtwdev, REG_SDIO_RX0_REQ_LEN);
 		else
@@ -1018,6 +1012,7 @@ static void rtw_sdio_rx_isr(struct rtw_dev *rtwdev)
 		rtw_sdio_rxfifo_recv(rtwdev, rx_len);
 
 		total_rx_bytes += rx_len;
+		hisr = rtw_read32(rtwdev, REG_SDIO_HISR);
 
 		/* Stop if no more RX requests are pending, even if rx_len
 		 * could be greater than zero in the next iteration. This is
@@ -1025,12 +1020,11 @@ static void rtw_sdio_rx_isr(struct rtw_dev *rtwdev)
 		 * the chip is not done filling that buffer yet. Still reading
 		 * the buffer can result in empty packets or reading packets
 		 * where rtw_rx_pkt_stat.pkt_len points beyond the end of the
-		 * buffer.
+		 * buffer. This seems mostly relevant for RTW_WCPU_11N chips,
+		 * RTW_WCPU_11AC chips seem to have improved hardware/firmware
+		 * for this case.
 		 */
-		hisr = rtw_read32(rtwdev, REG_SDIO_HISR);
-		if (!(hisr & REG_SDIO_HISR_RX_REQUEST))
-			break;
-	}
+	} while (total_rx_bytes < SZ_64K && (hisr & REG_SDIO_HISR_RX_REQUEST));
 }
 
 static void rtw_sdio_handle_interrupt(struct sdio_func *sdio_func)
@@ -1402,3 +1396,4 @@ MODULE_AUTHOR("Martin Blumenstingl");
 MODULE_AUTHOR("Jernej Skrabec");
 MODULE_DESCRIPTION("Realtek 802.11ac wireless SDIO driver");
 MODULE_LICENSE("Dual BSD/GPL");
+
