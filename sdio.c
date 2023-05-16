@@ -1011,7 +1011,7 @@ static void rtw_sdio_rxfifo_recv(struct rtw_dev *rtwdev, u32 rx_len)
 
 static void rtw_sdio_rx_isr(struct rtw_dev *rtwdev)
 {
-	u32 rx_len, total_rx_bytes = 0;
+	u32 rx_len, hisr, total_rx_bytes = 0;
 
 	while (total_rx_bytes < SZ_64K) {
 		if (rtw_chip_wcpu_11n(rtwdev))
@@ -1025,6 +1025,18 @@ static void rtw_sdio_rx_isr(struct rtw_dev *rtwdev)
 		rtw_sdio_rxfifo_recv(rtwdev, rx_len);
 
 		total_rx_bytes += rx_len;
+
+		/* Stop if no more RX requests are pending, even if rx_len
+		 * could be greater than zero in the next iteration. This is
+		 * needed because the RX buffer may already contain data while
+		 * the chip is not done filling that buffer yet. Still reading
+		 * the buffer can result in empty packets or reading packets
+		 * where rtw_rx_pkt_stat.pkt_len points beyond the end of the
+		 * buffer.
+		 */
+		hisr = rtw_read32(rtwdev, REG_SDIO_HISR);
+		if (!(hisr & REG_SDIO_HISR_RX_REQUEST))
+			break;
 	}
 }
 
