@@ -1013,7 +1013,7 @@ static void rtw_sdio_rx_isr(struct rtw_dev *rtwdev)
 
 		total_rx_bytes += rx_len;
 
-		if (rtw_chip_wcpu_11n(rtwdev))
+		if (rtw_chip_wcpu_11n(rtwdev)) {
 			/* Stop if no more RX requests are pending, even if
 			 * rx_len could be greater than zero in the next
 			 * iteration. This is needed because the RX buffer may
@@ -1024,11 +1024,12 @@ static void rtw_sdio_rx_isr(struct rtw_dev *rtwdev)
 			 * end of the buffer.
 			 */
 			hisr = rtw_read32(rtwdev, REG_SDIO_HISR);
-		else
+		} else {
 			/* RTW_WCPU_11AC chips have improved hardware or
 			 * firmware and can use rx_len unconditionally.
 			 */
 			hisr = REG_SDIO_HISR_RX_REQUEST;
+		}
 	} while (total_rx_bytes < SZ_64K && hisr & REG_SDIO_HISR_RX_REQUEST);
 }
 
