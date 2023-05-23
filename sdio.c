@@ -87,7 +87,7 @@ static void rtw_sdio_writew(struct rtw_dev *rtwdev, u16 val, u32 addr,
 	u8 buf[2];
 	int i;
 
-	if (rtw_sdio_use_memcpy_io(rtwdev, addr, 2)) {
+	if (rtw_sdio_use_memcpy_io(rtwdev, addr, 2) && !rtw_chip_wcpu_11n(rtwdev)) {
 		sdio_writew(rtwsdio->sdio_func, val, addr, err_ret);
 		return;
 	}
@@ -125,7 +125,7 @@ static u16 rtw_sdio_readw(struct rtw_dev *rtwdev, u32 addr, int *err_ret)
 	u8 buf[2];
 	int i;
 
-	if (rtw_sdio_use_memcpy_io(rtwdev, addr, 2))
+	if (rtw_sdio_use_memcpy_io(rtwdev, addr, 2) && !rtw_chip_wcpu_11n(rtwdev))
 		return sdio_readw(rtwsdio->sdio_func, addr, err_ret);
 
 	for (i = 0; i < 2; i++) {
