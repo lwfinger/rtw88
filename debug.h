@@ -57,7 +57,6 @@ static inline void rtw_dbg(struct rtw_dev *rtwdev, enum rtw_debug_mask mask,
 
 #define rtw_info(rtwdev, a...) dev_info(rtwdev->dev, ##a)
 #define rtw_warn(rtwdev, a...) dev_warn(rtwdev->dev, ##a)
-#define rtw_warn_once(rtwdev, a...) dev_warn_once(rtwdev->dev, ##a)
 #define rtw_err(rtwdev, a...) dev_err(rtwdev->dev, ##a)
 
 #endif
