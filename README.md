@@ -2,6 +2,14 @@ rtw88
 ===========
 ### A repo for the newest Realtek wifi 5 codes.
 
+The code in this repo is kept up to date with the code in the wireless-next repository.
+The only difference is the changes that are required to compensate for kernel API changes
+with time.
+
+Note: Wireless-next contains the code that will be in the NEXT kernel. At the moment,
+kernel 6.3 is released, the kernel mainline repo has 6.4-rcX, and wireless-next has
+the code that will be in 6.5! As long as possible, that relationship will be kept!
+
 This code will build on any kernel 5.4 and newer as long as the distro has not modified
 any of the kernel APIs. IF YOU RUN UBUNTU, YOU CAN BE ASSURED THAT THE APIs HAVE CHANGED.
 NO, I WILL NOT MODIFY THE SOURCE FOR YOU. YOU ARE ON YOUR OWN!!!!!
@@ -12,15 +20,10 @@ RTW8822BE, RTW8822CE, RTW8821CE, and RTW8723DE  (All PCIe)
 RTW8822BU, RTW8822CU, RTW8821CU, and RTW8723DU (All USB)
 RTW8822BS, RTW8822CS, RTW8821CS, and RTW8723DS  (All SDIO)
 
-The SDIO drivers have not yet been included in the kernel, but they appear to work
-and are now included here to help with testing.
-
 If you are looking for a driver for chips such as 
 RTL8188EE, RTL8192CE, RTL8192CU, RTL8192DE, RTL8192EE, RTL8192SE, RTL8723AE, RTL8723BE, or RTL8821AE,
 these should be provided by your kernel. If not, then you should go to the Backports Project
 (https://backports.wiki.kernel.org/index.php/Main_Page) to obtain the necessary code.
-
-This repo has been brought up to date with the kernel code on May 07, 2023.
 
 Please let me know of build problems.
 
