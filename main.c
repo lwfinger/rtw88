@@ -345,7 +345,11 @@ int rtw_sta_add(struct rtw_dev *rtwdev, struct ieee80211_sta *sta,
 	if (si->mac_id >= RTW_MAX_MAC_ID_NUM)
 		return -ENOSPC;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0)
 	if (vif->type == NL80211_IFTYPE_STATION && vif->cfg.assoc == 0)
+#else
+	if (vif->type == NL80211_IFTYPE_STATION && vif->bss_conf.assoc == 0)
+#endif
 		rtwvif->mac_id = si->mac_id;
 	si->rtwdev = rtwdev;
 	si->sta = sta;
