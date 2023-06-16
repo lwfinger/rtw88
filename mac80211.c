@@ -390,6 +390,7 @@ static void rtw_ops_bss_info_changed(struct ieee80211_hw *hw,
 
 			rtw_fw_download_rsvd_page(rtwdev);
 			rtw_send_rsvd_page_h2c(rtwdev);
+			rtw_fw_default_port(rtwdev, rtwvif);
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
 			rtw_coex_media_status_notify(rtwdev, vif->cfg.assoc);
 #else
