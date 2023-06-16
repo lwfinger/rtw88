@@ -31,7 +31,6 @@ struct rtw_tx_desc {
 #define RTW_TX_DESC_W1_RATE_ID GENMASK(20, 16)
 #define RTW_TX_DESC_W1_SEC_TYPE GENMASK(23, 22)
 #define RTW_TX_DESC_W1_PKT_OFFSET GENMASK(28, 24)
-#define RTW_TX_DESC_W1_MORE_DATA BIT(29)
 #define RTW_TX_DESC_W2_AGG_EN BIT(12)
 #define RTW_TX_DESC_W2_SPE_RPT BIT(19)
 #define RTW_TX_DESC_W2_AMPDU_DEN GENMASK(22, 20)
@@ -119,12 +118,13 @@ void fill_txdesc_checksum_common(u8 *txdesc, size_t words)
 	__le16 *data = (__le16 *)(txdesc);
 	struct rtw_tx_desc *tx_desc = (struct rtw_tx_desc *)txdesc;
 
-	le32_replace_bits(tx_desc->w7, 0, RTW_TX_DESC_W7_TXDESC_CHECKSUM);
+	le32p_replace_bits(&tx_desc->w7, 0, RTW_TX_DESC_W7_TXDESC_CHECKSUM);
 
 	while (words--)
 		chksum ^= *data++;
 
-	le32_replace_bits(tx_desc->w7, __le16_to_cpu(chksum), RTW_TX_DESC_W7_TXDESC_CHECKSUM);
+	le32p_replace_bits(&tx_desc->w7, __le16_to_cpu(chksum),
+			   RTW_TX_DESC_W7_TXDESC_CHECKSUM);
 }
 
 static inline void rtw_tx_fill_txdesc_checksum(struct rtw_dev *rtwdev,
