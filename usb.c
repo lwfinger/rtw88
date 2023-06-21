@@ -28,7 +28,7 @@ static void rtw_usb_fill_tx_checksum(struct rtw_usb *rtwusb,
 	struct rtw_dev *rtwdev = rtwusb->rtwdev;
 	struct rtw_tx_pkt_info pkt_info;
 
-	le32p_replace_bits(&tx_desc->w7, agg_num, RTW_TX_DESC_W7_DMA_TXAGG_NUM);
+	le32_replace_bits(tx_desc->w7, agg_num, RTW_TX_DESC_W7_TXDESC_CHECKSUM);
 	pkt_info.pkt_offset = le32_get_bits(tx_desc->w1, RTW_TX_DESC_W1_PKT_OFFSET);
 	rtw_tx_fill_txdesc_checksum(rtwdev, &pkt_info, skb->data);
 }

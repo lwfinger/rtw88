@@ -1979,8 +1979,7 @@ static void rtw8723d_fill_txdesc_checksum(struct rtw_dev *rtwdev,
 
 	chksum = ~chksum;
 
-	le32_replace_bits(tx_desc->w7, __le16_to_cpu(chksum),
-			  RTW_TX_DESC_W7_TXDESC_CHECKSUM);
+	le32_replace_bits(tx_desc->w7, __le16_to_cpu(chksum), RTW_TX_DESC_W7_TXDESC_CHECKSUM);
 }
 
 static struct rtw_chip_ops rtw8723d_ops = {
