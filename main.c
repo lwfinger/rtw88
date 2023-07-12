@@ -2299,7 +2299,11 @@ void rtw_core_deinit(struct rtw_dev *rtwdev)
 		release_firmware(wow_fw->firmware);
 
 	destroy_workqueue(rtwdev->tx_wq);
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 2, 0)
 	timer_delete_sync(&rtwdev->tx_report.purge_timer);
+# else
+	del_timer_sync(&rtwdev->tx_report.purge_timer);
+# endif
 	spin_lock_irqsave(&rtwdev->tx_report.q_lock, flags);
 	skb_queue_purge(&rtwdev->tx_report.queue);
 	skb_queue_purge(&rtwdev->coex.queue);
