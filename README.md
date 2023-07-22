@@ -72,11 +72,11 @@ cd rtw88
 make
 sudo make sign-install
 ```
-You will be promted a password, please keep it in mind and use it in next steps.
+You will be prompted a password, please keep it in mind and use it in next steps.
 Reboot to activate the new installed module.
 In the MOK managerment screen:
 1. Select "Enroll key" and enroll the key created by above sign-install step
-2. When promted, enter the password you entered when create sign key. 
+2. When prompted, enter the password you entered when create sign key. 
 3. If you enter wrong password, your computer won't not bebootable. In this case,
    use the BOOT menu from your BIOS, to boot into your OS then do below steps:
 ```bash
