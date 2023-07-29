@@ -20,6 +20,22 @@
 
 #define RTW_SDIO_INDIRECT_RW_RETRIES			50
 
+static void rtw_log_write(int count, u32 addr, u32 value)
+{
+	static int count_out;
+
+	if (count_out++ < 300)
+		pr_info("****** rtw88 write: count %d, addr 0x%x, data read 0x%x\n", count, addr, value);
+}
+
+static void rtw_log_read(int count, u32 addr, u32 value)
+{
+	static int count_out;
+
+	if (count_out++ < 300)
+		pr_info("****** rtw88 read: count %d, addr 0x%x, data read 0x%x\n", count, addr, value);
+}
+
 static bool rtw_sdio_is_bus_addr(u32 addr)
 {
 	return !!(addr & RTW_SDIO_BUS_MSK);
@@ -77,6 +93,7 @@ static void rtw_sdio_writel(struct rtw_dev *rtwdev, u32 val, u32 addr,
 		sdio_writeb(rtwsdio->sdio_func, buf[i], addr + i, err_ret);
 		if (*err_ret)
 			return;
+	rtw_log_write(4, addr, val);
 	}
 }
 
@@ -94,6 +111,7 @@ static void rtw_sdio_writew(struct rtw_dev *rtwdev, u16 val, u32 addr,
 		if (*err_ret)
 			return;
 	}
+	rtw_log_write(2, addr, (u32)val);
 }
 
 static u32 rtw_sdio_readl(struct rtw_dev *rtwdev, u32 addr, int *err_ret)
@@ -111,6 +129,7 @@ static u32 rtw_sdio_readl(struct rtw_dev *rtwdev, u32 addr, int *err_ret)
 			return 0;
 	}
 
+	rtw_log_read(4, addr, le32_to_cpu(*(__le32 *)buf));
 	return le32_to_cpu(*(__le32 *)buf);
 }
 
@@ -126,6 +145,7 @@ static u16 rtw_sdio_readw(struct rtw_dev *rtwdev, u32 addr, int *err_ret)
 			return 0;
 	}
 
+	rtw_log_read(2, addr, (u32)le16_to_cpu(*(__le16 *)buf));
 	return le16_to_cpu(*(__le16 *)buf);
 }
 
@@ -176,6 +196,7 @@ static u8 rtw_sdio_indirect_read8(struct rtw_dev *rtwdev, u32 addr,
 {
 	struct rtw_sdio *rtwsdio = (struct rtw_sdio *)rtwdev->priv;
 	u32 reg_data;
+	u8 value;
 
 	*err_ret = rtw_sdio_indirect_reg_cfg(rtwdev, addr,
 					     BIT_SDIO_INDIRECT_REG_CFG_READ);
@@ -183,8 +204,10 @@ static u8 rtw_sdio_indirect_read8(struct rtw_dev *rtwdev, u32 addr,
 		return 0;
 
 	reg_data = rtw_sdio_to_bus_offset(rtwdev, REG_SDIO_INDIRECT_REG_DATA);
-	return sdio_readb(rtwsdio->sdio_func, reg_data, err_ret);
-}
+	value = sdio_readb(rtwsdio->sdio_func, reg_data, err_ret);
+	rtw_log_read(1, addr, (u32)value);
+	return value;
+	}
 
 static int rtw_sdio_indirect_read_bytes(struct rtw_dev *rtwdev, u32 addr,
 					u8 *buf, int count)
@@ -211,6 +234,7 @@ static u16 rtw_sdio_indirect_read16(struct rtw_dev *rtwdev, u32 addr,
 		if (*err_ret)
 			return 0;
 
+		rtw_log_read(2, addr, (u32)le16_to_cpu(*(__le16 *)buf));
 		return le16_to_cpu(*(__le16 *)buf);
 	}
 
@@ -234,6 +258,7 @@ static u32 rtw_sdio_indirect_read32(struct rtw_dev *rtwdev, u32 addr,
 		if (*err_ret)
 			return 0;
 
+		rtw_log_read(4, addr, le32_to_cpu(*(__le32 *)buf));
 		return le32_to_cpu(*(__le32 *)buf);
 	}
 
@@ -271,6 +296,7 @@ static u8 rtw_sdio_read8(struct rtw_dev *rtwdev, u32 addr)
 	if (ret)
 		rtw_warn(rtwdev, "sdio read8 failed (0x%x): %d", addr, ret);
 
+	rtw_log_read(1, addr, (u32)val);
 	return val;
 }
 
@@ -299,6 +325,7 @@ static u16 rtw_sdio_read16(struct rtw_dev *rtwdev, u32 addr)
 	if (ret)
 		rtw_warn(rtwdev, "sdio read16 failed (0x%x): %d", addr, ret);
 
+	rtw_log_read(2, addr, (u32)val);
 	return val;
 }
 
@@ -327,6 +354,7 @@ static u32 rtw_sdio_read32(struct rtw_dev *rtwdev, u32 addr)
 	if (ret)
 		rtw_warn(rtwdev, "sdio read32 failed (0x%x): %d", addr, ret);
 
+	rtw_log_read(4, addr, (u32)val);
 	return val;
 }
 
@@ -357,6 +385,7 @@ static void rtw_sdio_indirect_write16(struct rtw_dev *rtwdev, u16 val, u32 addr,
 	}
 
 	reg_data = rtw_sdio_to_bus_offset(rtwdev, REG_SDIO_INDIRECT_REG_DATA);
+	rtw_log_write(2, addr, (u32)reg_data);
 	rtw_sdio_writew(rtwdev, val, reg_data, err_ret);
 	if (*err_ret)
 		return;
@@ -378,6 +407,7 @@ static void rtw_sdio_indirect_write32(struct rtw_dev *rtwdev, u32 val,
 	}
 
 	reg_data = rtw_sdio_to_bus_offset(rtwdev, REG_SDIO_INDIRECT_REG_DATA);
+	rtw_log_write(4, addr, (u32)reg_data);
 	rtw_sdio_writel(rtwdev, val, reg_data, err_ret);
 
 	*err_ret = rtw_sdio_indirect_reg_cfg(rtwdev, addr,
@@ -408,6 +438,7 @@ static void rtw_sdio_write8(struct rtw_dev *rtwdev, u32 addr, u8 val)
 
 	if (ret)
 		rtw_warn(rtwdev, "sdio write8 failed (0x%x): %d", addr, ret);
+	rtw_log_write(1, addr, (u32)val);
 }
 
 static void rtw_sdio_write16(struct rtw_dev *rtwdev, u32 addr, u16 val)
@@ -433,6 +464,7 @@ static void rtw_sdio_write16(struct rtw_dev *rtwdev, u32 addr, u16 val)
 
 	if (ret)
 		rtw_warn(rtwdev, "sdio write16 failed (0x%x): %d", addr, ret);
+	rtw_log_write(2, addr, (u32)val);
 }
 
 static void rtw_sdio_write32(struct rtw_dev *rtwdev, u32 addr, u32 val)
@@ -458,6 +490,7 @@ static void rtw_sdio_write32(struct rtw_dev *rtwdev, u32 addr, u32 val)
 
 	if (ret)
 		rtw_warn(rtwdev, "sdio write32 failed (0x%x): %d", addr, ret);
+	rtw_log_write(4, addr, (u32)val);
 }
 
 static u32 rtw_sdio_get_tx_addr(struct rtw_dev *rtwdev, size_t size,
