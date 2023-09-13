@@ -5,6 +5,8 @@
 
 📌 **Note**: The `wireless-next` repo contains the code set for the next kernel version. At present, kernel 6.5 is out, kernel mainline repo is about to become 6.6-rc1, and `wireless-next` contains the code that will be in kernel 6.7.
 
+⚠️ **Reminder**: You must blacklist the in-tree kernel versions of this driver when using the version in this repository! Failing to do so will result in all manner of strange errors!!! See **Blacklisting** under [Important Information](#important-information) section.
+
 ---
 
 ### Compatibility
