@@ -161,6 +161,8 @@ endif
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_core.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723d.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723de.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723du.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723ds.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822b.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822be.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822bu.ko
