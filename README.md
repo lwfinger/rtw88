@@ -170,7 +170,7 @@ git pull
 make
 sudo make install
 ```
-💡 **Remember, every new kernel requires this step - no exceptions**.
+💡 **Remember, every new kernel requires this step - no exceptions**. If the update means that you have no network, skip the 'git pull' and build the possible oldeer version, but do that step once you have network, and rebuild if any updates were pulled.
 
 ## FAQ
 
