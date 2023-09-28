@@ -12,6 +12,12 @@ else
 MODDESTDIR := /lib/modules/$(KVER)/kernel/drivers/net/wireless/rtw88
 endif
 
+ifneq ("$(INSTALL_MOD_PATH)", "")
+DEPMOD_ARGS = -b $(INSTALL_MOD_PATH)
+else
+DEPMOD_ARGS =
+endif
+
 #Handle the compression option for modules in 3.18+
 ifneq ("","$(wildcard $(MODDESTDIR)/*.ko.gz)")
 COMPRESS_GZIP := y
@@ -128,7 +134,7 @@ ifeq ($(COMPRESS_XZ), y)
 	@xz -f $(MODDESTDIR)/*.ko
 endif
 
-	@depmod -a $(KVER)
+	@depmod $(DEPMOD_ARGS) -a $(KVER)
 
 	@echo "Install rtw88 SUCCESS"
 
@@ -138,7 +144,7 @@ uninstall:
 	@modprobe -r rtw_8723de
 	@rm -f $(MODDESTDIR)/rtw_*.ko
 	
-	@depmod -a
+	@depmod $(DEPMOD_ARGS)
 	
 	@echo "Uninstall rtw88 SUCCESS"
 
