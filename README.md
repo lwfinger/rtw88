@@ -157,7 +157,7 @@ There, enter the line below:
 options <device_name> <<driver_option_name>>=<value>
 ```
 The available options for rtw_pci are disable_msi and disable_aspm.
-The available options for rtw_core are lps_deep_mode, support_bf,  and debug_mask.
+The available options for rtw_core are disable_lps_deep, support_bf,  and debug_mask.
 
 ---
 
