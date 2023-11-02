@@ -1,9 +1,9 @@
 # rtw88 📡🐧
 ### A Repo for the Latest Realtek WiFi 5 Codes on Linux
 
-🌟 **Up-to-Date Drivers**: The code in this repo stays in sync with the `wireless-next` repository, with additional changes to accommodate kernel API changes over time.
+🌟 **Up-to-Date Drivers**: The code in this repo stays in sync with the `wireless-next` repository, with additional changes to accommodate kernel API changes over time. The current repo matches the kernel as of Nov. 2, 2023.
 
-📌 **Note**: The `wireless-next` repo contains the code set for the ***next*** kernel version. At present, kernel 6.5 is out, kernel mainline repo is on 6.6-rcX, and `wireless-next` targets kernel 6.7 material.
+📌 **Note**: The `wireless-next` repo contains the code set for the ***next*** kernel version. At present, kernel 6.6 is out, kernel mainline repo is on 6.7-rcX, and `wireless-next` targets kernel 6.8 material.
 
 ---
 
