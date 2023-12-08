@@ -2125,6 +2125,11 @@ static int rtw_chip_efuse_info_setup(struct rtw_dev *rtwdev)
 		dev_warn(rtwdev->dev, "efuse MAC invalid, using random\n");
 	}
 
+	if (!is_valid_ether_addr(efuse->addr)) {
+		eth_random_addr(efuse->addr);
+		dev_warn(rtwdev->dev, "efuse MAC invalid, using random\n");
+	}
+
 out_disable:
 	rtw_chip_efuse_disable(rtwdev);
 
