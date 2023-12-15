@@ -1009,7 +1009,7 @@ static u8 rtw_get_rsvd_page_probe_req_location(struct rtw_dev *rtwdev,
 		if (rsvd_pkt->type != RSVD_PROBE_REQ)
 			continue;
 		if ((!ssid && !rsvd_pkt->ssid) ||
-		    rtw_ssid_equal(rsvd_pkt->ssid, ssid))
+		    cfg80211_ssid_eq(rsvd_pkt->ssid, ssid))
 			location = rsvd_pkt->page;
 	}
 
@@ -1026,7 +1026,7 @@ static u16 rtw_get_rsvd_page_probe_req_size(struct rtw_dev *rtwdev,
 		if (rsvd_pkt->type != RSVD_PROBE_REQ)
 			continue;
 		if ((!ssid && !rsvd_pkt->ssid) ||
-		    rtw_ssid_equal(rsvd_pkt->ssid, ssid))
+		    cfg80211_ssid_eq(rsvd_pkt->ssid, ssid))
 			size = rsvd_pkt->probe_req_size;
 	}
 
