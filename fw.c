@@ -1010,7 +1010,7 @@ static u8 rtw_get_rsvd_page_probe_req_location(struct rtw_dev *rtwdev,
 			continue;
 		if ((!ssid && !rsvd_pkt->ssid) ||
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 8, 0)
-			rtw_ssid_equal(rsvd_pkt->ssid, ssid))
+			cfg80211_ssid_eq(rsvd_pkt->ssid, ssid))
 #else
 			cfg80211_ssid_eq(rsvd_pkt->ssid, ssid))
 #endif
@@ -1031,7 +1031,7 @@ static u16 rtw_get_rsvd_page_probe_req_size(struct rtw_dev *rtwdev,
 			continue;
 		if ((!ssid && !rsvd_pkt->ssid) ||
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 8, 0)
-		    rtw_ssid_equal(rsvd_pkt->ssid, ssid))
+		    cfg80211_ssid_eq(rsvd_pkt->ssid, ssid))
 #else
 		    cfg80211_ssid_eq(rsvd_pkt->ssid, ssid))
 #endif

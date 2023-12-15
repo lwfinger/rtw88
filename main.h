@@ -2310,3 +2310,4 @@ static inline bool rtw_ssid_equal(struct cfg80211_ssid *a,
 #endif
 
 #endif
+
