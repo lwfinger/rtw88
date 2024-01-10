@@ -293,7 +293,7 @@ static ssize_t rtw_debugfs_set_rsvd_page(struct file *filp,
 	int num;
 	int ret;
 
-	ret = rtw_debugfs_copy_from_user(tmp, sizeof(tmp), buffer, count, 2);
+	ret = rtw_debugfs_copy_from_user(tmp, sizeof(tmp), buffer, count, 1);
 	if (ret)
 		return ret;
 
