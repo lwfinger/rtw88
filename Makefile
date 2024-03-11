@@ -81,8 +81,8 @@ rtw_8822cu-objs		:= rtw8822cu.o
 obj-m	   += rtw_8723x.o
 rtw_8723x-objs		:= rtw8723x.o
 
-#obj-m	   += rtw_8703b.o
-#rtw_8703b-objs		:= rtw8703b.o rtw8703b_tables.o
+obj-m	   += rtw_8703b.o
+rtw_8703b-objs		:= rtw8703b.o rtw8703b_tables.o
 
 obj-m	   += rtw_8723x.o
 rtw_8723x-objs		:= rtw8723x.o
@@ -95,6 +95,9 @@ rtw88_8723x-objs	:= rtw8723x.o
 
 #obj-m	    += rtw_8723cs.o
 #rtw_8723cs-objs		:= rtw8723cs.o
+
+obj-m	    += rtw_8723cs.o
+rtw_8723cs-objs		:= rtw8723cs.o
 
 obj-m       += rtw_8723d.o
 rtw_8723d-objs          := rtw8723d.o rtw8723d_table.o
