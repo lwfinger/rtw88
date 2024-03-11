@@ -175,6 +175,13 @@ static void __rtw8723x_debug_txpwr_limit(struct rtw_dev *rtwdev,
 			table[i].pwr_idx_2g.ht_4s_diff.bw40);
 }
 
+#define DBG_EFUSE_VAL(rtwdev, map, name)			\
+	rtw_dbg(rtwdev, RTW_DBG_EFUSE, # name "=0x%02x\n",	\
+		(map)->name)
+#define DBG_EFUSE_2BYTE(rtwdev, map, name)			\
+	rtw_dbg(rtwdev, RTW_DBG_EFUSE, # name "=0x%02x%02x\n",	\
+		(map)->name[0], (map)->name[1])
+
 static void efuse_debug_dump(struct rtw_dev *rtwdev,
 			     struct rtw8723x_efuse *map)
 {
