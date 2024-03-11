@@ -84,6 +84,9 @@ rtw_8723x-objs		:= rtw8723x.o
 #obj-m	   += rtw_8703b.o
 #rtw_8703b-objs		:= rtw8703b.o rtw8703b_tables.o
 
+obj-m	   += rtw_8723x.o
+rtw_8723x-objs		:= rtw8723x.o
+
 obj-m	   += rtw_8822cs.o
 rtw_8822cs-objs		:= rtw8822cs.o
 
