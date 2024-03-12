@@ -81,8 +81,8 @@ rtw_8822cu-objs		:= rtw8822cu.o
 obj-m	   += rtw_8822cs.o
 rtw_8822cs-objs		:= rtw8822cs.o
 
-obj-$(CONFIG_RTW88_8723X)	+= rtw88_8723x.o
-rtw88_8723x-objs		:= rtw8723x.o
+obj-m			+= rtw88_8723x.o
+rtw88_8723x-objs	:= rtw8723x.o
 
 obj-m       += rtw_8723d.o
 rtw_8723d-objs          := rtw8723d.o rtw8723d_table.o
