@@ -1,11 +1,9 @@
 # rtw88 📡🐧
 ### A Repo for the Latest Realtek WiFi 5 Codes on Linux
 
-🌟 **Up-to-Date Drivers**: The code in this repo stays in sync with the `wireless-next` repository, with additional changes to accommodate kernel API changes over time.
+🌟 **Up-to-Date Drivers**: The code in this repo stays in sync with the `wireless-next` repository, with additional changes to accommodate kernel API changes over time. The current repo matches the kernel as of March 5, 2024.
 
-📌 **Note**: The `wireless-next` repo contains the code set for the next kernel version. At present, kernel 6.5 is out, kernel mainline repo is about to become 6.6-rc1, and `wireless-next` contains the code that will be in kernel 6.7.
-
-⚠️ **Reminder**: You must blacklist the in-tree kernel versions of this driver when using the version in this repository! Failing to do so will result in all manner of strange errors!!! See **Blacklisting** under [Important Information](#important-information) section.
+📌 **Note**: The `wireless-next` repo contains the code set for the ***next*** kernel version. At present, kernel 6.7 is out, kernel mainline repo is on 6.8-rcX, and `wireless-next` targets kernel 6.9 material.
 
 ---
 
@@ -159,7 +157,7 @@ There, enter the line below:
 options <device_name> <<driver_option_name>>=<value>
 ```
 The available options for rtw_pci are disable_msi and disable_aspm.
-The available options for rtw_core are lps_deep_mode, support_bf,  and debug_mask.
+The available options for rtw_core are disable_lps_deep, support_bf,  and debug_mask.
 
 ---
 
@@ -172,7 +170,7 @@ git pull
 make
 sudo make install
 ```
-💡 **Remember, every new kernel requires this step - no exceptions**.
+💡 **Remember, every new kernel requires this step - no exceptions**. If the update means that you have no network, skip the 'git pull' and build the possible oldeer version, but do that step once you have network, and rebuild if any updates were pulled.
 
 ## FAQ
 
@@ -186,7 +184,7 @@ issue on this repository is **NOT** the place to report it.
 
 We have no idea about the internal workings of any of the chips, and the Realtek engineers who do will not read these issues. To reach them, send E-mail to [linux-wireless@vger.kernel.org](mailto:linux-wireless@vger.kernel.org). 
 
-Be sure to include a detailed description of any messages in the kernel logs and any steps that you have taken to analyze or fix the problem. If your description is not complete, you are unlikely to get the help you need.
+Be sure to include a detailed description of any messages in the kernel logs and any steps that you have taken to analyze or fix the problem. If your description is not complete, you are unlikely to get the help you need. NOTE: E-mail sent to that mailing list MUST be plain test. HTML mail will be rejected.
 
 Start with this page for guidance: https://wireless.wiki.kernel.org/en/users/support
 

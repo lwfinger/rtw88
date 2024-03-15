@@ -110,7 +110,9 @@ static const struct ieee80211_iface_limit rtw_iface_limits[] = {
 	},
 	{
 		.max = 1,
-		.types = BIT(NL80211_IFTYPE_AP),
+		.types = BIT(NL80211_IFTYPE_AP) |
+                        BIT(NL80211_IFTYPE_P2P_CLIENT) |
+                        BIT(NL80211_IFTYPE_P2P_GO)
 	}
 };
 
@@ -2118,6 +2120,11 @@ static int rtw_chip_efuse_info_setup(struct rtw_dev *rtwdev)
 	efuse->ext_pa_5g = efuse->pa_type_5g & BIT(0) ? 1 : 0;
 	efuse->ext_lna_2g = efuse->lna_type_5g & BIT(3) ? 1 : 0;
 
+	if (!is_valid_ether_addr(efuse->addr)) {
+		eth_random_addr(efuse->addr);
+		dev_warn(rtwdev->dev, "efuse MAC invalid, using random\n");
+	}
+
 out_disable:
 	rtw_chip_efuse_disable(rtwdev);
 
@@ -2137,8 +2144,6 @@ static int rtw_chip_board_info_setup(struct rtw_dev *rtwdev)
 	rtw_phy_setup_phy_cond(rtwdev, hal->pkg_type);
 
 	rtw_phy_init_tx_power(rtwdev);
-	if (rfe_def->agc_btg_tbl)
-		rtw_load_table(rtwdev, rfe_def->agc_btg_tbl);
 	rtw_load_table(rtwdev, rfe_def->phy_pg_tbl);
 	rtw_load_table(rtwdev, rfe_def->txpwr_lmt_tbl);
 	rtw_phy_tx_power_by_rate_config(hal);
@@ -2352,7 +2357,9 @@ int rtw_register_hw(struct rtw_dev *rtwdev, struct ieee80211_hw *hw)
 	hw->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) |
 				     BIT(NL80211_IFTYPE_AP) |
 				     BIT(NL80211_IFTYPE_ADHOC) |
-				     BIT(NL80211_IFTYPE_MESH_POINT);
+				     BIT(NL80211_IFTYPE_MESH_POINT) |
+                                    BIT(NL80211_IFTYPE_P2P_CLIENT) |
+                                    BIT(NL80211_IFTYPE_P2P_GO);
 	hw->wiphy->available_antennas_tx = hal->antenna_tx;
 	hw->wiphy->available_antennas_rx = hal->antenna_rx;
 

@@ -309,6 +309,13 @@ static int rtw_mac_power_switch(struct rtw_dev *rtwdev, bool pwr_on)
 	pwr_seq = pwr_on ? chip->pwr_on_seq : chip->pwr_off_seq;
 	ret = rtw_pwr_seq_parser(rtwdev, pwr_seq);
 
+	if (pwr_on && rtw_hci_type(rtwdev) == RTW_HCI_TYPE_USB) {
+		if (chip->id == RTW_CHIP_TYPE_8822C ||
+		    chip->id == RTW_CHIP_TYPE_8822B ||
+		    chip->id == RTW_CHIP_TYPE_8821C)
+			rtw_write8_clr(rtwdev, REG_SYS_STATUS1 + 1, BIT(0));
+	}
+
 	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_SDIO)
 		rtw_write32(rtwdev, REG_SDIO_HIMR, imr);
 
@@ -935,6 +942,12 @@ static int __rtw_download_firmware_legacy(struct rtw_dev *rtwdev,
 					  struct rtw_fw_state *fw)
 {
 	int ret = 0;
+
+	/* reset firmware if still present */
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8703B &&
+	    rtw_read8_mask(rtwdev, REG_MCUFW_CTRL, BIT_RAM_DL_SEL)) {
+		rtw_write8(rtwdev, REG_MCUFW_CTRL, 0x00);
+	}
 
 	en_download_firmware_legacy(rtwdev, true);
 	ret = download_firmware_legacy(rtwdev, fw->firmware->data, fw->firmware->size);
