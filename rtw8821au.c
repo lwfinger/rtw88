@@ -23,7 +23,7 @@ static const struct usb_device_id rtw_8821au_id_table[] = {
 	  .driver_info = (kernel_ulong_t)&(rtw8821a_hw_spec) },
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x0411, 0x0242, 0xff, 0xff, 0xff),
 	  .driver_info = (kernel_ulong_t)&(rtw8821a_hw_spec) }, /* Buffalo */
-	{ USB_DEVICE_AND_INTERFACE_INFO(0x0411, 0x029B, 0xff, 0xff, 0xff),
+	{ USB_DEVICE_AND_INTERFACE_INFO(0x0411, 0x029b, 0xff, 0xff, 0xff),
 	  .driver_info = (kernel_ulong_t)&(rtw8821a_hw_spec) }, /* Buffalo */
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x04bb, 0x0953, 0xff, 0xff, 0xff),
 	  .driver_info = (kernel_ulong_t)&(rtw8821a_hw_spec) }, /* I-O DATA */
@@ -80,5 +80,5 @@ static struct usb_driver rtw_8821au_driver = {
 module_usb_driver(rtw_8821au_driver);
 
 MODULE_AUTHOR("Hans Ulli Kroll <linux@ulli-kroll.de>");
-MODULE_DESCRIPTION("Realtek 802.11ac wireless 8821cu driver");
+MODULE_DESCRIPTION("Realtek 802.11ac wireless 8821au driver");
 MODULE_LICENSE("Dual BSD/GPL");
