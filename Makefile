@@ -176,6 +176,8 @@ else
 	echo "Skipping key creation"
 endif
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_pci.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_usb.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_sdio.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_core.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723d.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723de.ko
