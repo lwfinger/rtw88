@@ -1012,9 +1012,9 @@ static u8 rtw_get_rsvd_page_probe_req_location(struct rtw_dev *rtwdev,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 8, 0)
 			rtw_ssid_equal(rsvd_pkt->ssid, ssid))
 #else
-			cfg80211_ssid_eq(rsvd_pkt->ssid, ssid))
+		    cfg80211_ssid_eq(rsvd_pkt->ssid, ssid))
 #endif
-				location = rsvd_pkt->page;
+			location = rsvd_pkt->page;
 	}
 
 	return location;
