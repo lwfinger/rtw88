@@ -185,7 +185,7 @@ void rtw_rx_fill_rx_status(struct rtw_dev *rtwdev,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
 		rx_status->encoding = RX_ENC_HT;
 #else
-		rx_status->flag |= RX_FLAG_VHT;
+		rx_status->flag |= RX_FLAG_HT;
 #endif
 
 	if (rx_status->band == NL80211_BAND_5GHZ &&

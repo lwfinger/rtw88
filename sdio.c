@@ -503,8 +503,8 @@ static int rtw_sdio_read_port(struct rtw_dev *rtwdev, u8 *buf, size_t count)
 	struct mmc_host *host = rtwsdio->sdio_func->card->host;
 	bool bus_claim = rtw_sdio_bus_claim_needed(rtwsdio);
 	u32 rxaddr = rtwsdio->rx_addr++;
+	int ret = 0, err;
 	size_t bytes;
-	int ret;
 
 	if (bus_claim)
 		sdio_claim_host(rtwsdio->sdio_func);
@@ -512,14 +512,23 @@ static int rtw_sdio_read_port(struct rtw_dev *rtwdev, u8 *buf, size_t count)
 	while (count > 0) {
 		bytes = min_t(size_t, host->max_req_size, count);
 
-		ret = sdio_memcpy_fromio(rtwsdio->sdio_func, buf,
+		err = sdio_memcpy_fromio(rtwsdio->sdio_func, buf,
 					 RTW_SDIO_ADDR_RX_RX0FF_GEN(rxaddr),
 					 bytes);
-		if (ret) {
+		if (err) {
 			rtw_warn(rtwdev,
-				 "Failed to read %zu byte(s) from SDIO port 0x%08x",
-				 bytes, rxaddr);
-			break;
+				 "Failed to read %zu byte(s) from SDIO port 0x%08x: %d",
+				 bytes, rxaddr, err);
+
+			 /* Signal to the caller that reading did not work and
+			  * that the data in the buffer is short/corrupted.
+			  */
+			ret = err;
+
+			/* Don't stop here - instead drain the remaining data
+			 * from the card's buffer, else the card will return
+			 * corrupt data for the next rtw_sdio_read_port() call.
+			 */
 		}
 
 		count -= bytes;
