@@ -102,6 +102,15 @@ rtw_8821c-objs		:= rtw8821c.o rtw8821c_table.o
 obj-m	+= rtw_8821ce.o
 rtw_8821ce-objs		:= rtw8821ce.o
 
+obj-m	+= rtw_8821a.o
+rtw_8821a-objs		:= rtw8821a.o rtw8821a_table.o
+
+obj-m	   += rtw_8821ae.o
+rtw_8821ae-objs		:= rtw8821ae.o
+
+obj-m	   += rtw_8821au.o
+rtw_8821au-objs		:= rtw8821au.o
+
 obj-m	   += rtw_8821cs.o
 rtw_8821cs-objs		:= rtw8821cs.o
 
@@ -167,6 +176,8 @@ else
 	echo "Skipping key creation"
 endif
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_pci.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_usb.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_sdio.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_core.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723d.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723de.ko
