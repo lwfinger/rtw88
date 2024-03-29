@@ -161,7 +161,7 @@ ifeq ($(COMPRESS_XZ), y)
 	@xz -f $(MODDESTDIR)/*.ko
 endif
 
-	@depmod $(DEPMOD_ARGS) -a $(KVER)
+	depmod -a $(KVER)
 
 	@echo "Install rtw88 SUCCESS"
 
