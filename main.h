@@ -33,6 +33,27 @@
 #define RHEL_RELEASE_VERSION(a, b) a<<8 & b
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 8, 0)
+/**
+ * cfg80211_ssid_eq - compare two SSIDs
+ * @a: first SSID
+ * @b: second SSID
+ *
+ * Return: %true if SSIDs are equal, %false otherwise.
+ */
+static inline bool
+cfg80211_ssid_eq(struct cfg80211_ssid *a, struct cfg80211_ssid *b)
+{
+       if (WARN_ON(!a || !b))
+               return false;
+       if (a->ssid_len != b->ssid_len)
+               return false;
+       return memcmp(a->ssid, b->ssid, a->ssid_len) ? false : true;
+}
+
+#endif
+
+
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)) || defined(RHEL_RELEASE) && (RHEL_RELEASE_CODE < RHEL_RELEASE_VERSION(8,0))
 /* see Documentation/timers/timers-howto.rst for the thresholds */
 static inline void fsleep(unsigned long usecs)
