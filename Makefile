@@ -169,6 +169,11 @@ uninstall:
 	@modprobe -r rtw_8822be
 	@modprobe -r rtw_8822ce
 	@modprobe -r rtw_8723de
+	@modprobe -r rtw_8723de
+	@modprobe -r rtw_8723de
+	@modprobe -r rtw_8723de
+	@modprobe -r rtw_8723de
+	@modprobe -r rtw_8723de
 	@rm -f $(MODDESTDIR)/rtw_*.ko
 	
 	@depmod $(DEPMOD_ARGS)
@@ -210,6 +215,12 @@ endif
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822ce.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822cu.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822cs.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821a.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821ae.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821au.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8703b.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723x.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723cs.ko
 
 sign-install: all sign install
 
