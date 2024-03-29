@@ -1867,6 +1867,7 @@ struct rtw_efuse {
 	u8 country_code[2];
 	u8 rf_board_option;
 	u8 rfe_option;
+	u8 rfe_option_full;
 	u8 power_track_type;
 	u8 thermal_meter[RTW_RF_PATH_MAX];
 	u8 thermal_meter_k;

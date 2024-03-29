@@ -1049,6 +1049,8 @@ void rtw_phy_setup_phy_cond(struct rtw_dev *rtwdev, u32 pkg)
 	cond.pkg = pkg ? pkg : 15;
 	cond.plat = 0x04;
 	cond.rfe = efuse->rfe_option;
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821C)
+		cond.rfe = efuse->rfe_option_full >> 3;
 
 	switch (rtw_hci_type(rtwdev)) {
 	case RTW_HCI_TYPE_USB:
