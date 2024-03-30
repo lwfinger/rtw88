@@ -2047,6 +2047,7 @@ struct rtw_hal {
 	u32 antenna_rx;
 	u8 bfee_sts_cap;
 	bool txrx_1ss;
+	bool cck_high_power;
 
 	/* protect tx power section */
 	struct mutex tx_power_mutex;
