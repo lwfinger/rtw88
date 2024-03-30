@@ -1436,6 +1436,7 @@ static struct rtw_chip_ops rtw8723d_ops = {
 	.query_rx_desc		= rtw8723d_query_rx_desc,
 	.set_channel		= rtw8723d_set_channel,
 	.mac_init		= rtw8723x_mac_init,
+	.llt_init_legacy	= rtw_llt_init_legacy,
 	.shutdown		= rtw8723d_shutdown,
 	.read_rf		= rtw_phy_read_rf_sipi,
 	.write_rf		= rtw_phy_write_rf_reg_sipi,

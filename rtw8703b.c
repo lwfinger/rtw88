@@ -1951,6 +1951,7 @@ static const struct coex_tdma_para tdma_sant_8703b[] = {
 
 static struct rtw_chip_ops rtw8703b_ops = {
 	.mac_init		= rtw8723x_mac_init,
+	.llt_init_legacy	= rtw_llt_init_legacy,
 	.dump_fw_crash		= NULL,
 	.shutdown		= NULL,
 	.read_efuse		= rtw8703b_read_efuse,
