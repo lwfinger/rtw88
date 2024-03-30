@@ -1767,6 +1767,7 @@ void rtw_phy_load_tables(struct rtw_dev *rtwdev)
 {
 	const struct rtw_rfe_def *rfe_def = rtw_get_rfe_def(rtwdev);
 	const struct rtw_chip_info *chip = rtwdev->chip;
+	const struct rtw_efuse *efuse = &rtwdev->efuse;
 	u8 rf_path;
 
 	rtw_load_table(rtwdev, chip->mac_tbl);
@@ -1775,6 +1776,14 @@ void rtw_phy_load_tables(struct rtw_dev *rtwdev)
 	if (rfe_def->agc_btg_tbl)
 		rtw_load_table(rtwdev, rfe_def->agc_btg_tbl);
 	rtw_load_rfk_table(rtwdev);
+	if (chip->id == RTW_CHIP_TYPE_8821C) {
+		if (efuse->rfe_option_full <= 0x2f && efuse->rfe_option_full >= 0x28)
+			rtw_write32(rtwdev, REG_RFE_CTRL8, 0x00000073);
+		else if (efuse->rfe_option_full == 4)
+			rtw_write32(rtwdev, REG_RFE_CTRL8, 0x20000077);
+		else
+			rtw_write32(rtwdev, REG_RFE_CTRL8, 0x10000077);
+	}
 
 	for (rf_path = 0; rf_path < rtwdev->hal.rf_path_num; rf_path++) {
 		const struct rtw_table *tbl;
