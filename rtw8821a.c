@@ -2040,7 +2040,7 @@ static int rtw8821a_read_efuse(struct rtw_dev *rtwdev, u8 *log_map)
 		.ops = &rtw8821a_ops,
 		.id = RTW_CHIP_TYPE_8821C,
 		.fw_name = "rtw88/rtw8821a_fw.bin",
-		.wlan_cpu = RTW_WCPU_11AC,
+		.wlan_cpu = RTW_WCPU_11N,,
 		.tx_pkt_desc_sz = 48,
 		.tx_buf_desc_sz = 16,
 		.rx_pkt_desc_sz = 24,
