@@ -157,7 +157,10 @@ static void rtw_fw_ra_report_iter(void *data, struct ieee80211_sta *sta)
 
 	rate = GET_RA_REPORT_RATE(ra_data->payload);
 	sgi = GET_RA_REPORT_SGI(ra_data->payload);
-	bw = GET_RA_REPORT_BW(ra_data->payload);
+	if (si->rtwdev->chip->c2h_ra_report_size < 7)
+		bw = si->bw_mode;
+	else
+		bw = GET_RA_REPORT_BW(ra_data->payload);
 
 	if (rate < DESC_RATEMCS0) {
 		si->ra_report.txrate.legacy = rtw_desc_to_bitrate(rate);
@@ -203,7 +206,8 @@ static void rtw_fw_ra_report_handle(struct rtw_dev *rtwdev, u8 *payload,
 {
 	struct rtw_fw_iter_ra_data ra_data;
 
-	if (WARN(length < 7, "invalid ra report c2h length\n"))
+	if (WARN(length < rtwdev->chip->c2h_ra_report_size,
+		 "invalid ra report c2h length %d\n", length))
 		return;
 
 	rtwdev->dm_info.tx_rate = GET_RA_REPORT_RATE(payload);

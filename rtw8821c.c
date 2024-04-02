@@ -2031,6 +2031,7 @@ const struct rtw_chip_info rtw8821c_hw_spec = {
 	.rfe_defs_size = ARRAY_SIZE(rtw8821c_rfe_defs),
 	.rx_ldpc = false,
 	.has_hw_feature_report = true,
+	.c2h_ra_report_size = 7,
 	.pwr_track_tbl = &rtw8821c_rtw_pwr_track_tbl,
 	.iqk_threshold = 8,
 	.bfer_su_max_num = 2,
