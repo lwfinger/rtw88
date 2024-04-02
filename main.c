@@ -220,6 +220,10 @@ static void rtw_watch_dog_work(struct work_struct *work)
 	bool busy_traffic = test_bit(RTW_FLAG_BUSY_TRAFFIC, rtwdev->flags);
 	bool ps_active;
 
+	///TODO
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A || rtwdev->chip->id == RTW_CHIP_TYPE_8812A)
+		return;
+
 	mutex_lock(&rtwdev->mutex);
 
 	if (!test_bit(RTW_FLAG_RUNNING, rtwdev->flags))
