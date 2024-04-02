@@ -2028,6 +2028,9 @@ static int rtw_dump_hw_feature(struct rtw_dev *rtwdev)
 	u8 bw;
 	int i;
 
+	if (!rtwdev->chip->has_hw_feature_report)
+		goto print_hw_cap;
+
 	id = rtw_read8(rtwdev, REG_C2HEVT);
 	if (id != C2H_HW_FEATURE_REPORT) {
 		rtw_err(rtwdev, "failed to read hw feature report\n");
@@ -2052,6 +2055,7 @@ static int rtw_dump_hw_feature(struct rtw_dev *rtwdev)
 	    efuse->hw_cap.nss > rtwdev->hal.rf_path_num)
 		efuse->hw_cap.nss = rtwdev->hal.rf_path_num;
 
+print_hw_cap:
 	rtw_dbg(rtwdev, RTW_DBG_EFUSE,
 		"hw cap: hci=0x%02x, bw=0x%02x, ptcl=0x%02x, ant_num=%d, nss=%d\n",
 		efuse->hw_cap.hci, efuse->hw_cap.bw, efuse->hw_cap.ptcl,

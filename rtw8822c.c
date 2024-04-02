@@ -5397,6 +5397,7 @@ const struct rtw_chip_info rtw8822c_hw_spec = {
 	.bfer_mu_max_num = 1,
 	.rx_ldpc = true,
 	.tx_stbc = true,
+	.has_hw_feature_report = true,
 	.edcca_th = rtw8822c_edcca_th,
 	.l2h_th_ini_cs = 60,
 	.l2h_th_ini_ad = 45,
