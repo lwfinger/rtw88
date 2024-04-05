@@ -135,6 +135,9 @@ static void rtw8812a_read_usb_type(struct rtw_dev *rtwdev)
 	else
 		efuse->hw_cap.nss = 2;
 
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A)
+		return;
+
 	for (i = 0; i < 2; i++) {
 		rtw_read8_physical_efuse(rtwdev, 1019 - i, &val8);
 
@@ -155,21 +158,32 @@ static void rtw8812a_read_usb_type(struct rtw_dev *rtwdev)
 	}
 
 	if (antenna == 1) {
-		rtw_info(rtwdev, "This RTL8812A says it is 1T1R.\n");
+		rtw_info(rtwdev, "This RTL8812AU says it is 1T1R.\n");
 
 		efuse->hw_cap.nss = 1;
 		hal->rf_type = RF_1T1R;
 		hal->rf_path_num = 1;
+		hal->rf_phy_num = 1;
 		hal->antenna_tx = BB_PATH_A;
 		hal->antenna_rx = BB_PATH_A;
-	} else if (antenna == 2 && wmode == 2) {
-		rtw_info(rtwdev, "This RTL8812A says it can't do VHT.\n");
+	} else {
+		/* Override rtw_chip_parameter_setup(). It detects 8812au as 1T1R. */
+		efuse->hw_cap.nss = 2;
+		hal->rf_type = RF_2T2R;
+		hal->rf_path_num = 2;
+		hal->rf_phy_num = 2;
+		hal->antenna_tx = BB_PATH_AB;
+		hal->antenna_rx = BB_PATH_AB;
 
-		/* Can't be EFUSE_HW_CAP_IGNORE and can't be
-		 * EFUSE_HW_CAP_PTCL_VHT, so make it 1.
-		 */
-		efuse->hw_cap.ptcl = 1;
-		efuse->hw_cap.bw &= ~BIT(RTW_CHANNEL_WIDTH_80);
+		if (antenna == 2 && wmode == 2) {
+			rtw_info(rtwdev, "This RTL8812AU says it can't do VHT.\n");
+
+			/* Can't be EFUSE_HW_CAP_IGNORE and can't be
+			* EFUSE_HW_CAP_PTCL_VHT, so make it 1.
+			*/
+			efuse->hw_cap.ptcl = 1;
+			efuse->hw_cap.bw &= ~BIT(RTW_CHANNEL_WIDTH_80);
+		}
 	}
 }
 
