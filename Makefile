@@ -126,6 +126,9 @@ rtw_8821ae-objs		:= rtw8821ae.o
 obj-m	   += rtw_8821au.o
 rtw_8821au-objs		:= rtw8821au.o
 
+obj-m	   += rtw_8812au.o
+rtw_8812au-objs		:= rtw8812au.o
+
 obj-m	   += rtw_8821cs.o
 rtw_8821cs-objs		:= rtw8821cs.o
 
