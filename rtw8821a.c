@@ -691,7 +691,7 @@ static void rtw8812a_phy_set_rfe_reg_5g(struct rtw_dev *rtwdev)
 	}
 }
 
-void rtw8821a_switch_band(struct rtw_dev *rtwdev, u8 channel, u8 bw)
+static void rtw8821a_switch_band(struct rtw_dev *rtwdev, u8 channel, u8 bw)
 {
 	const struct rtw_chip_info *chip = rtwdev->chip;
 	u16 basic_rates, reg_41a;
@@ -998,7 +998,7 @@ static void rtw8821a_switch_channel(struct rtw_dev *rtwdev, u8 channel, u8 bw)
 	}
 }
 
-void rtw8821a_set_reg_bw(struct rtw_dev *rtwdev, u8 bw)
+static void rtw8821a_set_reg_bw(struct rtw_dev *rtwdev, u8 bw)
 {
 	u16 val16 = rtw_read16(rtwdev, REG_WMAC_TRXPTCL_CTL);
 
