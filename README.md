@@ -3,7 +3,7 @@
 
 🌟 **Up-to-Date Drivers**: The code in this repo stays in sync with the `wireless-next` repository, with additional changes to accommodate kernel API changes over time. The current repo matches the kernel as of March 5, 2024.
 
-📌 **Note**: The `wireless-next` repo contains the code set for the ***next*** kernel version. At present, kernel 6.7 is out, kernel mainline repo is on 6.8-rcX, and `wireless-next` targets kernel 6.9 material.
+📌 **Note**: The `wireless-next` repo contains the code set for the ***next*** kernel version. If kernel 6.X is out, kernel mainline repo is on 6.X+1-rcY, and `wireless-next` targets kernel 6.X+2 material.
 
 ---
 
