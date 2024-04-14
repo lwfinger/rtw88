@@ -540,11 +540,21 @@ static void try_mac_from_devicetree(struct rtw_dev *rtwdev)
 {
 	struct device_node *node = rtwdev->dev->of_node;
 	struct rtw_efuse *efuse = &rtwdev->efuse;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 13, 0)
 	int ret;
+#else
+	const void *ret;
+#endif
 
 	if (node) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 13, 0)
 		ret = of_get_mac_address(node, efuse->addr);
 		if (ret == 0) {
+#else
+		ret = of_get_mac_address(node);
+		if (!IS_ERR(ret)) {
+			ether_addr_copy(efuse->addr, ret);
+#endif
 			rtw_dbg(rtwdev, RTW_DBG_EFUSE,
 				"got wifi mac address from DT: %pM\n",
 				efuse->addr);
