@@ -25,6 +25,10 @@ endif
 ifneq ("","$(wildcard $(MODDESTDIR)/*.ko.xz)")
 COMPRESS_XZ := y
 endif
+ifneq ("","$(wildcard $(MODDESTDIR)/*.ko.zst)")
+COMPRESS_ZSTD := y
+endif
+
 ifeq ("","$(wildcard MOK.der)")
 NO_SKIP_SIGN := y
 endif
@@ -158,7 +162,10 @@ ifeq ($(COMPRESS_GZIP), y)
 	@gzip -f $(MODDESTDIR)/*.ko
 endif
 ifeq ($(COMPRESS_XZ), y)
-	@xz -f $(MODDESTDIR)/*.ko
+	@xz -f -C crc32 $(MODDESTDIR)/*.ko
+endif
+ifeq ($(COMPRESS_ZSTD), y)
+	@zstd -f -q --rm $(MODDESTDIR)/*.ko
 endif
 
 	depmod -a $(KVER)
@@ -167,14 +174,23 @@ endif
 
 uninstall:
 	@modprobe -r rtw_8822be
+	@modprobe -r rtw_8822bs
+	@modprobe -r rtw_8822bu
 	@modprobe -r rtw_8822ce
+	@modprobe -r rtw_8822cs
+	@modprobe -r rtw_8822cu
 	@modprobe -r rtw_8723de
 	@modprobe -r rtw_8723de
 	@modprobe -r rtw_8723de
 	@modprobe -r rtw_8723de
 	@modprobe -r rtw_8723de
 	@modprobe -r rtw_8723de
-	@rm -f $(MODDESTDIR)/rtw_*.ko
+	@modprobe -r rtw_8723ds
+	@modprobe -r rtw_8723cs
+	@modprobe -r rtw_8723du
+	@modprobe -r rtw_8821cs
+	@modprobe -r rtw_8821cu
+	@rm -f $(MODDESTDIR)/rtw_*.ko*
 	
 	@depmod $(DEPMOD_ARGS)
 	
