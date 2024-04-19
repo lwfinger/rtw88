@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
 /* Copyright Fiona Klute <fiona.klute@gmx.de> */
 
+#include <linux/of.h>
 #include <linux/of_net.h>
 #include "main.h"
 #include "coex.h"
