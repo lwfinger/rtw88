@@ -452,6 +452,12 @@ static int rtw8821a_mac_init(struct rtw_dev *rtwdev)
 		 */
 		rtw_write8(rtwdev, REG_HIQ_NO_LMT_EN, 0xff);
 
+	///TODO: blinking controlled by mac80211
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A)
+		rtw_write8(rtwdev, REG_LED_CFG + 2, BIT(1) | BIT(5));
+	else
+		rtw_write8(rtwdev, REG_LED_CFG, BIT(1) | BIT(5));
+
 	return 0;
 }
 
