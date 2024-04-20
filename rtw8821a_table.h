@@ -17,6 +17,7 @@ extern const struct rtw_table rtw8812a_agc_tbl;
 extern const struct rtw_table rtw8812a_bb_tbl;
 extern const struct rtw_table rtw8812a_bb_pg_tbl;
 extern const struct rtw_table rtw8812a_rf_a_tbl;
+extern const struct rtw_table rtw8812a_rf_b_tbl;
 extern const struct rtw_table rtw8812a_txpwr_lmt_tbl;
 
 #endif
