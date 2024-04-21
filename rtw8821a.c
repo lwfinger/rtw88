@@ -194,6 +194,9 @@ static int rtw8821a_read_efuse(struct rtw_dev *rtwdev, u8 *log_map)
 	struct rtw8821a_efuse *map;
 	int i;
 
+	print_hex_dump(KERN_INFO, "", DUMP_PREFIX_OFFSET, 16, 1,
+		       log_map, chip->log_efuse_size, true);
+
 	map = (struct rtw8821a_efuse *)log_map;
 
 	efuse->rf_board_option = map->rf_board_option;
