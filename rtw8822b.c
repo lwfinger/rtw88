@@ -2172,6 +2172,8 @@ static struct rtw_prioq_addrs prioq_addrs_8822b = {
 };
 
 static struct rtw_chip_ops rtw8822b_ops = {
+	.power_on		= rtw_power_on,
+	.power_off		= rtw_power_off,
 	.phy_set_param		= rtw8822b_phy_set_param,
 	.read_efuse		= rtw8822b_read_efuse,
 	.query_rx_desc		= rtw8822b_query_rx_desc,
