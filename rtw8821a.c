@@ -1294,10 +1294,11 @@ static void rtw8821a_set_tx_power_index(struct rtw_dev *rtwdev)
 
 	for (path = 0; path < hal->rf_path_num; path++) {
 		for (rs = 0; rs < RTW_RATE_SECTION_MAX; rs++) {
-			if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A &&
+			if (hal->rf_path_num == 1 &&
 			    (rs == RTW_RATE_SECTION_HT_2S ||
 			     rs == RTW_RATE_SECTION_VHT_2S))
 				continue;
+
 			rtw8821a_set_tx_power_index_by_rate(rtwdev, path, rs);
 		}
 	}
