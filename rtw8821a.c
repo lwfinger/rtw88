@@ -1277,6 +1277,9 @@ rtw8821a_set_tx_power_index_by_rate(struct rtw_dev *rtwdev, u8 path, u8 rs)
 		write_1ss_mcs9 = rate == DESC_RATEVHT1SS_MCS9 && hal->rf_path_num == 1;
 		if (shift == 0x3 || write_1ss_mcs9) {
 			rate_idx = rate & 0xfc;
+			if (rate >= DESC_RATEVHT1SS_MCS0)
+				rate_idx -= 0x10;
+
 			rtw_write32(rtwdev, offset_txagc[path] + rate_idx,
 				    phy_pwr_idx);
 			phy_pwr_idx = 0;
