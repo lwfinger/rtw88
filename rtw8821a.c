@@ -1124,7 +1124,7 @@ static void rtw8821a_set_channel(struct rtw_dev *rtwdev, u8 channel, u8 bw,
 	rtw8821a_set_channel_rf(rtwdev, channel, bw);
 }
 
-static s8 rtw8821a_get_cck_rx_pwr(struct rtw_dev *rtwdev, u8 lna_idx, u8 vga_idx)
+static s8 rtw8821a_cck_rx_pwr(struct rtw_dev *rtwdev, u8 lna_idx, u8 vga_idx)
 {
 	static const s8 lna_gain_table[] = {15, -1, -17, 0, -30, -38};
 	s8 rx_pwr_all = 0;
@@ -1138,6 +1138,45 @@ static s8 rtw8821a_get_cck_rx_pwr(struct rtw_dev *rtwdev, u8 lna_idx, u8 vga_idx
 	case 0:
 		lna_gain = lna_gain_table[lna_idx];
 		rx_pwr_all = lna_gain - 2 * vga_idx;
+		break;
+	default:
+		break;
+	}
+
+	return rx_pwr_all;
+}
+
+static s8 rtw8812a_cck_rx_pwr(struct rtw_dev *rtwdev, u8 lna_idx, u8 vga_idx)
+{
+	s8 rx_pwr_all = 0;
+
+	switch (lna_idx) {
+	case 7:
+		if (vga_idx <= 27)
+			rx_pwr_all = -94 + 2 * (27 - vga_idx);
+		else
+			rx_pwr_all = -94;
+		break;
+	case 6:
+		rx_pwr_all = -42 + 2 * (2 - vga_idx);
+		break;
+	case 5:
+		rx_pwr_all = -36 + 2 * (7 - vga_idx);
+		break;
+	case 4:
+		rx_pwr_all = -30 + 2 * (7 - vga_idx);
+		break;
+	case 3:
+		rx_pwr_all = -18 + 2 * (7 - vga_idx);
+		break;
+	case 2:
+		rx_pwr_all = 2 * (5 - vga_idx);
+		break;
+	case 1:
+		rx_pwr_all = 14 - 2 * vga_idx;
+		break;
+	case 0:
+		rx_pwr_all = 20 - 2 * vga_idx;
 		break;
 	default:
 		break;
@@ -1163,7 +1202,11 @@ static void rtw8821a_query_phy_status(struct rtw_dev *rtwdev, u8 *phy_status,
 		lna_idx = (cck_agc_rpt & 0xE0) >> 5;
 		vga_idx = cck_agc_rpt & 0x1F;
 
-		rx_pwr_db = rtw8821a_get_cck_rx_pwr(rtwdev, lna_idx, vga_idx);
+		if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A)
+			rx_pwr_db = rtw8821a_cck_rx_pwr(rtwdev, lna_idx, vga_idx);
+		else
+			rx_pwr_db = rtw8812a_cck_rx_pwr(rtwdev, lna_idx, vga_idx);
+
 		pkt_stat->rx_power[RF_PATH_A] = rx_pwr_db;
 		pkt_stat->rssi = rtw_phy_rf_power_2_rssi(pkt_stat->rx_power, 1);
 		dm_info->rssi[RF_PATH_A] = pkt_stat->rssi;
