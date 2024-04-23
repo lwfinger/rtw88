@@ -232,10 +232,13 @@ static int rtw8821a_read_efuse(struct rtw_dev *rtwdev, u8 *log_map)
 		efuse->btcoex = (map->rf_board_option & 0xe0) == 0x20;
 	efuse->share_ant = !!(efuse->bt_setting & BIT(0));
 
-	if (map->rf_board_option != 0xff)
-		efuse->ant_div_cfg = u8_get_bits(map->rf_board_option, BIT(3));
-	if (efuse->btcoex && efuse->share_ant)
-		efuse->ant_div_cfg = 0;
+	// if (map->rf_board_option != 0xff)
+	// 	efuse->ant_div_cfg = u8_get_bits(map->rf_board_option, BIT(3));
+	// if (efuse->btcoex && efuse->share_ant)
+	// 	efuse->ant_div_cfg = 0;
+
+	/* No antenna diversity because it's disabled in the vendor driver */
+	efuse->ant_div_cfg = 0;
 
 	efuse->ant_div_type = map->rf_antenna_option;
 	if (efuse->ant_div_type == 0xff)
