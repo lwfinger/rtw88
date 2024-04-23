@@ -1193,7 +1193,7 @@ static void rtw8821a_query_phy_status(struct rtw_dev *rtwdev, u8 *phy_status,
 	u8 lna_idx, vga_idx, cck_agc_rpt;
 	const s8 min_rx_power = -120;
 	u8 rssi, val, i;
-	s8 rx_pwr_db;
+	s8 rx_pwr_db, power_a, power_b;
 
 	phy_sts = (struct rtw8821a_phy_status_rpt *)phy_status;
 
@@ -1255,9 +1255,13 @@ static void rtw8821a_query_phy_status(struct rtw_dev *rtwdev, u8 *phy_status,
 
 		pkt_stat->rssi = rtw_phy_rf_power_2_rssi(pkt_stat->rx_power,
 							 rtwdev->hal.rf_path_num);
-		pkt_stat->signal_power = max3(pkt_stat->rx_power[RF_PATH_A],
-					      pkt_stat->rx_power[RF_PATH_B],
-					      min_rx_power);
+
+		power_a = pkt_stat->rx_power[RF_PATH_A];
+		power_b = pkt_stat->rx_power[RF_PATH_B];
+		if (rtwdev->hal.rf_path_num == 1)
+			power_b = power_a;
+
+		pkt_stat->signal_power = max3(power_a, power_b, min_rx_power);
 	}
 }
 
