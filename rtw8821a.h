@@ -209,9 +209,27 @@ struct rtw8821a_phy_status_rpt {
 
 #define REG_SYS_CTRL				0x000
 #define BIT_FEN_EN				BIT(26)
+#define REG_APS_FSMCO				0x04
+#define  APS_FSMCO_MAC_ENABLE			BIT(8)
+#define  APS_FSMCO_MAC_OFF			BIT(9)
+#define  APS_FSMCO_HW_POWERDOWN			BIT(15)
 #define REG_ACLK_MON				0x3e
+#define REG_RF_B_CTRL				0x76
 #define REG_HIMR0				0xb0
+#define REG_HISR0				0xb4
 #define REG_HIMR1				0xb8
+#define REG_HISR1				0xbc
+#define HCI_TXDMA_EN				BIT(0)
+#define HCI_RXDMA_EN				BIT(1)
+#define TXDMA_EN				BIT(2)
+#define RXDMA_EN				BIT(3)
+#define PROTOCOL_EN				BIT(4)
+#define SCHEDULE_EN				BIT(5)
+#define MACTXEN					BIT(6)
+#define MACRXEN					BIT(7)
+#define ENSWBCN					BIT(8)
+#define ENSEC					BIT(9)
+#define CALTMR_EN				BIT(10)	/* 32k CAL TMR enable */
 #define REG_MSR					0x102
 #define REG_PBP					0x104
 #define PBP_RX_MASK				0x0f
@@ -225,6 +243,7 @@ struct rtw8821a_phy_status_rpt {
 #define REG_TXPKT_EMPTY				0x41a
 #define REG_AMPDU_MAX_LENGTH			0x458
 #define REG_FAST_EDCA_CTRL			0x460
+#define REG_TX_RPT_CTRL				0x4ec
 #define REG_TX_RPT_TIME				0x4f0
 #define REG_BCNTCFG				0x510
 #define REG_INIRTS_RATE_SEL 			0x0480
@@ -246,6 +265,7 @@ struct rtw8821a_phy_status_rpt {
 #define REG_CLKTRK				0x860
 #define REG_ADCCLK				0x8ac
 #define REG_HSSI_READ				0x8b0
+#define REG_FPGA0_XCD_RF_PARA			0x8b4
 #define REG_ADC160				0x8c4
 #define REG_ADC40				0x8c8
 #define REG_CHFIR				0x8f0

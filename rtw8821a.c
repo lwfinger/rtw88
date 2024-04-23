@@ -2,8 +2,6 @@
 /* Copyright(c) 2018-2019  Realtek Corporation
  */
 
-#include "linux/bitfield.h"
-#include "linux/bits.h"
 #include <linux/usb.h>
 #include "main.h"
 #include "coex.h"
@@ -15,11 +13,404 @@
 #include "rtw8821a_table.h"
 #include "mac.h"
 #include "reg.h"
+#include "sec.h"
 #include "debug.h"
 #include "bf.h"
 #include "regd.h"
 #include "efuse.h"
 #include "usb.h"
+
+static struct rtw_pwr_seq_cmd trans_carddis_to_cardemu_8821a[] = {
+	// {0x0086,
+	//  RTW_PWR_CUT_ALL_MSK,
+	//  RTW_RTW_PWR_INTF_SDIO_MSK,
+	//  RTW_PWR_ADDR_SDIO,
+	//  RTW_RTW_PWR_CMD_WRITE, BIT(0), 0},
+	// {0x0086,
+	//  RTW_PWR_CUT_ALL_MSK,
+	//  RTW_RTW_PWR_INTF_SDIO_MSK,
+	//  RTW_PWR_ADDR_SDIO,
+	//  RTW_RTW_PWR_CMD_POLLING, BIT(1), BIT(1)},
+	// {0x004A,
+	//  RTW_PWR_CUT_ALL_MSK,
+	//  RTW_RTW_PWR_INTF_USB_MSK,
+	//  RTW_PWR_ADDR_MAC,
+	//  RTW_RTW_PWR_CMD_WRITE, BIT(0), 0},
+	// {0x0005,
+	//  RTW_PWR_CUT_ALL_MSK,
+	//  RTW_PWR_INTF_ALL_MSK,
+	//  RTW_PWR_ADDR_MAC,
+	//  RTW_RTW_PWR_CMD_WRITE, BIT(3) | BIT(4) | BIT(7), 0},
+	// {0x0300,
+	//  RTW_PWR_CUT_ALL_MSK,
+	//  RTW_RTW_PWR_INTF_PCI_MSK,
+	//  RTW_PWR_ADDR_MAC,
+	//  RTW_RTW_PWR_CMD_WRITE, 0xFF, 0},
+	// {0x0301,
+	//  RTW_PWR_CUT_ALL_MSK,
+	//  RTW_RTW_PWR_INTF_PCI_MSK,
+	//  RTW_PWR_ADDR_MAC,
+	//  RTW_RTW_PWR_CMD_WRITE, 0xFF, 0},
+
+	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(3) | BIT(7), 0}, /*clear suspend enable and power down enable*/	\
+	{0x0086, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_SDIO_MSK, RTW_PWR_ADDR_SDIO, RTW_PWR_CMD_WRITE, BIT(0), 0}, /*Set SDIO suspend local register*/	\
+	{0x0086, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_SDIO_MSK, RTW_PWR_ADDR_SDIO, RTW_PWR_CMD_POLLING, BIT(1), BIT(1)}, /*wait power state to suspend*/\
+	{0x004A, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), 0}, /*0x48[16] = 0 to disable GPIO9 as EXT WAKEUP*/   \
+	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(3) | BIT(4), 0}, /*0x04[12:11] = 2b'01enable WL suspend*/\
+	{0x0023, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_SDIO_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(4), 0}, /*0x23[4] = 1b'0 12H LDO enter normal mode*/   \
+	{0x0301, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0},/*PCIe DMA start*/
+
+	{0xFFFF,
+	 RTW_PWR_CUT_ALL_MSK,
+	 RTW_PWR_INTF_ALL_MSK,
+	 0,
+	 RTW_PWR_CMD_END, 0, 0},
+};
+
+static struct rtw_pwr_seq_cmd trans_cardemu_to_act_8821a[] = {
+	{0x0020, RTW_PWR_CUT_ALL_MSK,			\
+	 RTW_PWR_INTF_USB_MSK|RTW_PWR_INTF_SDIO_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), BIT(0) \
+	 /*0x20[0] = 1b'1 enable LDOA12 MACRO block for all interface*/},   \
+	{0x0067, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK | RTW_PWR_INTF_SDIO_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(4), 0}, /*0x67[0] = 0 to disable BT_GPS_SEL pins*/	\
+	{0x0001, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK | RTW_PWR_INTF_SDIO_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_DELAY, 1, RTW_PWR_DELAY_MS},/*Delay 1ms*/   \
+	{0x0000, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK | RTW_PWR_INTF_SDIO_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(5), 0}, /*0x00[5] = 1b'0 release analog Ips to digital ,1:isolation*/   \
+	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, (BIT(4) | BIT(3) | BIT(2)), 0},/* disable SW LPS 0x04[10]=0 and WLSUS_EN 0x04[12:11]=0*/	\
+	{0x0075, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0) , BIT(0)},/* Disable USB suspend */	\
+	{0x0006, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, BIT(1), BIT(1)},/* wait till 0x04[17] = 1    power ready*/	\
+	{0x0075, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0) , 0},/* Enable USB suspend */	\
+	{0x0006, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), BIT(0)},/* release WLON reset  0x04[16]=1*/	\
+	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(7), 0},/* disable HWPDN 0x04[15]=0*/	\
+	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, (BIT(4) | BIT(3)), 0},/* disable WL suspend*/	\
+	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), BIT(0)},/* polling until return 0*/	\
+	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, BIT(0), 0},/**/	\
+	{0x004F, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), BIT(0)},/*0x4C[24] = 0x4F[0] = 1, switch DPDT_SEL_P output from WL BB */\
+	{0x0067, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, (BIT(5) | BIT(4)), (BIT(5) | BIT(4))},/*0x66[13] = 0x67[5] = 1, switch for PAPE_G/PAPE_A from WL BB ; 0x66[12] = 0x67[4] = 1, switch LNAON from WL BB */\
+	{0x0025, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(6), 0},/*anapar_mac<118> , 0x25[6]=0 by wlan single function*/\
+	{0x0049, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), BIT(1)},/*Enable falling edge triggering interrupt*/\
+	{0x0063, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), BIT(1)},/*Enable GPIO9 interrupt mode*/\
+	{0x0062, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), 0},/*Enable GPIO9 input mode*/\
+	{0x0058, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), BIT(0)},/*Enable HSISR GPIO[C:0] interrupt*/\
+	{0x005A, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), BIT(1)},/*Enable HSISR GPIO9 interrupt*/\
+	{0x002E, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF , 0x82 },/* 0x2C[23:12]=0x820 ; XTAL trim */ \
+	{0x0010, RTW_PWR_CUT_ALL_MSK , RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(6) , BIT(6) },/* 0x10[6]=1 ; MP新增對於0x2C的控制權，須把0x10[6]設為1才能讓WLAN控制 */
+	{0xFFFF,
+	 RTW_PWR_CUT_ALL_MSK,
+	 RTW_PWR_INTF_ALL_MSK,
+	 0,
+	 RTW_PWR_CMD_END, 0, 0},
+};
+
+static const struct rtw_pwr_seq_cmd trans_act_to_lps_8821a[] = {
+	{0x0301, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0xFF},/*PCIe DMA stop*/	\
+	{0x0522, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0xFF},/*Tx Pause*/	\
+	{0x05F8, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, 0xFF, 0},/*Should be zero if no packet is transmitting*/	\
+	{0x05F9, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, 0xFF, 0},/*Should be zero if no packet is transmitting*/	\
+	{0x05FA, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, 0xFF, 0},/*Should be zero if no packet is transmitting*/	\
+	{0x05FB, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, 0xFF, 0},/*Should be zero if no packet is transmitting*/	\
+	{0x0002, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), 0},/*CCK and OFDM are disabled, and clock are gated*/	\
+	{0x0002, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_DELAY, 0, RTW_PWR_DELAY_US},/*Delay 1us*/	\
+	{0x0002, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), 0},/*Whole BB is reset*/	\
+	{0x0100, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x03},/*Reset MAC TRX*/	\
+	{0x0101, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), 0},/*check if removed later*/	\
+	{0x0093, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_SDIO_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x00},/*When driver enter Sus/ Disable, enable LOP for BT*/	\
+	{0x0553, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(5), BIT(5)},/*Respond TxOK to scheduler*/	\
+	{0xFFFF,
+	 RTW_PWR_CUT_ALL_MSK,
+	 RTW_PWR_INTF_ALL_MSK,
+	 0,
+	 RTW_PWR_CMD_END, 0, 0},
+};
+
+static struct rtw_pwr_seq_cmd trans_act_to_cardemu_8821a[] = {
+	{0x001F, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0 \
+	/*0x1F[7:0] = 0 turn off RF*/},	\
+	{0x004F, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), 0 \
+	/*0x4C[24] = 0x4F[0] = 0, switch DPDT_SEL_P output from		\
+	 register 0x65[2] */},\
+	{0x0049, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), 0 \
+	/*Enable rising edge triggering interrupt*/}, \
+	/* Originally this was INTF_ALL, but it came from the USB driver: */ \
+	{0x0006, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), BIT(0)}, \
+	/* release WLON reset  0x04[16]=1*/	\
+	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), BIT(1) \
+	 /*0x04[9] = 1 turn off MAC by HW state machine*/},	\
+	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, BIT(1), 0 \
+	 /*wait till 0x04[9] = 0 polling until return 0 to disable*/},	\
+	{0x0000, RTW_PWR_CUT_ALL_MSK,			\
+	 RTW_PWR_INTF_USB_MSK|RTW_PWR_INTF_SDIO_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(5), BIT(5) \
+	 /*0x00[5] = 1b'1 analog Ips to digital ,1:isolation*/},   \
+	{0x0020, RTW_PWR_CUT_ALL_MSK,		\
+	 RTW_PWR_INTF_USB_MSK|RTW_PWR_INTF_SDIO_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), 0 \
+	 /*0x20[0] = 1b'0 disable LDOA12 MACRO block*/},
+	{0xFFFF,
+	 RTW_PWR_CUT_ALL_MSK,
+	 RTW_PWR_INTF_ALL_MSK,
+	 0,
+	 RTW_PWR_CMD_END, 0, 0},
+};
+
+static struct rtw_pwr_seq_cmd trans_cardemu_to_carddis_8821a[] = {
+	{0x0007, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_SDIO_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x20 \
+	 /*0x07=0x20 , SOP option to disable BG/MB*/},	\
+	{0x0005, RTW_PWR_CUT_ALL_MSK,		\
+	 RTW_PWR_INTF_USB_MSK|RTW_PWR_INTF_SDIO_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(3)|BIT(4), BIT(3) \
+	 /*0x04[12:11] = 2b'01 enable WL suspend*/},	\
+	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(2), BIT(2) \
+	 /*0x04[10] = 1, enable SW LPS*/},	\
+        {0x004A, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), 1 \
+	 /*0x48[16] = 1 to enable GPIO9 as EXT WAKEUP*/},   \
+	{0x0023, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_SDIO_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(4), BIT(4) \
+	 /*0x23[4] = 1b'1 12H LDO enter sleep mode*/},   \
+	{0x0086, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_SDIO_MSK,\
+	RTW_PWR_ADDR_SDIO, RTW_PWR_CMD_WRITE, BIT(0), BIT(0) \
+	 /*Set SDIO suspend local register*/},	\
+	{0x0086, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_SDIO_MSK,\
+	RTW_PWR_ADDR_SDIO, RTW_PWR_CMD_POLLING, BIT(1), 0 \
+	 /*wait power state to suspend*/},
+	{0xFFFF,
+	 RTW_PWR_CUT_ALL_MSK,
+	 RTW_PWR_INTF_ALL_MSK,
+	 0,
+	 RTW_PWR_CMD_END, 0, 0},
+};
+
+static const struct rtw_pwr_seq_cmd *card_enable_flow_8821a[] = {
+	trans_carddis_to_cardemu_8821a,
+	trans_cardemu_to_act_8821a,
+	NULL
+};
+
+static const struct rtw_pwr_seq_cmd *enter_lps_flow_8821a[] = {
+	trans_act_to_lps_8821a,
+	NULL
+};
+
+static const struct rtw_pwr_seq_cmd *card_disable_flow_8821a[] = {
+	trans_act_to_cardemu_8821a,
+	trans_cardemu_to_carddis_8821a,
+	NULL
+};
+
+static struct rtw_pwr_seq_cmd trans_carddis_to_cardemu_8812a[] = {
+	{0x0012, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), BIT(0) \
+	/*0x12[0] = 1 force PWM mode */},	\
+	{0x0014, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0x80, 0 \
+	/*0x14[7] = 0 turn off ZCD */},	\
+	{0x0015, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0x01, 0 \
+	/* 0x15[0] =0 trun off ZCD */},	\
+	{0x0023, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0x10, 0 \
+	/*0x23[4] = 0 hpon LDO leave sleep mode */},	\
+	{0x0046, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x00 \
+	/* gpio0~7 input mode */},	\
+	{0x0043, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x00 \
+	/* gpio11 input mode, gpio10~8 input mode */}, \
+	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(2), 0 \
+	 /*0x04[10] = 0, enable SW LPS PCIE only*/},	\
+	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(3), 0 \
+	 /*0x04[11] = 2b'01enable WL suspend*/},	\
+	{0x0003, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(2), BIT(2) \
+	 /*0x03[2] = 1, enable 8051*/},	\
+	{0x0301, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0 \
+	/*PCIe DMA start*/},  \
+	{0x0024, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), BIT(1) \
+	/* 0x24[1] Choose the type of buffer after xosc: schmitt trigger*/}, \
+	{0x0028, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(3), BIT(3) \
+	/* 0x28[33] Choose the type of buffer after xosc: schmitt trigger*/},
+
+	{0xFFFF,
+	 RTW_PWR_CUT_ALL_MSK,
+	 RTW_PWR_INTF_ALL_MSK,
+	 0,
+	 RTW_PWR_CMD_END, 0, 0},
+};
+
+static struct rtw_pwr_seq_cmd trans_cardemu_to_act_8812a[] = {
+	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(2), 0 \
+	/* disable SW LPS 0x04[10]=0*/},	\
+	{0x0006, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, BIT(1), BIT(1) \
+	/* wait till 0x04[17] = 1    power ready*/},	\
+	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(7), 0 \
+	/* disable HWPDN 0x04[15]=0*/}, \
+	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(3), 0 \
+	/* disable WL suspend*/},	\
+	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), BIT(0) \
+	/* polling until return 0*/},	\
+	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, BIT(0), 0},   \
+	{0x0024, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), 0 \
+	/* 0x24[1] Choose the type of buffer after xosc: nand*/},   \
+	{0x0028, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(3), 0 \
+	/* 0x28[33] Choose the type of buffer after xosc: nand*/},
+	{0xFFFF,
+	 RTW_PWR_CUT_ALL_MSK,
+	 RTW_PWR_INTF_ALL_MSK,
+	 0,
+	 RTW_PWR_CMD_END, 0, 0},
+};
+
+static struct rtw_pwr_seq_cmd trans_act_to_lps_8812a[] = {
+	{0x0301, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0xFF},/*PCIe DMA stop*/	\
+	{0x0522, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x7F},/*Tx Pause*/		\
+	{0x05F8, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, 0xFF, 0},/*Should be zero if no packet is transmitting*/	\
+	{0x05F9, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, 0xFF, 0},/*Should be zero if no packet is transmitting*/	\
+	{0x05FA, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, 0xFF, 0},/*Should be zero if no packet is transmitting*/	\
+	{0x05FB, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, 0xFF, 0},/*Should be zero if no packet is transmitting*/	\
+	{0x0c00, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x04}, /* 0xc00[7:0] = 4	turn off 3-wire */	\
+	{0x0e00, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x04}, /* 0xe00[7:0] = 4	turn off 3-wire */	\
+	{0x0002, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), 0},/*CCK and OFDM are disabled, and clock are gated, and RF closed*/	\
+	{0x0002, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_DELAY, 0, RTW_PWR_DELAY_US},/*Delay 1us*/	\
+	{0x0002, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), 0},  /* Whole BB is reset*/			\
+	{0x0100, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x03},/*Reset MAC TRX*/			\
+	{0x0101, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), 0},/*check if removed later*/		\
+	{0x0553, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(5), BIT(5)},/*Respond TxOK to scheduler*/
+	{0xFFFF,
+	 RTW_PWR_CUT_ALL_MSK,
+	 RTW_PWR_INTF_ALL_MSK,
+	 0,
+	 RTW_PWR_CMD_END, 0, 0},
+};
+
+static struct rtw_pwr_seq_cmd trans_act_to_cardemu_8812a[] = {
+	{0x0c00, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x04 \
+	 /* 0xc00[7:0] = 4	turn off 3-wire */},	\
+	{0x0e00, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x04 \
+	 /* 0xe00[7:0] = 4	turn off 3-wire */},	\
+	{0x0002, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), 0 \
+	 /* 0x2[0] = 0	 RESET BB, CLOSE RF */},	\
+	{0x0002, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_DELAY, 0, RTW_PWR_DELAY_US \
+	/*Delay 1us*/},	\
+	{0x0002, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), 0 \
+	  /* Whole BB is reset*/},			\
+	{0x0007, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x2A \
+	 /* 0x07[7:0] = 0x28 sps pwm mode 0x2a for BT coex*/},	\
+	{0x0008, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0x02, 0 \
+	/*0x8[1] = 0 ANA clk =500k */},	\
+	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), BIT(1) \
+	 /*0x04[9] = 1 turn off MAC by HW state machine*/},	\
+	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, BIT(1), 0 \
+	 /*wait till 0x04[9] = 0 polling until return 0 to disable*/},
+	{0xFFFF,
+	 RTW_PWR_CUT_ALL_MSK,
+	 RTW_PWR_INTF_ALL_MSK,
+	 0,
+	 RTW_PWR_CMD_END, 0, 0},
+};
+
+static struct rtw_pwr_seq_cmd trans_cardemu_to_carddis_8812a[] = {
+	{0x0003, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(2), 0 \
+	/*0x03[2] = 0, reset 8051*/},	\
+	{0x0080, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x05 \
+	/*0x80=05h if reload fw, fill the default value of host_CPU handshake field*/},	\
+	{0x0042, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xF0, 0xcc}, \
+	{0x0042, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xF0, 0xEC}, \
+	{0x0043, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x07 \
+	/* gpio11 input mode, gpio10~8 output mode */},	\
+	{0x0045, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x00 \
+	/* gpio 0~7 output same value as input ?? */},	\
+	{0x0046, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0xff \
+	/* gpio0~7 output mode */},	\
+	{0x0047, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0 \
+	/* 0x47[7:0] = 00 gpio mode */},	\
+	{0x0014, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0x80, BIT(7) \
+	/*0x14[7] = 1 turn on ZCD */},	\
+	{0x0015, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0x01, BIT(0) \
+	/* 0x15[0] =1 trun on ZCD */},	\
+	{0x0012, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0x01, 0 \
+	/*0x12[0] = 0 force PFM mode */},	\
+	{0x0023, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0x10, BIT(4) \
+	/*0x23[4] = 1 hpon LDO sleep mode */},	\
+	{0x0008, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0x02, 0 \
+	/*0x8[1] = 0 ANA clk =500k */},	\
+	{0x0007, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x20 \
+	 /*0x07=0x20 , SOP option to disable BG/MB*/},	\
+	{0x001f, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), 0 \
+	 /*0x01f[1]=0 , disable RFC_0  control  REG_RF_CTRL_8812 */},	\
+	{0x0076, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), 0 \
+	 /*0x076[1]=0 , disable RFC_1  control REG_OPT_CTRL_8812 +2 */},	\
+	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
+	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(3), BIT(3) \
+	 /*0x04[11] = 2b'01 enable WL suspend*/},
+	{0xFFFF,
+	 RTW_PWR_CUT_ALL_MSK,
+	 RTW_PWR_INTF_ALL_MSK,
+	 0,
+	 RTW_PWR_CMD_END, 0, 0},
+};
+
+static const struct rtw_pwr_seq_cmd *card_enable_flow_8812a[] = {
+	trans_carddis_to_cardemu_8812a,
+	trans_cardemu_to_act_8812a,
+	NULL
+};
+
+static const struct rtw_pwr_seq_cmd *enter_lps_flow_8812a[] = {
+	trans_act_to_lps_8812a,
+	NULL
+};
+
+static const struct rtw_pwr_seq_cmd *card_disable_flow_8812a[] = {
+	trans_act_to_cardemu_8812a,
+	trans_cardemu_to_carddis_8812a,
+	NULL
+};
 
 static void rtw8821a_efuse_grant(struct rtw_dev *rtwdev, bool on)
 {
@@ -264,56 +655,244 @@ static int rtw8821a_read_efuse(struct rtw_dev *rtwdev, u8 *log_map)
 	return 0;
 }
 
-static const u32 rtw8821a_txscale_tbl[] = {
-	0x081, 0x088, 0x090, 0x099, 0x0a2, 0x0ac, 0x0b6, 0x0c0, 0x0cc, 0x0d8,
-	0x0e5, 0x0f2, 0x101, 0x110, 0x120, 0x131, 0x143, 0x156, 0x16a, 0x180,
-	0x197, 0x1af, 0x1c8, 0x1e3, 0x200, 0x21e, 0x23e, 0x261, 0x285, 0x2ab,
-	0x2d3, 0x2fe, 0x32b, 0x35c, 0x38e, 0x3c4, 0x3fe
-};
-
-static u8 rtw8821a_get_swing_index(struct rtw_dev *rtwdev)
+static void rtw8821a_reset_8051(struct rtw_dev *rtwdev)
 {
-	u8 i = 0;
-	u32 swing, table_value;
+	const struct rtw_chip_info *chip = rtwdev->chip;
+	u8 val8;
 
-	swing = rtw_read32_mask(rtwdev, REG_TXSCALE_A, BB_SWING_MASK);
-	for (i = 0; i < ARRAY_SIZE(rtw8821a_txscale_tbl); i++) {
-		table_value = rtw8821a_txscale_tbl[i];
-		if (swing == table_value)
-			break;
-	}
-
-	return i;
-}
-
-static void rtw8821a_pwrtrack_init(struct rtw_dev *rtwdev)
-{
-	struct rtw_dm_info *dm_info = &rtwdev->dm_info;
-	u8 swing_idx = rtw8821a_get_swing_index(rtwdev);
-	u8 path;
-
-	if (swing_idx >= ARRAY_SIZE(rtw8821a_txscale_tbl))
-		dm_info->default_ofdm_index = 24;
+	/* Reset MCU IO Wrapper */
+	rtw_write8_clr(rtwdev, REG_RSV_CTRL, BIT(1));
+	if (chip->id == RTW_CHIP_TYPE_8812A)
+		rtw_write8_clr(rtwdev, REG_RSV_CTRL + 1, BIT(3));
 	else
-		dm_info->default_ofdm_index = swing_idx;
+		rtw_write8_clr(rtwdev, REG_RSV_CTRL + 1, BIT(0));
 
-	for (path = RF_PATH_A; path < rtwdev->hal.rf_path_num; path++) {
-		ewma_thermal_init(&dm_info->avg_thermal[path]);
-		dm_info->delta_power_index[path] = 0;
-		dm_info->delta_power_index_last[RF_PATH_A] = 0;
-	}
+	val8 = rtw_read8(rtwdev, REG_SYS_FUNC_EN + 1);
+	rtw_write8(rtwdev, REG_SYS_FUNC_EN + 1, val8 & ~BIT(2));
 
-	dm_info->pwr_trk_triggered = false;
-	dm_info->pwr_trk_init_trigger = true;
-	dm_info->thermal_meter_k = rtwdev->efuse.thermal_meter_k;
+	/* Enable MCU IO Wrapper */
+	rtw_write8_clr(rtwdev, REG_RSV_CTRL, BIT(1));
+	if (chip->id == RTW_CHIP_TYPE_8812A)
+		rtw_write8_set(rtwdev, REG_RSV_CTRL + 1, BIT(3));
+	else
+		rtw_write8_set(rtwdev, REG_RSV_CTRL + 1, BIT(0));
+
+	rtw_write8(rtwdev, REG_SYS_FUNC_EN + 1, val8 | BIT(2));
 }
 
-// static void rtw8821a_phy_bf_init(struct rtw_dev *rtwdev)
-// {
-// 	rtw_bf_phy_init(rtwdev);
-// 	/* Grouping bitmap parameters */
-// 	rtw_write32(rtwdev, 0x1C94, 0xAFFFAFFF);
-// }
+/* A lightweight deinit function */
+static void rtw8812au_hw_reset(struct rtw_dev *rtwdev)
+{
+	u8 val8;
+
+	if (!(rtw_read8(rtwdev, REG_MCUFW_CTRL) & BIT_RAM_DL_SEL))
+		return;
+
+	rtw8821a_reset_8051(rtwdev);
+	rtw_write8(rtwdev, REG_MCUFW_CTRL, 0x00);
+
+	/* before BB reset should do clock gated */
+	rtw_write32_set(rtwdev, REG_FPGA0_XCD_RF_PARA, BIT(6));
+
+	/* reset BB */
+	rtw_write8_clr(rtwdev, REG_SYS_FUNC_EN, BIT(0) | BIT(1));
+
+	/* reset RF */
+	rtw_write8(rtwdev, REG_RF_CTRL, 0);
+
+	/* reset TRX path */
+	rtw_write16(rtwdev, REG_CR, 0);
+
+	/* reset MAC, reg0x5[1], auto FSM off */
+	rtw_write8_set(rtwdev, REG_APS_FSMCO + 1, APS_FSMCO_MAC_OFF >> 8);
+
+	/* check if reg0x5[1] auto cleared */
+	if (read_poll_timeout_atomic(rtw_read8, val8,
+				     !(val8 & (APS_FSMCO_MAC_OFF >> 8)),
+				     1, 5000, false,
+				     rtwdev, REG_APS_FSMCO + 1))
+		rtw_err(rtwdev, "%s: timed out waiting for 0x5[1]\n", __func__);
+
+	/* reg0x5[0], auto FSM on */
+	val8 |= APS_FSMCO_MAC_ENABLE >> 8;
+	rtw_write8(rtwdev, REG_APS_FSMCO + 1, val8);
+
+	rtw_write8_clr(rtwdev, REG_SYS_FUNC_EN + 1, BIT(4) | BIT(7));
+	rtw_write8_set(rtwdev, REG_SYS_FUNC_EN + 1, BIT(4) | BIT(7));
+}
+
+static int rtw8812au_init_power_on(struct rtw_dev *rtwdev)
+{
+	const struct rtw_chip_info *chip = rtwdev->chip;
+	u16 val16;
+	int ret;
+
+	if (test_bit(RTW_FLAG_POWERON, rtwdev->flags)) {
+		rtw_err(rtwdev, "%s: bailing because RTW_FLAG_POWERON\n", __func__);
+		return 0;
+	}
+
+	ret = rtw_pwr_seq_parser(rtwdev, chip->pwr_on_seq);
+	if (ret) {
+		rtw_err(rtwdev, "power on flow failed\n");
+		return ret;
+	}
+
+	rtw_write16(rtwdev, REG_CR, 0);
+	val16 = HCI_TXDMA_EN | HCI_RXDMA_EN | TXDMA_EN | RXDMA_EN |
+		PROTOCOL_EN | SCHEDULE_EN | ENSEC | CALTMR_EN;
+	rtw_write16_set(rtwdev, REG_CR, val16);
+
+	if (chip->id == RTW_CHIP_TYPE_8821A) {
+		if (rtw_read8(rtwdev, REG_SYS_CFG1 + 3) & BIT(0))
+			rtw_write8_set(rtwdev, REG_LDO_SWR_CTRL, BIT(6));
+	}
+
+	set_bit(RTW_FLAG_POWERON, rtwdev->flags);
+
+	return ret;
+}
+
+static void rtw8821au_init_queue_reserved_page(struct rtw_dev *rtwdev)
+{
+	const struct rtw_chip_info *chip = rtwdev->chip;
+	struct rtw_fifo_conf *fifo = &rtwdev->fifo;
+	const struct rtw_page_table *pg_tbl = NULL;
+	u16 pubq_num;
+	u32 val32;
+
+	switch (rtw_hci_type(rtwdev)) {
+	case RTW_HCI_TYPE_PCIE:
+		pg_tbl = &chip->page_table[1];
+		break;
+	case RTW_HCI_TYPE_USB:
+		if (rtwdev->hci.bulkout_num == 2)
+			pg_tbl = &chip->page_table[2];
+		else if (rtwdev->hci.bulkout_num == 3)
+			pg_tbl = &chip->page_table[3];
+		else if (rtwdev->hci.bulkout_num == 4)
+			pg_tbl = &chip->page_table[4];
+		break;
+	case RTW_HCI_TYPE_SDIO:
+		pg_tbl = &chip->page_table[0];
+		break;
+	default:
+		break;
+	}
+
+	pubq_num = fifo->acq_pg_num - pg_tbl->hq_num - pg_tbl->lq_num -
+		   pg_tbl->nq_num - pg_tbl->exq_num - pg_tbl->gapq_num;
+
+	val32 = BIT_RQPN_NE(pg_tbl->nq_num, pg_tbl->exq_num);
+	rtw_write32(rtwdev, REG_RQPN_NPQ, val32);
+	val32 = BIT_RQPN_HLP(pg_tbl->hq_num, pg_tbl->lq_num, pubq_num);
+	rtw_write32(rtwdev, REG_RQPN, val32);
+}
+
+static void rtw8821au_init_tx_buffer_boundary(struct rtw_dev *rtwdev)
+{
+	struct rtw_fifo_conf *fifo = &rtwdev->fifo;
+
+	rtw_write8(rtwdev, REG_BCNQ_BDNY, fifo->rsvd_boundary);
+	rtw_write8(rtwdev, REG_MGQ_BDNY, fifo->rsvd_boundary);
+	rtw_write8(rtwdev, REG_WMAC_LBK_BF_HD, fifo->rsvd_boundary);
+	rtw_write8(rtwdev, REG_TRXFF_BNDY, fifo->rsvd_boundary);
+	rtw_write8(rtwdev, REG_DWBCN0_CTRL + 1, fifo->rsvd_boundary);
+}
+
+static int rtw8821au_init_queue_priority(struct rtw_dev *rtwdev)
+{
+	const struct rtw_chip_info *chip = rtwdev->chip;
+	const struct rtw_rqpn *rqpn = NULL;
+	u16 txdma_pq_map;
+
+	switch (rtw_hci_type(rtwdev)) {
+	case RTW_HCI_TYPE_PCIE:
+		rqpn = &chip->rqpn_table[1];
+		break;
+	case RTW_HCI_TYPE_USB:
+		if (rtwdev->hci.bulkout_num == 2)
+			rqpn = &chip->rqpn_table[2];
+		else if (rtwdev->hci.bulkout_num == 3)
+			rqpn = &chip->rqpn_table[3];
+		else if (rtwdev->hci.bulkout_num == 4)
+			rqpn = &chip->rqpn_table[4];
+		else
+			return -EINVAL;
+		break;
+	case RTW_HCI_TYPE_SDIO:
+		rqpn = &chip->rqpn_table[0];
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	rtwdev->fifo.rqpn = rqpn;
+
+	txdma_pq_map = rtw_read16(rtwdev, REG_TXDMA_PQ_MAP) & 0x7;
+	txdma_pq_map |= BIT_TXDMA_HIQ_MAP(rqpn->dma_map_hi);
+	txdma_pq_map |= BIT_TXDMA_MGQ_MAP(rqpn->dma_map_mg);
+	txdma_pq_map |= BIT_TXDMA_BKQ_MAP(rqpn->dma_map_bk);
+	txdma_pq_map |= BIT_TXDMA_BEQ_MAP(rqpn->dma_map_be);
+	txdma_pq_map |= BIT_TXDMA_VIQ_MAP(rqpn->dma_map_vi);
+	txdma_pq_map |= BIT_TXDMA_VOQ_MAP(rqpn->dma_map_vo);
+	rtw_write16(rtwdev, REG_TXDMA_PQ_MAP, txdma_pq_map);
+
+	/* Packet in Hi Queue Tx immediately (No constraint for ATIM Period). */
+	if (rtwdev->hci.type == RTW_HCI_TYPE_USB &&
+	    rtwdev->hci.bulkout_num == 4)
+		rtw_write8(rtwdev, REG_HIQ_NO_LMT_EN, 0xff);
+
+	return 0;
+}
+
+static void rtw8821a_init_wmac_setting(struct rtw_dev *rtwdev)
+{
+	rtw_write16(rtwdev, REG_RXFLTMAP0, 0xffff);
+	rtw_write16(rtwdev, REG_RXFLTMAP1, 0x0400);
+	rtw_write16(rtwdev, REG_RXFLTMAP2, 0xffff);
+
+	rtw_write32(rtwdev, REG_MAR, 0xffffffff);
+	rtw_write32(rtwdev, REG_MAR + 4, 0xffffffff);
+}
+
+static void rtw8821a_init_adaptive_ctrl(struct rtw_dev *rtwdev)
+{
+	rtw_write32_mask(rtwdev, REG_RRSR, 0xfffff, 0xffff1);
+	rtw_write16(rtwdev, REG_RETRY_LIMIT, 0x3030);
+}
+
+static void rtw8821a_init_edca(struct rtw_dev *rtwdev)
+{
+	rtw_write16(rtwdev, REG_SPEC_SIFS, 0x100a);
+	rtw_write16(rtwdev, REG_MAC_SPEC_SIFS, 0x100a);
+
+	rtw_write16(rtwdev, REG_SIFS, 0x100a);
+	rtw_write16(rtwdev, REG_SIFS + 2, 0x100a);
+
+	rtw_write32(rtwdev, REG_EDCA_BE_PARAM, 0x005EA42B);
+	rtw_write32(rtwdev, REG_EDCA_BK_PARAM, 0x0000A44F);
+	rtw_write32(rtwdev, REG_EDCA_VI_PARAM, 0x005EA324);
+	rtw_write32(rtwdev, REG_EDCA_VO_PARAM, 0x002FA226);
+
+	rtw_write8(rtwdev, REG_USTIME_TSF, 0x50);
+	rtw_write8(rtwdev, REG_USTIME_EDCA, 0x50);
+}
+
+static void rtw8821a_init_beacon_parameters(struct rtw_dev *rtwdev)
+{
+	u16 val16;
+
+	val16 = (BIT_DIS_TSF_UDT << 8) | BIT_DIS_TSF_UDT;
+	if (rtwdev->efuse.btcoex)
+		val16 |= BIT_EN_BCN_FUNCTION;
+	rtw_write16(rtwdev, REG_BCN_CTRL, val16);
+
+	rtw_write32_mask(rtwdev, REG_TBTT_PROHIBIT, 0xfffff, WLAN_TBTT_TIME);
+	rtw_write8(rtwdev, REG_DRVERLYINT, 0x05);
+	rtw_write8(rtwdev, REG_BCNDMATIM, WLAN_BCN_DMA_TIME);
+	rtw_write16(rtwdev, REG_BCNTCFG, 0x4413);
+}
 
 static void rtw8821au_init_burst_pkt_len(struct rtw_dev *rtwdev)
 {
@@ -413,6 +992,44 @@ static void rtw8821au_init_burst_pkt_len(struct rtw_dev *rtwdev)
 	rtw_write32(rtwdev, REG_ARFRH3_V1, 0xffcff000);
 }
 
+static void rtw8821a_phy_bb_config(struct rtw_dev *rtwdev)
+{
+	u8 val8, crystal_cap;
+
+	/* power on BB/RF domain */
+	val8 = rtw_read8(rtwdev, REG_SYS_FUNC_EN);
+	val8 |= BIT_FEN_USBA;
+	rtw_write8(rtwdev, REG_SYS_FUNC_EN, val8);
+
+	/* toggle BB reset */
+	val8 |= BIT_FEN_BB_RSTB | BIT_FEN_BB_GLB_RST;
+	rtw_write8(rtwdev, REG_SYS_FUNC_EN, val8);
+
+	rtw_write8(rtwdev, REG_RF_CTRL,
+		   BIT_RF_EN | BIT_RF_RSTB | BIT_RF_SDM_RSTB);
+	rtw_write8(rtwdev, REG_RF_B_CTRL,
+		   BIT_RF_EN | BIT_RF_RSTB | BIT_RF_SDM_RSTB);
+
+	rtw_load_table(rtwdev, rtwdev->chip->bb_tbl);
+	rtw_load_table(rtwdev, rtwdev->chip->agc_tbl);
+
+	crystal_cap = rtwdev->efuse.crystal_cap & 0x3F;
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8812A)
+		rtw_write32_mask(rtwdev, REG_AFE_CTRL3, 0x7FF80000,
+				 crystal_cap | (crystal_cap << 6));
+	else
+		rtw_write32_mask(rtwdev, REG_AFE_CTRL3, 0xFFF000,
+				 crystal_cap | (crystal_cap << 6));
+}
+
+static void rtw8821a_phy_rf_config(struct rtw_dev *rtwdev)
+{
+	u8 rf_path;
+
+	for (rf_path = 0; rf_path < rtwdev->hal.rf_path_num; rf_path++)
+		rtw_load_table(rtwdev, rtwdev->chip->rf_tbl[rf_path]);
+}
+
 static void rtw8812a_config_1t(struct rtw_dev *rtwdev)
 {
 	/* BB OFDM RX Path_A */
@@ -438,25 +1055,230 @@ static void rtw8812a_config_1t(struct rtw_dev *rtwdev)
 	rtw_write32_mask(rtwdev, 0xe64, MASKDWORD, 0);
 }
 
-static int rtw8821a_mac_init(struct rtw_dev *rtwdev)
+static const u32 rtw8821a_txscale_tbl[] = {
+	0x081, 0x088, 0x090, 0x099, 0x0a2, 0x0ac, 0x0b6, 0x0c0, 0x0cc, 0x0d8,
+	0x0e5, 0x0f2, 0x101, 0x110, 0x120, 0x131, 0x143, 0x156, 0x16a, 0x180,
+	0x197, 0x1af, 0x1c8, 0x1e3, 0x200, 0x21e, 0x23e, 0x261, 0x285, 0x2ab,
+	0x2d3, 0x2fe, 0x32b, 0x35c, 0x38e, 0x3c4, 0x3fe
+};
+
+static u8 rtw8821a_get_swing_index(struct rtw_dev *rtwdev)
 {
+	u8 i = 0;
+	u32 swing, table_value;
+
+	swing = rtw_read32_mask(rtwdev, REG_TXSCALE_A, BB_SWING_MASK);
+	for (i = 0; i < ARRAY_SIZE(rtw8821a_txscale_tbl); i++) {
+		table_value = rtw8821a_txscale_tbl[i];
+		if (swing == table_value)
+			break;
+	}
+
+	return i;
+}
+
+static void rtw8821a_pwrtrack_init(struct rtw_dev *rtwdev)
+{
+	struct rtw_dm_info *dm_info = &rtwdev->dm_info;
+	u8 swing_idx = rtw8821a_get_swing_index(rtwdev);
+	u8 path;
+
+	if (swing_idx >= ARRAY_SIZE(rtw8821a_txscale_tbl))
+		dm_info->default_ofdm_index = 24;
+	else
+		dm_info->default_ofdm_index = swing_idx;
+
+	for (path = RF_PATH_A; path < rtwdev->hal.rf_path_num; path++) {
+		ewma_thermal_init(&dm_info->avg_thermal[path]);
+		dm_info->delta_power_index[path] = 0;
+		dm_info->delta_power_index_last[RF_PATH_A] = 0;
+	}
+
+	dm_info->pwr_trk_triggered = false;
+	dm_info->pwr_trk_init_trigger = true;
+	dm_info->thermal_meter_k = rtwdev->efuse.thermal_meter_k;
+}
+
+static void rtw8821a_power_off(struct rtw_dev *rtwdev)
+{
+	u16 ori_fsmc0;
+
+	rtw_hci_stop(rtwdev);
+
+	if (!rtwdev->efuse.btcoex)
+		rtw_write16_clr(rtwdev, REG_GPIO_MUXCFG, BIT_EN_SIC);
+
+	// if (pHalData->bSupportUSB3 == _TRUE) {
+	// 	/* set Reg 0xf008[3:4] to 2'11 to eable U1/U2 Mode in USB3.0. added by page, 20120712 */
+	// 	rtw_write8_set(Adapter, 0xf008, 0x18);
+	// }
+
+	rtw_write32(rtwdev, REG_HISR0, 0xffffffff);
+	rtw_write32(rtwdev, REG_HISR1, 0xffffffff);
+	rtw_write32(rtwdev, REG_HIMR0, 0);
+	rtw_write32(rtwdev, REG_HIMR1, 0);
+
+	rtw_coex_power_off_setting(rtwdev);
+
+	if (!test_bit(RTW_FLAG_POWERON, rtwdev->flags)) {
+		rtw_err(rtwdev, "%s: bailing because RTW_FLAG_POWERON\n", __func__);
+		return;
+	}
+
+	ori_fsmc0 = rtw_read16(rtwdev, REG_APS_FSMCO);
+	rtw_write16(rtwdev, REG_APS_FSMCO, ori_fsmc0 & ~APS_FSMCO_HW_POWERDOWN);
+
+	/* Stop Tx Report Timer. */
+	rtw_write8_clr(rtwdev, REG_TX_RPT_CTRL, BIT(1));
+
+	/* Stop Rx */
+	rtw_write8(rtwdev, REG_CR, 0);
+
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A)
+		rtw_pwr_seq_parser(rtwdev, enter_lps_flow_8821a);
+	else
+		rtw_pwr_seq_parser(rtwdev, enter_lps_flow_8812a);
+
+	if (rtw_read8(rtwdev, REG_MCUFW_CTRL) & BIT_RAM_DL_SEL)
+		rtw8821a_reset_8051(rtwdev);
+
+	rtw_write8_clr(rtwdev, REG_SYS_FUNC_EN + 1, BIT(2));
+	rtw_write8(rtwdev, REG_MCUFW_CTRL, 0);
+
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A)
+		rtw_pwr_seq_parser(rtwdev, card_disable_flow_8821a);
+	else
+		rtw_pwr_seq_parser(rtwdev, card_disable_flow_8812a);
+
+	clear_bit(RTW_FLAG_POWERON, rtwdev->flags);
+
+	if (ori_fsmc0 & APS_FSMCO_HW_POWERDOWN)
+		rtw_write16_set(rtwdev, REG_APS_FSMCO, APS_FSMCO_HW_POWERDOWN);
+}
+
+///TODO: chip identification needs to be copied as well
+
+static int rtw8821a_power_on(struct rtw_dev *rtwdev)
+{
+	const struct rtw_chip_info *chip = rtwdev->chip;
 	struct rtw_efuse *efuse = &rtwdev->efuse;
+	bool wifi_only;
+	int ret;
+	u8 val8;
 
 	/* Override rtw_chip_efuse_info_setup() */
-	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A)
+	if (chip->id == RTW_CHIP_TYPE_8821A)
 		efuse->btcoex = rtw_read32_mask(rtwdev, REG_WL_BT_PWR_CTRL,
 						BIT_BT_FUNC_EN);
 
 	/* Override rtw_chip_efuse_info_setup() */
-	if (rtwdev->chip->id == RTW_CHIP_TYPE_8812A)
+	if (chip->id == RTW_CHIP_TYPE_8812A)
 		rtw8812a_read_amplifier_type(rtwdev);
 
-	if (rtwdev->hci.type == RTW_HCI_TYPE_USB &&
-	    rtw_get_usb_priv(rtwdev)->out_ep[3])
-		/* Packet in Hi Queue Tx immediately (No constraint for
-		 * ATIM Period). Only if we have 4 out endpoints.
-		 */
-		rtw_write8(rtwdev, REG_HIQ_NO_LMT_EN, 0xff);
+	ret = rtw_hci_setup(rtwdev);
+	if (ret) {
+		rtw_err(rtwdev, "failed to setup hci\n");
+		goto err;
+	}
+
+	///TODO: change to rtw_dbg
+	val8 = rtw_read8(rtwdev, REG_CR);
+	if (val8 != 0 && val8 != 0xEA &&
+	    (rtw_read8(rtwdev, REG_SYS_CLKR + 1) & BIT(3)))
+		rtw_info(rtwdev, "MAC has already power on\n");
+	else
+		rtw_info(rtwdev, "MAC has not been powered on yet\n");
+
+	/* Revise for U2/U3 switch we can not update RF-A/B reset.
+	 * Reset after MAC power on to prevent RF R/W error.
+	 * Is it a right method?
+	 */
+	if (chip->id == RTW_CHIP_TYPE_8812A) {
+		rtw_write8(rtwdev, REG_RF_CTRL, 5);
+		rtw_write8(rtwdev, REG_RF_CTRL, 7);
+		rtw_write8(rtwdev, REG_RF_B_CTRL, 5);
+		rtw_write8(rtwdev, REG_RF_B_CTRL, 7);
+	}
+
+	/* If HW didn't go through a complete de-initial procedure,
+	 * it probably occurs some problem for double initial
+	 * procedure.
+	 */
+	rtw8812au_hw_reset(rtwdev);
+
+	ret = rtw8812au_init_power_on(rtwdev);
+	if (ret) {
+		rtw_err(rtwdev, "failed to power on\n");
+		goto err;
+	}
+
+	if (rtwdev->efuse.btcoex)
+		rtw_coex_power_on_setting(rtwdev);
+
+	ret = set_trx_fifo_info(rtwdev);
+	if (ret) {
+		rtw_err(rtwdev, "failed to set trx fifo info\n");
+		goto err;
+	}
+
+	///TODO: undo that commit which introduced this function. move it here
+	ret = rtw_llt_init_legacy_old(rtwdev, rtwdev->fifo.rsvd_boundary);
+	if (ret) {
+		rtw_err(rtwdev, "failed to init llt\n");
+		goto err;
+	}
+
+	rtw_write32_set(rtwdev, REG_TXDMA_OFFSET_CHK, BIT_DROP_DATA_EN);
+
+	ret = rtw_wait_firmware_completion(rtwdev);
+	if (ret) {
+		rtw_err(rtwdev, "failed to wait firmware completion\n");
+		goto err_off;
+	}
+
+	ret = rtw_download_firmware(rtwdev, &rtwdev->fw);
+	if (ret) {
+		rtw_err(rtwdev, "failed to download firmware\n");
+		goto err_off;
+	}
+
+	rtw_load_table(rtwdev, chip->mac_tbl);
+
+	rtw8821au_init_queue_reserved_page(rtwdev);
+	rtw8821au_init_tx_buffer_boundary(rtwdev);
+	rtw8821au_init_queue_priority(rtwdev);
+
+	rtw_write16(rtwdev, REG_TRXFF_BNDY + 2,
+		    chip->rxff_size - REPORT_BUF - 1);
+
+	if (chip->id == RTW_CHIP_TYPE_8812A)
+		rtw_write8(rtwdev, REG_PBP,
+			   u8_encode_bits(PBP_512, PBP_TX_MASK) |
+			   u8_encode_bits(PBP_64, PBP_RX_MASK));
+
+	rtw_write8(rtwdev, REG_RX_DRVINFO_SZ, PHY_STATUS_SIZE);
+
+	rtw_write32(rtwdev, REG_HIMR0, 0);
+	rtw_write32(rtwdev, REG_HIMR1, 0);
+
+	rtw_write32_mask(rtwdev, REG_CR, 0x30000, 0x2);
+
+	rtw8821a_init_wmac_setting(rtwdev);
+	rtw8821a_init_adaptive_ctrl(rtwdev);
+	rtw8821a_init_edca(rtwdev);
+
+	rtw_write8_set(rtwdev, REG_FWHW_TXQ_CTRL, BIT(7));
+	rtw_write8(rtwdev, REG_ACKTO, 0x80);
+
+	/* init_UsbAggregationSetting_8812A(); no aggregation for now */
+
+	rtw8821a_init_beacon_parameters(rtwdev);
+	rtw_write8(rtwdev, REG_BCN_MAX_ERR, 0xff);
+
+	if (rtwdev->hci.type == RTW_HCI_TYPE_USB)
+		rtw8821au_init_burst_pkt_len(rtwdev);
+
+	rtw_write8_set(rtwdev, REG_CR, MACTXEN | MACRXEN);
 
 	///TODO: blinking controlled by mac80211
 	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A)
@@ -464,6 +1286,81 @@ static int rtw8821a_mac_init(struct rtw_dev *rtwdev)
 	else
 		rtw_write8(rtwdev, REG_LED_CFG, BIT(1) | BIT(5));
 
+	rtw8821a_phy_bb_config(rtwdev);
+	rtw8821a_phy_rf_config(rtwdev);
+
+	if (chip->id == RTW_CHIP_TYPE_8812A && rtwdev->hal.rf_path_num == 1)
+		rtw8812a_config_1t(rtwdev);
+
+	// rtw8821a_switch_band(rtwdev, 36, RTW_CHANNEL_WIDTH_20);
+	// rtw8821a_switch_band(rtwdev, 1, RTW_CHANNEL_WIDTH_20);///TODO is this needed?
+
+	rtw_write32(rtwdev, RTW_SEC_CMD_REG, BIT(31) | BIT(30));
+
+	rtw_write8(rtwdev, REG_HWSEQ_CTRL, 0xff);
+	rtw_write32(rtwdev, REG_BAR_MODE_CTRL, 0x0201ffff);
+	rtw_write8(rtwdev, REG_NAV_CTRL + 2, 0);
+
+	rtw_phy_init(rtwdev);
+
+	rtw8821a_pwrtrack_init(rtwdev);
+
+	/* 0x4c6[3] 1: RTS BW = Data BW
+	 * 0: RTS BW depends on CCA / secondary CCA result.
+	 */
+	rtw_write8_clr(rtwdev, REG_QUEUE_CTRL, BIT(3));
+
+	/* enable Tx report. */
+	rtw_write8(rtwdev, REG_FWHW_TXQ_CTRL + 1, 0x0f);
+
+	/* Pretx_en, for WEP/TKIP SEC */
+	rtw_write8(rtwdev, REG_EARLY_MODE_CONTROL + 3, 0x01);
+
+	rtw_write16(rtwdev, REG_TX_RPT_TIME, 0x3df0);
+
+	/* Reset USB mode switch setting */
+	rtw_write8(rtwdev, REG_SYS_SDIO_CTRL, 0x0);
+	rtw_write8(rtwdev, REG_ACLK_MON, 0x0);
+
+	rtw_write8(rtwdev, REG_USB_HRPWM, 0);
+
+	/* ack for xmit mgmt frames. */
+	rtw_write32_set(rtwdev, REG_FWHW_TXQ_CTRL, BIT(12));
+
+	rtwdev->hal.cck_high_power = rtw_read32_mask(rtwdev, REG_CCK_RPT_FORMAT,
+						     BIT_CCK_RPT_FORMAT);
+
+	// rtw8821a_phy_bf_init(rtwdev);
+
+	ret = rtw_hci_start(rtwdev);
+	if (ret) {
+		rtw_err(rtwdev, "failed to start hci\n");
+		goto err_off;
+	}
+
+	wifi_only = !rtwdev->efuse.btcoex;
+	rtw_coex_power_on_setting(rtwdev);
+	rtw_coex_init_hw_config(rtwdev, wifi_only);
+
+	return 0;
+
+err_off:
+	rtw8821a_power_off(rtwdev);
+
+err:
+	return ret;
+}
+
+// static void rtw8821a_phy_bf_init(struct rtw_dev *rtwdev)
+// {
+// 	rtw_bf_phy_init(rtwdev);
+// 	/* Grouping bitmap parameters */
+// 	rtw_write32(rtwdev, 0x1C94, 0xAFFFAFFF);
+// }
+
+static int rtw8821a_mac_init(struct rtw_dev *rtwdev)
+{
+	rtw_err(rtwdev, "%s: useless function\n", __func__);
 	return 0;
 }
 
@@ -798,134 +1695,7 @@ static void rtw8821a_switch_band(struct rtw_dev *rtwdev, u8 channel, u8 bw)
 
 static void rtw8821a_phy_set_param(struct rtw_dev *rtwdev)
 {
-	const struct rtw_chip_info *chip = rtwdev->chip;
-	struct rtw_efuse *efuse = &rtwdev->efuse;
-	u8 crystal_cap, val;
-	u8 rf_path;
-	u16 val16;
-
-	rtw_load_table(rtwdev, chip->mac_tbl);
-
-	rtw_write32_set(rtwdev, REG_TXDMA_OFFSET_CHK, BIT_DROP_DATA_EN);
-
-	if (chip->id == RTW_CHIP_TYPE_8812A)
-		rtw_write8(rtwdev, REG_PBP,
-			   u8_encode_bits(PBP_512, PBP_TX_MASK) |
-			   u8_encode_bits(PBP_64, PBP_RX_MASK));
-
-	rtw_write32(rtwdev, REG_HIMR0, 0);
-	rtw_write32(rtwdev, REG_HIMR1, 0);
-
-	rtw_write16(rtwdev, REG_RXFLTMAP0, 0xffff);
-	rtw_write16(rtwdev, REG_RXFLTMAP1, 0x0400);
-	rtw_write16(rtwdev, REG_RXFLTMAP2, 0xffff);
-
-	rtw_write32(rtwdev, REG_MAR, 0xffffffff);
-	rtw_write32(rtwdev, REG_MAR + 4, 0xffffffff);
-
-	rtw_write32_mask(rtwdev, REG_RRSR, 0xfffff, 0xffff1);
-	rtw_write16(rtwdev, REG_RETRY_LIMIT, 0x3030);
-	rtw_write16(rtwdev, REG_SPEC_SIFS, 0x100a);
-	rtw_write16(rtwdev, REG_MAC_SPEC_SIFS, 0x100a);
-
-	rtw_write16(rtwdev, REG_SIFS, 0x100a);
-	rtw_write16(rtwdev, REG_SIFS + 2, 0x100a);
-
-	rtw_write32(rtwdev, REG_EDCA_BE_PARAM, 0x005EA42B);
-	rtw_write32(rtwdev, REG_EDCA_BK_PARAM, 0x0000A44F);
-	rtw_write32(rtwdev, REG_EDCA_VI_PARAM, 0x005EA324);
-	rtw_write32(rtwdev, REG_EDCA_VO_PARAM, 0x002FA226);
-
-	rtw_write8(rtwdev, REG_USTIME_TSF, 0x50);
-	rtw_write8(rtwdev, REG_USTIME_EDCA, 0x50);
-
-	rtw_write8_set(rtwdev, REG_FWHW_TXQ_CTRL, BIT(7));
-	rtw_write8(rtwdev, REG_ACKTO, 0x80);
-
-	/* init_UsbAggregationSetting_8812A(); no aggregation for now */
-	val16 = (BIT_DIS_TSF_UDT << 8) | BIT_DIS_TSF_UDT;
-	if (efuse->btcoex)
-		val16 |= BIT_EN_BCN_FUNCTION;
-	rtw_write16(rtwdev, REG_BCN_CTRL, val16);
-
-	rtw_write32_mask(rtwdev, REG_TBTT_PROHIBIT, 0xfffff, WLAN_TBTT_TIME);
-	rtw_write8(rtwdev, REG_DRVERLYINT, 0x05);
-	rtw_write8(rtwdev, REG_BCNDMATIM, WLAN_BCN_DMA_TIME);
-	rtw_write16(rtwdev, REG_BCNTCFG, 0x4413);
-	rtw_write8(rtwdev, REG_BCN_MAX_ERR, 0xff);
-
-	if (rtwdev->hci.type == RTW_HCI_TYPE_USB)
-		rtw8821au_init_burst_pkt_len(rtwdev);
-
-	/* power on BB/RF domain */
-	val = rtw_read8(rtwdev, REG_SYS_FUNC_EN);
-	val |= BIT_FEN_USBA;
-	rtw_write8(rtwdev, REG_SYS_FUNC_EN, val);
-
-	/* toggle BB reset */
-	val |= BIT_FEN_BB_RSTB | BIT_FEN_BB_GLB_RST;
-	rtw_write8(rtwdev, REG_SYS_FUNC_EN, val);
-
-	rtw_write8(rtwdev, REG_RF_CTRL,
-		   BIT_RF_EN | BIT_RF_RSTB | BIT_RF_SDM_RSTB);
-	rtw_write8(rtwdev, REG_HCI_OPT_CTRL + 2,
-		   BIT_RF_EN | BIT_RF_RSTB | BIT_RF_SDM_RSTB);
-
-	rtw_load_table(rtwdev, chip->bb_tbl);
-	rtw_load_table(rtwdev, chip->agc_tbl);
-
-	crystal_cap = rtwdev->efuse.crystal_cap & 0x3F;
-	if (rtwdev->chip->id == RTW_CHIP_TYPE_8812A)
-		rtw_write32_mask(rtwdev, REG_AFE_CTRL3, 0x7FF80000,
-				 crystal_cap | (crystal_cap << 6));
-	else
-		rtw_write32_mask(rtwdev, REG_AFE_CTRL3, 0xFFF000,
-				 crystal_cap | (crystal_cap << 6));
-
-	for (rf_path = 0; rf_path < rtwdev->hal.rf_path_num; rf_path++)
-		rtw_load_table(rtwdev, chip->rf_tbl[rf_path]);
-
-	if (chip->id == RTW_CHIP_TYPE_8812A && rtwdev->hal.rf_path_num == 1)
-		rtw8812a_config_1t(rtwdev);
-
-	rtw8821a_switch_band(rtwdev, 36, RTW_CHANNEL_WIDTH_20);
-	rtw8821a_switch_band(rtwdev, 1, RTW_CHANNEL_WIDTH_20);///TODO is this needed?
-
-	rtw_write8(rtwdev, REG_HWSEQ_CTRL, 0xff);
-	rtw_write32(rtwdev, REG_BAR_MODE_CTRL, 0x0201ffff);
-	rtw_write8(rtwdev, REG_NAV_CTRL + 2, 0);
-
-	rtw_phy_init(rtwdev);
-	rtwdev->dm_info.cck_pd_default = rtw_read8(rtwdev, REG_CSRATIO) & 0x1f;
-
-	rtw8821a_pwrtrack_init(rtwdev);
-
-	/* 0x4c6[3] 1: RTS BW = Data BW
-	 * 0: RTS BW depends on CCA / secondary CCA result.
-	 */
-	rtw_write8_clr(rtwdev, REG_QUEUE_CTRL, BIT(3));
-
-	/* enable Tx report. */
-	rtw_write8(rtwdev, REG_FWHW_TXQ_CTRL + 1, 0x0f);
-
-	/* Pretx_en, for WEP/TKIP SEC */
-	rtw_write8(rtwdev, REG_EARLY_MODE_CONTROL + 3, 0x01);
-
-	rtw_write16(rtwdev, REG_TX_RPT_TIME, 0x3df0);
-
-	/* Reset USB mode switch setting */
-	rtw_write8(rtwdev, REG_SYS_SDIO_CTRL, 0x0);
-	rtw_write8(rtwdev, REG_ACLK_MON, 0x0);
-
-	rtw_write8(rtwdev, REG_USB_HRPWM, 0);
-
-	/* ack for xmit mgmt frames. */
-	rtw_write32_set(rtwdev, REG_FWHW_TXQ_CTRL, BIT(12));
-
-	rtwdev->hal.cck_high_power = rtw_read32_mask(rtwdev, REG_CCK_RPT_FORMAT,
-						     BIT_CCK_RPT_FORMAT);
-
-	// rtw8821a_phy_bf_init(rtwdev);
+	rtw_err(rtwdev, "%s: useless function\n", __func__);
 }
 
 static void rtw8812a_phy_fix_spur(struct rtw_dev *rtwdev, u8 channel, u8 bw)
@@ -1859,422 +2629,6 @@ static void rtw8821a_fill_txdesc_checksum(struct rtw_dev *rtwdev,
 	fill_txdesc_checksum_common(txdesc, 16);
 }
 
-static struct rtw_pwr_seq_cmd trans_carddis_to_cardemu_8821a[] = {
-	// {0x0086,
-	//  RTW_PWR_CUT_ALL_MSK,
-	//  RTW_RTW_PWR_INTF_SDIO_MSK,
-	//  RTW_PWR_ADDR_SDIO,
-	//  RTW_RTW_PWR_CMD_WRITE, BIT(0), 0},
-	// {0x0086,
-	//  RTW_PWR_CUT_ALL_MSK,
-	//  RTW_RTW_PWR_INTF_SDIO_MSK,
-	//  RTW_PWR_ADDR_SDIO,
-	//  RTW_RTW_PWR_CMD_POLLING, BIT(1), BIT(1)},
-	// {0x004A,
-	//  RTW_PWR_CUT_ALL_MSK,
-	//  RTW_RTW_PWR_INTF_USB_MSK,
-	//  RTW_PWR_ADDR_MAC,
-	//  RTW_RTW_PWR_CMD_WRITE, BIT(0), 0},
-	// {0x0005,
-	//  RTW_PWR_CUT_ALL_MSK,
-	//  RTW_PWR_INTF_ALL_MSK,
-	//  RTW_PWR_ADDR_MAC,
-	//  RTW_RTW_PWR_CMD_WRITE, BIT(3) | BIT(4) | BIT(7), 0},
-	// {0x0300,
-	//  RTW_PWR_CUT_ALL_MSK,
-	//  RTW_RTW_PWR_INTF_PCI_MSK,
-	//  RTW_PWR_ADDR_MAC,
-	//  RTW_RTW_PWR_CMD_WRITE, 0xFF, 0},
-	// {0x0301,
-	//  RTW_PWR_CUT_ALL_MSK,
-	//  RTW_RTW_PWR_INTF_PCI_MSK,
-	//  RTW_PWR_ADDR_MAC,
-	//  RTW_RTW_PWR_CMD_WRITE, 0xFF, 0},
-
-	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(3) | BIT(7), 0}, /*clear suspend enable and power down enable*/	\
-	{0x0086, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_SDIO_MSK, RTW_PWR_ADDR_SDIO, RTW_PWR_CMD_WRITE, BIT(0), 0}, /*Set SDIO suspend local register*/	\
-	{0x0086, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_SDIO_MSK, RTW_PWR_ADDR_SDIO, RTW_PWR_CMD_POLLING, BIT(1), BIT(1)}, /*wait power state to suspend*/\
-	{0x004A, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), 0}, /*0x48[16] = 0 to disable GPIO9 as EXT WAKEUP*/   \
-	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(3) | BIT(4), 0}, /*0x04[12:11] = 2b'01enable WL suspend*/\
-	{0x0023, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_SDIO_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(4), 0}, /*0x23[4] = 1b'0 12H LDO enter normal mode*/   \
-	{0x0301, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0},/*PCIe DMA start*/
-
-	{0xFFFF,
-	 RTW_PWR_CUT_ALL_MSK,
-	 RTW_PWR_INTF_ALL_MSK,
-	 0,
-	 RTW_PWR_CMD_END, 0, 0},
-};
-
-static struct rtw_pwr_seq_cmd trans_cardemu_to_act_8821a[] = {
-	{0x0020, RTW_PWR_CUT_ALL_MSK,			\
-	 RTW_PWR_INTF_USB_MSK|RTW_PWR_INTF_SDIO_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), BIT(0) \
-	 /*0x20[0] = 1b'1 enable LDOA12 MACRO block for all interface*/},   \
-	{0x0067, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK | RTW_PWR_INTF_SDIO_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(4), 0}, /*0x67[0] = 0 to disable BT_GPS_SEL pins*/	\
-	{0x0001, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK | RTW_PWR_INTF_SDIO_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_DELAY, 1, RTW_PWR_DELAY_MS},/*Delay 1ms*/   \
-	{0x0000, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK | RTW_PWR_INTF_SDIO_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(5), 0}, /*0x00[5] = 1b'0 release analog Ips to digital ,1:isolation*/   \
-	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, (BIT(4) | BIT(3) | BIT(2)), 0},/* disable SW LPS 0x04[10]=0 and WLSUS_EN 0x04[12:11]=0*/	\
-	{0x0075, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0) , BIT(0)},/* Disable USB suspend */	\
-	{0x0006, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, BIT(1), BIT(1)},/* wait till 0x04[17] = 1    power ready*/	\
-	{0x0075, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0) , 0},/* Enable USB suspend */	\
-	{0x0006, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), BIT(0)},/* release WLON reset  0x04[16]=1*/	\
-	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(7), 0},/* disable HWPDN 0x04[15]=0*/	\
-	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, (BIT(4) | BIT(3)), 0},/* disable WL suspend*/	\
-	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), BIT(0)},/* polling until return 0*/	\
-	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, BIT(0), 0},/**/	\
-	{0x004F, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), BIT(0)},/*0x4C[24] = 0x4F[0] = 1, switch DPDT_SEL_P output from WL BB */\
-	{0x0067, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, (BIT(5) | BIT(4)), (BIT(5) | BIT(4))},/*0x66[13] = 0x67[5] = 1, switch for PAPE_G/PAPE_A from WL BB ; 0x66[12] = 0x67[4] = 1, switch LNAON from WL BB */\
-	{0x0025, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(6), 0},/*anapar_mac<118> , 0x25[6]=0 by wlan single function*/\
-	{0x0049, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), BIT(1)},/*Enable falling edge triggering interrupt*/\
-	{0x0063, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), BIT(1)},/*Enable GPIO9 interrupt mode*/\
-	{0x0062, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), 0},/*Enable GPIO9 input mode*/\
-	{0x0058, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), BIT(0)},/*Enable HSISR GPIO[C:0] interrupt*/\
-	{0x005A, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), BIT(1)},/*Enable HSISR GPIO9 interrupt*/\
-	{0x002E, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF , 0x82 },/* 0x2C[23:12]=0x820 ; XTAL trim */ \
-	{0x0010, RTW_PWR_CUT_ALL_MSK , RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(6) , BIT(6) },/* 0x10[6]=1 ; MP新增對於0x2C的控制權，須把0x10[6]設為1才能讓WLAN控制 */
-	{0xFFFF,
-	 RTW_PWR_CUT_ALL_MSK,
-	 RTW_PWR_INTF_ALL_MSK,
-	 0,
-	 RTW_PWR_CMD_END, 0, 0},
-};
-
-static struct rtw_pwr_seq_cmd trans_act_to_lps_8821a[] = {
-	{0x0301, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0xFF},/*PCIe DMA stop*/	\
-	{0x0522, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0xFF},/*Tx Pause*/	\
-	{0x05F8, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, 0xFF, 0},/*Should be zero if no packet is transmitting*/	\
-	{0x05F9, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, 0xFF, 0},/*Should be zero if no packet is transmitting*/	\
-	{0x05FA, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, 0xFF, 0},/*Should be zero if no packet is transmitting*/	\
-	{0x05FB, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, 0xFF, 0},/*Should be zero if no packet is transmitting*/	\
-	{0x0002, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), 0},/*CCK and OFDM are disabled, and clock are gated*/	\
-	{0x0002, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_DELAY, 0, RTW_PWR_DELAY_US},/*Delay 1us*/	\
-	{0x0002, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), 0},/*Whole BB is reset*/	\
-	{0x0100, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x03},/*Reset MAC TRX*/	\
-	{0x0101, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), 0},/*check if removed later*/	\
-	{0x0093, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_SDIO_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x00},/*When driver enter Sus/ Disable, enable LOP for BT*/	\
-	{0x0553, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(5), BIT(5)},/*Respond TxOK to scheduler*/	\
-	{0xFFFF,
-	 RTW_PWR_CUT_ALL_MSK,
-	 RTW_PWR_INTF_ALL_MSK,
-	 0,
-	 RTW_PWR_CMD_END, 0, 0},
-};
-
-static struct rtw_pwr_seq_cmd trans_act_to_cardemu_8821a[] = {
-	{0x001F, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0 \
-	/*0x1F[7:0] = 0 turn off RF*/},	\
-	{0x004F, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), 0 \
-	/*0x4C[24] = 0x4F[0] = 0, switch DPDT_SEL_P output from		\
-	 register 0x65[2] */},\
-	{0x0049, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), 0 \
-	/*Enable rising edge triggering interrupt*/}, \
-	/* Originally this was INTF_ALL, but it came from the USB driver: */ \
-	{0x0006, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), BIT(0)}, \
-	/* release WLON reset  0x04[16]=1*/	\
-	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), BIT(1) \
-	 /*0x04[9] = 1 turn off MAC by HW state machine*/},	\
-	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, BIT(1), 0 \
-	 /*wait till 0x04[9] = 0 polling until return 0 to disable*/},	\
-	{0x0000, RTW_PWR_CUT_ALL_MSK,			\
-	 RTW_PWR_INTF_USB_MSK|RTW_PWR_INTF_SDIO_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(5), BIT(5) \
-	 /*0x00[5] = 1b'1 analog Ips to digital ,1:isolation*/},   \
-	{0x0020, RTW_PWR_CUT_ALL_MSK,		\
-	 RTW_PWR_INTF_USB_MSK|RTW_PWR_INTF_SDIO_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), 0 \
-	 /*0x20[0] = 1b'0 disable LDOA12 MACRO block*/},
-	{0xFFFF,
-	 RTW_PWR_CUT_ALL_MSK,
-	 RTW_PWR_INTF_ALL_MSK,
-	 0,
-	 RTW_PWR_CMD_END, 0, 0},
-};
-
-static struct rtw_pwr_seq_cmd trans_cardemu_to_carddis_8821a[] = {
-	{0x0007, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_SDIO_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x20 \
-	 /*0x07=0x20 , SOP option to disable BG/MB*/},	\
-	{0x0005, RTW_PWR_CUT_ALL_MSK,		\
-	 RTW_PWR_INTF_USB_MSK|RTW_PWR_INTF_SDIO_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(3)|BIT(4), BIT(3) \
-	 /*0x04[12:11] = 2b'01 enable WL suspend*/},	\
-	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(2), BIT(2) \
-	 /*0x04[10] = 1, enable SW LPS*/},	\
-        {0x004A, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), 1 \
-	 /*0x48[16] = 1 to enable GPIO9 as EXT WAKEUP*/},   \
-	{0x0023, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_SDIO_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(4), BIT(4) \
-	 /*0x23[4] = 1b'1 12H LDO enter sleep mode*/},   \
-	{0x0086, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_SDIO_MSK,\
-	RTW_PWR_ADDR_SDIO, RTW_PWR_CMD_WRITE, BIT(0), BIT(0) \
-	 /*Set SDIO suspend local register*/},	\
-	{0x0086, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_SDIO_MSK,\
-	RTW_PWR_ADDR_SDIO, RTW_PWR_CMD_POLLING, BIT(1), 0 \
-	 /*wait power state to suspend*/},
-	{0xFFFF,
-	 RTW_PWR_CUT_ALL_MSK,
-	 RTW_PWR_INTF_ALL_MSK,
-	 0,
-	 RTW_PWR_CMD_END, 0, 0},
-};
-
-static const struct rtw_pwr_seq_cmd *card_enable_flow_8821a[] = {
-	trans_carddis_to_cardemu_8821a,
-	trans_cardemu_to_act_8821a,
-	NULL
-};
-
-static const struct rtw_pwr_seq_cmd *card_disable_flow_8821a[] = {
-	trans_act_to_lps_8821a,
-	trans_act_to_cardemu_8821a,
-	trans_cardemu_to_carddis_8821a,
-	NULL
-};
-
-/* Revise for U2/U3 switch we can not update RF-A/B reset. Reset after
- * MAC power on to prevent RF R/W error. Is it a right method?
- */
-static struct rtw_pwr_seq_cmd trans_reset_rf_8812a[] = {
-	{REG_RF_CTRL,
-	 RTW_PWR_CUT_ALL_MSK,
-	 RTW_PWR_INTF_USB_MSK,
-	 RTW_PWR_ADDR_MAC,
-	 RTW_PWR_CMD_WRITE, 0xff, 5},
-	{REG_RF_CTRL,
-	 RTW_PWR_CUT_ALL_MSK,
-	 RTW_PWR_INTF_USB_MSK,
-	 RTW_PWR_ADDR_MAC,
-	 RTW_PWR_CMD_WRITE, 0xff, 7},
-	{0x0076,
-	 RTW_PWR_CUT_ALL_MSK,
-	 RTW_PWR_INTF_USB_MSK,
-	 RTW_PWR_ADDR_MAC,
-	 RTW_PWR_CMD_WRITE, 0xff, 5},
-	{0x0076,
-	 RTW_PWR_CUT_ALL_MSK,
-	 RTW_PWR_INTF_USB_MSK,
-	 RTW_PWR_ADDR_MAC,
-	 RTW_PWR_CMD_WRITE, 0xff, 7},
-	{0xFFFF,
-	 RTW_PWR_CUT_ALL_MSK,
-	 RTW_PWR_INTF_ALL_MSK,
-	 0,
-	 RTW_PWR_CMD_END, 0, 0},
-};
-
-static struct rtw_pwr_seq_cmd trans_carddis_to_cardemu_8812a[] = {
-	{0x0012, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), BIT(0) \
-	/*0x12[0] = 1 force PWM mode */},	\
-	{0x0014, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0x80, 0 \
-	/*0x14[7] = 0 turn off ZCD */},	\
-	{0x0015, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0x01, 0 \
-	/* 0x15[0] =0 trun off ZCD */},	\
-	{0x0023, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0x10, 0 \
-	/*0x23[4] = 0 hpon LDO leave sleep mode */},	\
-	{0x0046, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x00 \
-	/* gpio0~7 input mode */},	\
-	{0x0043, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x00 \
-	/* gpio11 input mode, gpio10~8 input mode */}, \
-	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(2), 0 \
-	 /*0x04[10] = 0, enable SW LPS PCIE only*/},	\
-	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(3), 0 \
-	 /*0x04[11] = 2b'01enable WL suspend*/},	\
-	{0x0003, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(2), BIT(2) \
-	 /*0x03[2] = 1, enable 8051*/},	\
-	{0x0301, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0 \
-	/*PCIe DMA start*/},  \
-	{0x0024, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), BIT(1) \
-	/* 0x24[1] Choose the type of buffer after xosc: schmitt trigger*/}, \
-	{0x0028, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(3), BIT(3) \
-	/* 0x28[33] Choose the type of buffer after xosc: schmitt trigger*/},
-
-	{0xFFFF,
-	 RTW_PWR_CUT_ALL_MSK,
-	 RTW_PWR_INTF_ALL_MSK,
-	 0,
-	 RTW_PWR_CMD_END, 0, 0},
-};
-
-static struct rtw_pwr_seq_cmd trans_cardemu_to_act_8812a[] = {
-	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(2), 0 \
-	/* disable SW LPS 0x04[10]=0*/},	\
-	{0x0006, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, BIT(1), BIT(1) \
-	/* wait till 0x04[17] = 1    power ready*/},	\
-	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(7), 0 \
-	/* disable HWPDN 0x04[15]=0*/}, \
-	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(3), 0 \
-	/* disable WL suspend*/},	\
-	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), BIT(0) \
-	/* polling until return 0*/},	\
-	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, BIT(0), 0},   \
-	{0x0024, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), 0 \
-	/* 0x24[1] Choose the type of buffer after xosc: nand*/},   \
-	{0x0028, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(3), 0 \
-	/* 0x28[33] Choose the type of buffer after xosc: nand*/},
-	{0xFFFF,
-	 RTW_PWR_CUT_ALL_MSK,
-	 RTW_PWR_INTF_ALL_MSK,
-	 0,
-	 RTW_PWR_CMD_END, 0, 0},
-};
-
-static struct rtw_pwr_seq_cmd trans_act_to_lps_8812a[] = {
-	{0x0301, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0xFF},/*PCIe DMA stop*/	\
-	{0x0522, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x7F},/*Tx Pause*/		\
-	{0x05F8, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, 0xFF, 0},/*Should be zero if no packet is transmitting*/	\
-	{0x05F9, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, 0xFF, 0},/*Should be zero if no packet is transmitting*/	\
-	{0x05FA, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, 0xFF, 0},/*Should be zero if no packet is transmitting*/	\
-	{0x05FB, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, 0xFF, 0},/*Should be zero if no packet is transmitting*/	\
-	{0x0c00, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x04}, /* 0xc00[7:0] = 4	turn off 3-wire */	\
-	{0x0e00, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x04}, /* 0xe00[7:0] = 4	turn off 3-wire */	\
-	{0x0002, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), 0},/*CCK and OFDM are disabled, and clock are gated, and RF closed*/	\
-	{0x0002, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_DELAY, 0, RTW_PWR_DELAY_US},/*Delay 1us*/	\
-	{0x0002, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), 0},  /* Whole BB is reset*/			\
-	{0x0100, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x03},/*Reset MAC TRX*/			\
-	{0x0101, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), 0},/*check if removed later*/		\
-	{0x0553, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK, RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(5), BIT(5)},/*Respond TxOK to scheduler*/
-	{0xFFFF,
-	 RTW_PWR_CUT_ALL_MSK,
-	 RTW_PWR_INTF_ALL_MSK,
-	 0,
-	 RTW_PWR_CMD_END, 0, 0},
-};
-
-static struct rtw_pwr_seq_cmd trans_act_to_cardemu_8812a[] = {
-	{0x0c00, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x04 \
-	 /* 0xc00[7:0] = 4	turn off 3-wire */},	\
-	{0x0e00, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x04 \
-	 /* 0xe00[7:0] = 4	turn off 3-wire */},	\
-	{0x0002, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(0), 0 \
-	 /* 0x2[0] = 0	 RESET BB, CLOSE RF */},	\
-	{0x0002, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_DELAY, 0, RTW_PWR_DELAY_US \
-	/*Delay 1us*/},	\
-	{0x0002, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), 0 \
-	  /* Whole BB is reset*/},			\
-	{0x0007, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x2A \
-	 /* 0x07[7:0] = 0x28 sps pwm mode 0x2a for BT coex*/},	\
-	{0x0008, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0x02, 0 \
-	/*0x8[1] = 0 ANA clk =500k */},	\
-	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), BIT(1) \
-	 /*0x04[9] = 1 turn off MAC by HW state machine*/},	\
-	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_POLLING, BIT(1), 0 \
-	 /*wait till 0x04[9] = 0 polling until return 0 to disable*/},
-	{0xFFFF,
-	 RTW_PWR_CUT_ALL_MSK,
-	 RTW_PWR_INTF_ALL_MSK,
-	 0,
-	 RTW_PWR_CMD_END, 0, 0},
-};
-
-static struct rtw_pwr_seq_cmd trans_cardemu_to_carddis_8812a[] = {
-	{0x0003, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(2), 0 \
-	/*0x03[2] = 0, reset 8051*/},	\
-	{0x0080, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x05 \
-	/*0x80=05h if reload fw, fill the default value of host_CPU handshake field*/},	\
-	{0x0042, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xF0, 0xcc}, \
-	{0x0042, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_PCI_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xF0, 0xEC}, \
-	{0x0043, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x07 \
-	/* gpio11 input mode, gpio10~8 output mode */},	\
-	{0x0045, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x00 \
-	/* gpio 0~7 output same value as input ?? */},	\
-	{0x0046, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0xff \
-	/* gpio0~7 output mode */},	\
-	{0x0047, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0 \
-	/* 0x47[7:0] = 00 gpio mode */},	\
-	{0x0014, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0x80, BIT(7) \
-	/*0x14[7] = 1 turn on ZCD */},	\
-	{0x0015, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0x01, BIT(0) \
-	/* 0x15[0] =1 trun on ZCD */},	\
-	{0x0012, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0x01, 0 \
-	/*0x12[0] = 0 force PFM mode */},	\
-	{0x0023, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0x10, BIT(4) \
-	/*0x23[4] = 1 hpon LDO sleep mode */},	\
-	{0x0008, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0x02, 0 \
-	/*0x8[1] = 0 ANA clk =500k */},	\
-	{0x0007, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, 0xFF, 0x20 \
-	 /*0x07=0x20 , SOP option to disable BG/MB*/},	\
-	{0x001f, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), 0 \
-	 /*0x01f[1]=0 , disable RFC_0  control  REG_RF_CTRL_8812 */},	\
-	{0x0076, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_USB_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(1), 0 \
-	 /*0x076[1]=0 , disable RFC_1  control REG_OPT_CTRL_8812 +2 */},	\
-	{0x0005, RTW_PWR_CUT_ALL_MSK, RTW_PWR_INTF_ALL_MSK,\
-	RTW_PWR_ADDR_MAC, RTW_PWR_CMD_WRITE, BIT(3), BIT(3) \
-	 /*0x04[11] = 2b'01 enable WL suspend*/},
-	{0xFFFF,
-	 RTW_PWR_CUT_ALL_MSK,
-	 RTW_PWR_INTF_ALL_MSK,
-	 0,
-	 RTW_PWR_CMD_END, 0, 0},
-};
-
-static const struct rtw_pwr_seq_cmd *card_enable_flow_8812a[] = {
-	trans_reset_rf_8812a,
-	trans_carddis_to_cardemu_8812a,
-	trans_cardemu_to_act_8812a,
-	NULL
-};
-
-static const struct rtw_pwr_seq_cmd *card_disable_flow_8812a[] = {
-	trans_act_to_lps_8812a,
-	trans_act_to_cardemu_8812a,
-	trans_cardemu_to_carddis_8812a,
-	NULL
-};
-
 static const struct rtw_intf_phy_para usb2_param_8821a[] = {
 	{0xFFFF, 0x00,
 	 RTW_IP_SEL_PHY,
@@ -2379,6 +2733,8 @@ static struct rtw_prioq_addrs prioq_addrs_8821a = {
 };
 
 static struct rtw_chip_ops rtw8821a_ops = {
+	.power_on		= rtw8821a_power_on,
+	.power_off		= rtw8821a_power_off,
 	.phy_set_param		= rtw8821a_phy_set_param,	///
 	.read_efuse		= rtw8821a_read_efuse,		///
 	.query_rx_desc		= rtw8821a_query_rx_desc,	///
