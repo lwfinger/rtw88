@@ -1990,6 +1990,11 @@ static int rtw_chip_efuse_enable(struct rtw_dev *rtwdev)
 	struct rtw_fw_state *fw = &rtwdev->fw;
 	int ret;
 
+	/* TODO: put this in the chip ops. They don't need powering on before reading the efuse. */
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A ||
+	    rtwdev->chip->id == RTW_CHIP_TYPE_8812A)
+		return 0;
+
 	ret = rtw_hci_setup(rtwdev);
 	if (ret) {
 		rtw_err(rtwdev, "failed to setup hci\n");
