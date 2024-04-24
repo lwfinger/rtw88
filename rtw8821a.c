@@ -1328,6 +1328,9 @@ static int rtw8821a_power_on(struct rtw_dev *rtwdev)
 	/* ack for xmit mgmt frames. */
 	rtw_write32_set(rtwdev, REG_FWHW_TXQ_CTRL, BIT(12));
 
+	/// From Hal_PatchwithJaguar_8812:
+	rtw_write8(rtwdev, 0x8c3, 0x3f);
+
 	rtwdev->hal.cck_high_power = rtw_read32_mask(rtwdev, REG_CCK_RPT_FORMAT,
 						     BIT_CCK_RPT_FORMAT);
 
