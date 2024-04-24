@@ -2686,9 +2686,9 @@ static struct rtw_page_table page_table_8821a[] = {
 	/* hq_num, nq_num, lq_num, exq_num, gapq_num */
 	{0, 0, 0, 0, 0},	// unused by USB
 	{0, 0, 0, 0, 0},	// unused by USB
-	{8, 0, 0, 0, 0},	// 2 bulk out endpoints
-	{8, 0, 8, 0, 0},	// 3 bulk out endpoints
-	{8, 0, 8, 4, 0},	// 4 bulk out endpoints
+	{8, 0, 0, 0, 1},	// 2 bulk out endpoints
+	{8, 0, 8, 0, 1},	// 3 bulk out endpoints
+	{8, 0, 8, 4, 1},	// 4 bulk out endpoints
 };
 
 static struct rtw_page_table page_table_8812a[] = {
