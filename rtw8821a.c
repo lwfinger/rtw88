@@ -1118,7 +1118,8 @@ static void rtw8821a_power_off(struct rtw_dev *rtwdev)
 	rtw_write32(rtwdev, REG_HIMR0, 0);
 	rtw_write32(rtwdev, REG_HIMR1, 0);
 
-	rtw_coex_power_off_setting(rtwdev);
+	if (rtwdev->efuse.btcoex)
+		rtw_coex_power_off_setting(rtwdev);
 
 	if (!test_bit(RTW_FLAG_POWERON, rtwdev->flags)) {
 		rtw_err(rtwdev, "%s: bailing because RTW_FLAG_POWERON\n", __func__);
@@ -1339,8 +1340,10 @@ static int rtw8821a_power_on(struct rtw_dev *rtwdev)
 	}
 
 	wifi_only = !rtwdev->efuse.btcoex;
-	rtw_coex_power_on_setting(rtwdev);
-	rtw_coex_init_hw_config(rtwdev, wifi_only);
+	if (efuse->btcoex) {
+		rtw_coex_power_on_setting(rtwdev);
+		rtw_coex_init_hw_config(rtwdev, wifi_only);
+	}
 
 	return 0;
 
