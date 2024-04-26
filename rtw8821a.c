@@ -2498,54 +2498,54 @@ static void rtw8821a_set_tx_power_index(struct rtw_dev *rtwdev)
 
 static void rtw8821a_false_alarm_statistics(struct rtw_dev *rtwdev)
 {
-// 	struct rtw_dm_info *dm_info = &rtwdev->dm_info;
-// 	u32 cck_enable;
-// 	u32 cck_fa_cnt;
-// 	u32 ofdm_fa_cnt;
-// 	u32 crc32_cnt;
-// 	u32 cca32_cnt;
-//
-// 	cck_enable = rtw_read32(rtwdev, REG_RXPSEL) & BIT(28);
-// 	cck_fa_cnt = rtw_read16(rtwdev, REG_FA_CCK);
-// 	ofdm_fa_cnt = rtw_read16(rtwdev, REG_FA_OFDM);
-//
-// 	dm_info->cck_fa_cnt = cck_fa_cnt;
-// 	dm_info->ofdm_fa_cnt = ofdm_fa_cnt;
-// 	dm_info->total_fa_cnt = ofdm_fa_cnt;
-// 	if (cck_enable)
-// 		dm_info->total_fa_cnt += cck_fa_cnt;
-//
-// 	crc32_cnt = rtw_read32(rtwdev, REG_CRC_CCK);
-// 	dm_info->cck_ok_cnt = FIELD_GET(GENMASK(15, 0), crc32_cnt);
-// 	dm_info->cck_err_cnt = FIELD_GET(GENMASK(31, 16), crc32_cnt);
-//
-// 	crc32_cnt = rtw_read32(rtwdev, REG_CRC_OFDM);
-// 	dm_info->ofdm_ok_cnt = FIELD_GET(GENMASK(15, 0), crc32_cnt);
-// 	dm_info->ofdm_err_cnt = FIELD_GET(GENMASK(31, 16), crc32_cnt);
-//
-// 	crc32_cnt = rtw_read32(rtwdev, REG_CRC_HT);
-// 	dm_info->ht_ok_cnt = FIELD_GET(GENMASK(15, 0), crc32_cnt);
-// 	dm_info->ht_err_cnt = FIELD_GET(GENMASK(31, 16), crc32_cnt);
-//
-// 	crc32_cnt = rtw_read32(rtwdev, REG_CRC_VHT);
-// 	dm_info->vht_ok_cnt = FIELD_GET(GENMASK(15, 0), crc32_cnt);
-// 	dm_info->vht_err_cnt = FIELD_GET(GENMASK(31, 16), crc32_cnt);
-//
-// 	cca32_cnt = rtw_read32(rtwdev, REG_CCA_OFDM);
-// 	dm_info->ofdm_cca_cnt = FIELD_GET(GENMASK(31, 16), cca32_cnt);
-// 	dm_info->total_cca_cnt = dm_info->ofdm_cca_cnt;
-// 	if (cck_enable) {
-// 		cca32_cnt = rtw_read32(rtwdev, REG_CCA_CCK);
-// 		dm_info->cck_cca_cnt = FIELD_GET(GENMASK(15, 0), cca32_cnt);
-// 		dm_info->total_cca_cnt += dm_info->cck_cca_cnt;
-// 	}
-//
-// 	rtw_write32_set(rtwdev, REG_FAS, BIT(17));
-// 	rtw_write32_clr(rtwdev, REG_FAS, BIT(17));
-// 	rtw_write32_clr(rtwdev, REG_RXDESC, BIT(15));
-// 	rtw_write32_set(rtwdev, REG_RXDESC, BIT(15));
-// 	rtw_write32_set(rtwdev, REG_CNTRST, BIT(0));
-// 	rtw_write32_clr(rtwdev, REG_CNTRST, BIT(0));
+	struct rtw_dm_info *dm_info = &rtwdev->dm_info;
+	u32 cck_enable;
+	u32 cck_fa_cnt;
+	u32 ofdm_fa_cnt;
+	u32 crc32_cnt;
+	u32 cca32_cnt;
+
+	cck_enable = rtw_read32(rtwdev, REG_RXPSEL) & BIT(28);
+	cck_fa_cnt = rtw_read16(rtwdev, REG_FA_CCK);
+	ofdm_fa_cnt = rtw_read16(rtwdev, REG_FA_OFDM);
+
+	dm_info->cck_fa_cnt = cck_fa_cnt;
+	dm_info->ofdm_fa_cnt = ofdm_fa_cnt;
+	dm_info->total_fa_cnt = ofdm_fa_cnt;
+	if (cck_enable)
+		dm_info->total_fa_cnt += cck_fa_cnt;
+
+	crc32_cnt = rtw_read32(rtwdev, REG_CRC_CCK);
+	dm_info->cck_ok_cnt = FIELD_GET(GENMASK(15, 0), crc32_cnt);
+	dm_info->cck_err_cnt = FIELD_GET(GENMASK(31, 16), crc32_cnt);
+
+	crc32_cnt = rtw_read32(rtwdev, REG_CRC_OFDM);
+	dm_info->ofdm_ok_cnt = FIELD_GET(GENMASK(15, 0), crc32_cnt);
+	dm_info->ofdm_err_cnt = FIELD_GET(GENMASK(31, 16), crc32_cnt);
+
+	crc32_cnt = rtw_read32(rtwdev, REG_CRC_HT);
+	dm_info->ht_ok_cnt = FIELD_GET(GENMASK(15, 0), crc32_cnt);
+	dm_info->ht_err_cnt = FIELD_GET(GENMASK(31, 16), crc32_cnt);
+
+	crc32_cnt = rtw_read32(rtwdev, REG_CRC_VHT);
+	dm_info->vht_ok_cnt = FIELD_GET(GENMASK(15, 0), crc32_cnt);
+	dm_info->vht_err_cnt = FIELD_GET(GENMASK(31, 16), crc32_cnt);
+
+	cca32_cnt = rtw_read32(rtwdev, REG_CCA_OFDM);
+	dm_info->ofdm_cca_cnt = FIELD_GET(GENMASK(31, 16), cca32_cnt);
+	dm_info->total_cca_cnt = dm_info->ofdm_cca_cnt;
+	if (cck_enable) {
+		cca32_cnt = rtw_read32(rtwdev, REG_CCA_CCK);
+		dm_info->cck_cca_cnt = FIELD_GET(GENMASK(15, 0), cca32_cnt);
+		dm_info->total_cca_cnt += dm_info->cck_cca_cnt;
+	}
+
+	rtw_write32_set(rtwdev, REG_FAS, BIT(17));
+	rtw_write32_clr(rtwdev, REG_FAS, BIT(17));
+	rtw_write32_clr(rtwdev, REG_RXDESC, BIT(15));
+	rtw_write32_set(rtwdev, REG_RXDESC, BIT(15));
+	rtw_write32_set(rtwdev, REG_CNTRST, BIT(0));
+	rtw_write32_clr(rtwdev, REG_CNTRST, BIT(0));
 }
 
 // static void rtw8821a_do_iqk(struct rtw_dev *rtwdev)
@@ -2959,30 +2959,19 @@ static void rtw8821a_bf_config_bfee(struct rtw_dev *rtwdev, struct rtw_vif *vif,
 
 static void rtw8821a_phy_cck_pd_set(struct rtw_dev *rtwdev, u8 new_lvl)
 {
-// 	struct rtw_dm_info *dm_info = &rtwdev->dm_info;
-// 	u8 pd[CCK_PD_LV_MAX] = {3, 7, 13, 13, 13};
-// 	u8 cck_n_rx;
-//
-// 	rtw_dbg(rtwdev, RTW_DBG_PHY, "lv: (%d) -> (%d)\n",
-// 		dm_info->cck_pd_lv[RTW_CHANNEL_WIDTH_20][RF_PATH_A], new_lvl);
-//
-// 	if (dm_info->cck_pd_lv[RTW_CHANNEL_WIDTH_20][RF_PATH_A] == new_lvl)
-// 		return;
-//
-// 	cck_n_rx = (rtw_read8_mask(rtwdev, REG_CCK0_FAREPORT, BIT_CCK0_2RX) &&
-// 		    rtw_read8_mask(rtwdev, REG_CCK0_FAREPORT, BIT_CCK0_MRC)) ? 2 : 1;
-// 	rtw_dbg(rtwdev, RTW_DBG_PHY,
-// 		"is_linked=%d, lv=%d, n_rx=%d, cs_ratio=0x%x, pd_th=0x%x, cck_fa_avg=%d\n",
-// 		rtw_is_assoc(rtwdev), new_lvl, cck_n_rx,
-// 		dm_info->cck_pd_default + new_lvl * 2,
-// 		pd[new_lvl], dm_info->cck_fa_avg);
-//
-// 	dm_info->cck_fa_avg = CCK_FA_AVG_RESET;
-//
-// 	dm_info->cck_pd_lv[RTW_CHANNEL_WIDTH_20][RF_PATH_A] = new_lvl;
-// 	rtw_write32_mask(rtwdev, REG_PWRTH, 0x3f0000, pd[new_lvl]);
-// 	rtw_write32_mask(rtwdev, REG_PWRTH2, 0x1f0000,
-// 			 dm_info->cck_pd_default + new_lvl * 2);
+	static const u8 pd[CCK_PD_LV_MAX] = {0x40, 0x83, 0xcd, 0xdd, 0xed};
+	struct rtw_dm_info *dm_info = &rtwdev->dm_info;
+
+	rtw_dbg(rtwdev, RTW_DBG_PHY, "lv: (%d) -> (%d)\n",
+		dm_info->cck_pd_lv[RTW_CHANNEL_WIDTH_20][RF_PATH_A], new_lvl);
+
+	if (dm_info->cck_pd_lv[RTW_CHANNEL_WIDTH_20][RF_PATH_A] == new_lvl)
+		return;
+
+	dm_info->cck_fa_avg = CCK_FA_AVG_RESET;
+	dm_info->cck_pd_lv[RTW_CHANNEL_WIDTH_20][RF_PATH_A] = new_lvl;
+
+	rtw_write8(rtwdev, 0xa0a, pd[new_lvl]);
 }
 
 static void rtw8821a_fill_txdesc_checksum(struct rtw_dev *rtwdev,
