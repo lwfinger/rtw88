@@ -1097,6 +1097,7 @@ static void rtw8821au_init_queue_reserved_page(struct rtw_dev *rtwdev)
 
 	val32 = BIT_RQPN_NE(pg_tbl->nq_num, pg_tbl->exq_num);
 	rtw_write32(rtwdev, REG_RQPN_NPQ, val32);
+
 	val32 = BIT_RQPN_HLP(pg_tbl->hq_num, pg_tbl->lq_num, pubq_num);
 	rtw_write32(rtwdev, REG_RQPN, val32);
 }
@@ -1213,6 +1214,7 @@ static void rtw8821au_init_burst_pkt_len(struct rtw_dev *rtwdev)
 
 	/* usb3 rx interval */
 	rtw_write8(rtwdev, 0xf050, 0x01);
+
 	/* burst lenght=4, set 0x3400 for burst length=2 */
 	rtw_write16(rtwdev, REG_RXDMA_STATUS, 0x7400);
 	rtw_write8(rtwdev, REG_RXDMA_STATUS + 1, 0xf5);
@@ -1299,6 +1301,7 @@ static void rtw8821au_init_burst_pkt_len(struct rtw_dev *rtwdev)
 	/* ARFB table 11 for 11ac 24G 1SS */
 	rtw_write32(rtwdev, REG_ARFR2_V1, 0x00000015);
 	rtw_write32(rtwdev, REG_ARFRH2_V1, 0x003ff000);
+
 	/* ARFB table 12 for 11ac 24G 2SS */
 	rtw_write32(rtwdev, REG_ARFR3_V1, 0x00000015);
 	rtw_write32(rtwdev, REG_ARFRH3_V1, 0xffcff000);
@@ -1380,6 +1383,7 @@ static u8 rtw8821a_get_swing_index(struct rtw_dev *rtwdev)
 	u32 swing, table_value;
 
 	swing = rtw_read32_mask(rtwdev, REG_TXSCALE_A, BB_SWING_MASK);
+
 	for (i = 0; i < ARRAY_SIZE(rtw8821a_txscale_tbl); i++) {
 		table_value = rtw8821a_txscale_tbl[i];
 		if (swing == table_value)
@@ -1392,8 +1396,10 @@ static u8 rtw8821a_get_swing_index(struct rtw_dev *rtwdev)
 static void rtw8821a_pwrtrack_init(struct rtw_dev *rtwdev)
 {
 	struct rtw_dm_info *dm_info = &rtwdev->dm_info;
-	u8 swing_idx = rtw8821a_get_swing_index(rtwdev);
+	u8 swing_idx;
 	u8 path;
+
+	swing_idx = rtw8821a_get_swing_index(rtwdev);
 
 	if (swing_idx >= ARRAY_SIZE(rtw8821a_txscale_tbl))
 		dm_info->default_ofdm_index = 24;
@@ -2071,6 +2077,7 @@ static void rtw8821a_switch_channel(struct rtw_dev *rtwdev, u8 channel, u8 bw)
 			fc_area = 0x96a;
 		break;
 	}
+
 	rtw_write32_mask(rtwdev, REG_CLKTRK, 0x1ffe0000, fc_area);
 
 	for (path = 0; path < hal->rf_path_num; path++) {
@@ -2088,6 +2095,7 @@ static void rtw8821a_switch_channel(struct rtw_dev *rtwdev, u8 channel, u8 bw)
 				rf_mod_ag = 0x000;
 			break;
 		}
+
 		rtw_write_rf(rtwdev, path, 0x18,
 			     RF18_RFSI_MASK | RF18_BAND_MASK, rf_mod_ag);
 
@@ -2172,6 +2180,7 @@ static void rtw8821a_post_set_bw_mode(struct rtw_dev *rtwdev, u8 channel, u8 bw,
 			else
 				l1pkval = 7;
 		}
+
 		rtw_write32_mask(rtwdev, REG_L1PKTH, 0x03C00000, l1pkval);
 
 		break;
