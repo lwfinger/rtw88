@@ -3025,15 +3025,7 @@ static const struct rtw_rfe_def rtw8812a_rfe_defs[] = {
 
 static struct rtw_hw_reg rtw8821a_dig[] = {
 	[0] = { .addr = 0xc50, .mask = 0x7f },
-};
-
-static struct rtw_hw_reg rtw8812a_dig[] = {
-	[0] = { .addr = 0xc50, .mask = 0x7f },
 	[1] = { .addr = 0xe50, .mask = 0x7f },
-};
-
-static const struct rtw_hw_reg rtw8821a_dig_cck[] = {
-	[0] = { .addr = 0xa0c, .mask = 0x3f00 },
 };
 
 static const struct rtw_ltecoex_addr rtw8821a_ltecoex_addr = {
@@ -3677,7 +3669,7 @@ const struct rtw_chip_info rtw8812a_hw_spec = {
 	.rqpn_table = rqpn_table_8821a,
 	.prioq_addrs = &prioq_addrs_8821a,
 	.intf_table = &phy_para_table_8821a,
-	.dig = rtw8812a_dig,
+	.dig = rtw8821a_dig,
 	.rf_sipi_addr = {0xc90, 0xe90},
 	.ltecoex_addr = NULL,
 	.mac_tbl = &rtw8812a_mac_tbl,
