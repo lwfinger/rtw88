@@ -2119,6 +2119,32 @@ rtw8821a_set_tx_power_index_by_rate(struct rtw_dev *rtwdev, u8 path, u8 rs,
 	}
 }
 
+static void rtw8821a_tx_power_training(struct rtw_dev *rtwdev, u8 bw,
+				       u8 channel, u8 path)
+{
+	static const u32 write_offset[] = {
+		REG_TX_PWR_TRAINING_A, REG_TX_PWR_TRAINING_B,
+	};
+	u32 power_level, write_data;
+	u8 i;
+
+	power_level = rtwdev->hal.tx_pwr_tbl[path][DESC_RATEMCS7];
+	write_data = 0;
+
+	for (i = 0; i < 3; i++) {
+		if (i == 0)
+			power_level -= 10;
+		else if (i == 1)
+			power_level -= 8;
+		else
+			power_level -= 6;
+
+		write_data |= max(power_level, 2) << (i * 8);
+	}
+
+	rtw_write32_mask(rtwdev, write_offset[path], 0xffffff, write_data);
+}
+
 static void rtw8821a_set_tx_power_index(struct rtw_dev *rtwdev)
 {
 	struct rtw_hal *hal = &rtwdev->hal;
@@ -2132,10 +2158,20 @@ static void rtw8821a_set_tx_power_index(struct rtw_dev *rtwdev)
 			     rs == RTW_RATE_SECTION_VHT_2S))
 				continue;
 
+			if (test_bit(RTW_FLAG_SCANNING, rtwdev->flags) &&
+			    rs > RTW_RATE_SECTION_OFDM)
+				continue;
+
+			if (hal->current_band_type == RTW_BAND_5G &&
+			    rs == RTW_RATE_SECTION_CCK)
+				continue;
+
 			rtw8821a_set_tx_power_index_by_rate(rtwdev, path, rs,
 							    &phy_pwr_idx);
 		}
-		///TODO: PHY_TxPowerTrainingByPath_8812
+
+		rtw8821a_tx_power_training(rtwdev, hal->current_band_width,
+					   hal->current_channel, path);
 	}
 }
 

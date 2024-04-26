@@ -299,6 +299,7 @@ struct rtw8821a_phy_status_rpt {
 #define BB_SWING_MASK				GENMASK(31, 21)
 #define REG_TXDFIR				0xc20
 #define REG_RXIGI_A				0xc50
+#define REG_TX_PWR_TRAINING_A			0xc54
 #define REG_TXAGCIDX				0xc94
 #define REG_TRSW				0xca0
 #define REG_RFESEL0				0xcb0
@@ -320,6 +321,7 @@ struct rtw8821a_phy_status_rpt {
 #define REG_AGCTR_B				0xe08
 #define REG_TXSCALE_B				0xe1c
 #define REG_RXIGI_B				0xe50
+#define REG_TX_PWR_TRAINING_B			0xe54
 #define REG_RFE_PINMUX_B			0xeb0
 #define REG_RFE_INV_B				0xeb4
 #define REG_CRC_CCK				0xf04
