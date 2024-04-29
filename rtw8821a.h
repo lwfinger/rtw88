@@ -295,11 +295,16 @@ struct rtw8821a_phy_status_rpt {
 #define REG_TXFILTER				0xaac
 #define REG_CNTRST				0xb58
 #define REG_AGCTR_A				0xc08
+#define REG_RX_IQC_AB_A				0xc10
 #define REG_TXSCALE_A				0xc1c
 #define BB_SWING_MASK				GENMASK(31, 21)
 #define REG_TXDFIR				0xc20
 #define REG_RXIGI_A				0xc50
 #define REG_TX_PWR_TRAINING_A			0xc54
+#define REG_AFE_PWR1_A				0xc60
+#define REG_AFE_PWR2_A				0xc64
+#define REG_RX_WAIT_CCA_TX_CCK_RFON_A		0xc68
+#define REG_LSSI_WRITE_A			0xc90
 #define REG_TXAGCIDX				0xc94
 #define REG_TRSW				0xca0
 #define REG_RFESEL0				0xcb0
@@ -322,6 +327,7 @@ struct rtw8821a_phy_status_rpt {
 #define REG_TXSCALE_B				0xe1c
 #define REG_RXIGI_B				0xe50
 #define REG_TX_PWR_TRAINING_B			0xe54
+#define REG_LSSI_WRITE_B			0xe90
 #define REG_RFE_PINMUX_B			0xeb0
 #define REG_RFE_INV_B				0xeb4
 #define REG_CRC_CCK				0xf04
@@ -360,5 +366,8 @@ struct rtw8821a_phy_status_rpt {
 #define RF18_BW_20M				(BIT(11) | BIT(10))
 #define RF18_BW_40M				(BIT(10))
 #define RF18_BW_80M				(0)
+#define RF_MODE_TABLE_ADDR			0x30
+#define RF_MODE_TABLE_DATA0			0x31
+#define RF_MODE_TABLE_DATA1			0x32
 
 #endif
