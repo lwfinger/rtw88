@@ -2123,11 +2123,21 @@ static void rtw8821a_post_set_bw_mode(struct rtw_dev *rtwdev, u8 channel, u8 bw,
 				      u8 primary_chan_idx)
 {
 	struct rtw_hal *hal = &rtwdev->hal;
+	u8 txsc40 = 0, txsc20, txsc;
 	u8 reg_837, l1pkval;
 
 	rtw8821a_set_reg_bw(rtwdev, bw);
 
-	rtw_write8(rtwdev, REG_DATA_SC, primary_chan_idx);
+	txsc20 = primary_chan_idx;
+	if (bw == RTW_CHANNEL_WIDTH_80) {
+		if (txsc20 == RTW_SC_20_UPPER || txsc20 == RTW_SC_20_UPMOST)
+			txsc40 = RTW_SC_40_UPPER;
+		else
+			txsc40 = RTW_SC_40_LOWER;
+	}
+
+	txsc = BIT_TXSC_20M(txsc20) | BIT_TXSC_40M(txsc40);
+	rtw_write8(rtwdev, REG_DATA_SC, txsc);
 
 	reg_837 = rtw_read8(rtwdev, REG_BWINDICATION + 3);
 
@@ -2146,8 +2156,8 @@ static void rtw8821a_post_set_bw_mode(struct rtw_dev *rtwdev, u8 channel, u8 bw,
 	case RTW_CHANNEL_WIDTH_40:
 		rtw_write32_mask(rtwdev, REG_ADCCLK, 0x003003C3, 0x00300201);
 		rtw_write32_mask(rtwdev, REG_ADC160, BIT(30), 0);
-		rtw_write32_mask(rtwdev, REG_ADCCLK, 0x3C, primary_chan_idx);
-		rtw_write32_mask(rtwdev, REG_CCA2ND, 0xf0000000, primary_chan_idx);
+		rtw_write32_mask(rtwdev, REG_ADCCLK, 0x3C, txsc);
+		rtw_write32_mask(rtwdev, REG_CCA2ND, 0xf0000000, txsc);
 
 		if (reg_837 & BIT(2)) {
 			l1pkval = 6;
@@ -2160,7 +2170,7 @@ static void rtw8821a_post_set_bw_mode(struct rtw_dev *rtwdev, u8 channel, u8 bw,
 
 		rtw_write32_mask(rtwdev, REG_L1PKTH, 0x03C00000, l1pkval);
 
-		if (primary_chan_idx == RTW_SC_20_UPPER)
+		if (txsc == RTW_SC_20_UPPER)
 			rtw_write32_set(rtwdev, REG_RXSB, BIT(4));
 		else
 			rtw_write32_clr(rtwdev, REG_RXSB, BIT(4));
@@ -2169,8 +2179,8 @@ static void rtw8821a_post_set_bw_mode(struct rtw_dev *rtwdev, u8 channel, u8 bw,
 	case RTW_CHANNEL_WIDTH_80:
 		rtw_write32_mask(rtwdev, REG_ADCCLK, 0x003003C3, 0x00300202);
 		rtw_write32_mask(rtwdev, REG_ADC160, BIT(30), 1);
-		rtw_write32_mask(rtwdev, REG_ADCCLK, 0x3C, primary_chan_idx);
-		rtw_write32_mask(rtwdev, REG_CCA2ND, 0xf0000000, primary_chan_idx);
+		rtw_write32_mask(rtwdev, REG_ADCCLK, 0x3C, txsc);
+		rtw_write32_mask(rtwdev, REG_CCA2ND, 0xf0000000, txsc);
 
 		if (reg_837 & BIT(2)) {
 			l1pkval = 5;
