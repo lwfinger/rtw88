@@ -1974,7 +1974,7 @@ static void rtw8821a_switch_band(struct rtw_dev *rtwdev, u8 channel, u8 bw)
 		}
 
 		rtw_write32_mask(rtwdev, REG_TXPSEL, 0xf0, 0x1);
-		rtw_write32_mask(rtwdev, REG_ADCINI, 0x0f000000, 0x1);
+		rtw_write32_mask(rtwdev, REG_CCK_RX, 0x0f000000, 0x1);
 
 		basic_rates = BIT(DESC_RATE1M) | BIT(DESC_RATE2M) |
 			      BIT(DESC_RATE5_5M) | BIT(DESC_RATE11M) |
@@ -2007,7 +2007,7 @@ static void rtw8821a_switch_band(struct rtw_dev *rtwdev, u8 channel, u8 bw)
 		}
 
 		rtw_write32_mask(rtwdev, REG_TXPSEL, 0xf0, 0);
-		rtw_write32_mask(rtwdev, REG_ADCINI, 0x0f000000, 0xf);
+		rtw_write32_mask(rtwdev, REG_CCK_RX, 0x0f000000, 0xf);
 
 		basic_rates = BIT(DESC_RATE6M) | BIT(DESC_RATE12M) |
 			      BIT(DESC_RATE24M);

@@ -277,7 +277,7 @@ struct rtw8821a_phy_status_rpt {
 #define REG_ACGG2TBL				0x958
 #define REG_FAS					0x9a4
 #define REG_RXSB				0xa00
-#define REG_ADCINI				0xa04
+#define REG_CCK_RX				0xa04
 #define REG_PWRTH				0xa08
 #define REG_CCA_FLTR				0xa20
 #define REG_TXSF2				0xa24
