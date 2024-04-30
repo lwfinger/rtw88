@@ -68,6 +68,7 @@ static inline bool rtw_dbg_is_enabled(struct rtw_dev *rtwdev,
 
 #define rtw_info(rtwdev, a...) dev_info(rtwdev->dev, ##a)
 #define rtw_warn(rtwdev, a...) dev_warn(rtwdev->dev, ##a)
+#define rtw_warn_once(rtwdev, a...) dev_warn_once(rtwdev->dev, ##a)
 #define rtw_err(rtwdev, a...) dev_err(rtwdev->dev, ##a)
 
 #endif
