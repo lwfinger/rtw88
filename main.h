@@ -1316,6 +1316,7 @@ struct rtw_chip_info {
 	u16 fw_fifo_addr[RTW_FW_FIFO_MAX];
 	const struct rtw_fwcd_segs *fwcd_segs;
 	u8 c2h_ra_report_size;
+	bool old_datarate_fb_limit;
 
 	u8 default_1ss_tx_path;
 
