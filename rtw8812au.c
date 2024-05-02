@@ -5,7 +5,7 @@
 #include <linux/module.h>
 #include <linux/usb.h>
 #include "main.h"
-#include "rtw8821a.h"
+#include "rtw8812a.h"
 #include "usb.h"
 
 static const struct usb_device_id rtw_8812au_id_table[] = {
