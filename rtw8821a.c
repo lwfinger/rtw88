@@ -1561,6 +1561,8 @@ static int rtw8821a_power_on(struct rtw_dev *rtwdev)
 		goto err_off;
 	}
 
+	rtw_write8(rtwdev, REG_HMETFR, 0xf);
+
 	rtw_load_table(rtwdev, chip->mac_tbl);
 
 	rtw8821au_init_queue_reserved_page(rtwdev);
