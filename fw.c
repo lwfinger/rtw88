@@ -1522,9 +1522,13 @@ int rtw_fw_write_data_rsvd_page(struct rtw_dev *rtwdev, u16 pg_addr,
 	}
 
 restore:
-	rsvd_pg_head = rtwdev->fifo.rsvd_boundary;
-	rtw_write16(rtwdev, REG_FIFOPAGE_CTRL_2,
-		    rsvd_pg_head | BIT_BCN_VALID_V1);
+	if (rtw_chip_wcpu_11n(rtwdev)) {
+		rtw_write32_set(rtwdev, REG_DWBCN0_CTRL, BIT_BCN_VALID);
+	} else {
+		rsvd_pg_head = rtwdev->fifo.rsvd_boundary;
+		rtw_write16(rtwdev, REG_FIFOPAGE_CTRL_2,
+			    rsvd_pg_head | BIT_BCN_VALID_V1);
+	}
 	rtw_write8(rtwdev, REG_FWHW_TXQ_CTRL + 2, bckp[1]);
 	rtw_write8(rtwdev, REG_CR + 1, bckp[0]);
 
