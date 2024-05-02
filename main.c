@@ -279,6 +279,8 @@ static void rtw_watch_dog_work(struct work_struct *work)
 	 * get that vif and check if device is having traffic more than the
 	 * threshold.
 	 */
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A || rtwdev->chip->id == RTW_CHIP_TYPE_8812A)
+		rtwdev->ps_enabled = false;///TODO: 8821au disconnects with "Reason: 7=CLASS3_FRAME_FROM_NONASSOC_STA"
 	if (rtwdev->ps_enabled && data.rtwvif && !ps_active &&
 	    !rtwdev->beacon_loss && !rtwdev->ap_active)
 		rtw_enter_lps(rtwdev, data.rtwvif->port);
