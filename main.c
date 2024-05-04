@@ -2037,6 +2037,9 @@ static int rtw_dump_hw_feature(struct rtw_dev *rtwdev)
 	u8 bw;
 	int i;
 
+	if (!rtwdev->chip->has_hw_feature_report)
+		goto print_hw_cap;
+
 	id = rtw_read8(rtwdev, REG_C2HEVT);
 	if (id != C2H_HW_FEATURE_REPORT) {
 		rtw_err(rtwdev, "failed to read hw feature report\n");
@@ -2061,6 +2064,7 @@ static int rtw_dump_hw_feature(struct rtw_dev *rtwdev)
 	    efuse->hw_cap.nss > rtwdev->hal.rf_path_num)
 		efuse->hw_cap.nss = rtwdev->hal.rf_path_num;
 
+print_hw_cap:
 	rtw_dbg(rtwdev, RTW_DBG_EFUSE,
 		"hw cap: hci=0x%02x, bw=0x%02x, ptcl=0x%02x, ant_num=%d, nss=%d\n",
 		efuse->hw_cap.hci, efuse->hw_cap.bw, efuse->hw_cap.ptcl,
@@ -2126,12 +2130,7 @@ static int rtw_chip_efuse_info_setup(struct rtw_dev *rtwdev)
 	efuse->ext_pa_2g = efuse->pa_type_2g & BIT(4) ? 1 : 0;
 	efuse->ext_lna_2g = efuse->lna_type_2g & BIT(3) ? 1 : 0;
 	efuse->ext_pa_5g = efuse->pa_type_5g & BIT(0) ? 1 : 0;
-	efuse->ext_lna_2g = efuse->lna_type_5g & BIT(3) ? 1 : 0;
-
-	if (!is_valid_ether_addr(efuse->addr)) {
-		eth_random_addr(efuse->addr);
-		dev_warn(rtwdev->dev, "efuse MAC invalid, using random\n");
-	}
+	efuse->ext_lna_5g = efuse->lna_type_5g & BIT(3) ? 1 : 0;
 
 out_disable:
 	rtw_chip_efuse_disable(rtwdev);
