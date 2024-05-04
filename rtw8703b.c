@@ -2032,6 +2032,7 @@ const struct rtw_chip_info rtw8703b_hw_spec = {
 	.tx_stbc = false,
 	.max_power_index = 0x3f,
 	.ampdu_density = IEEE80211_HT_MPDU_DENSITY_16,
+	.has_hw_feature_report = true,
 
 	.path_div_supported = false,
 	.ht_supported = true,
