@@ -110,7 +110,9 @@ static const struct ieee80211_iface_limit rtw_iface_limits[] = {
 	},
 	{
 		.max = 1,
-		.types = BIT(NL80211_IFTYPE_AP),
+		.types = BIT(NL80211_IFTYPE_AP) |
+                        BIT(NL80211_IFTYPE_P2P_CLIENT) |
+                        BIT(NL80211_IFTYPE_P2P_GO)
 	}
 };
 
@@ -217,6 +219,10 @@ static void rtw_watch_dog_work(struct work_struct *work)
 	struct rtw_watch_dog_iter_data data = {};
 	bool busy_traffic = test_bit(RTW_FLAG_BUSY_TRAFFIC, rtwdev->flags);
 	bool ps_active;
+
+	///TODO
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A || rtwdev->chip->id == RTW_CHIP_TYPE_8812A)
+		return;
 
 	mutex_lock(&rtwdev->mutex);
 

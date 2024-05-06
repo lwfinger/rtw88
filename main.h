@@ -301,6 +301,8 @@ enum rtw_chip_type {
 	RTW_CHIP_TYPE_8723D,
 	RTW_CHIP_TYPE_8821C,
 	RTW_CHIP_TYPE_8703B,
+	RTW_CHIP_TYPE_8821A,
+	RTW_CHIP_TYPE_8812A,
 };
 
 enum rtw_tx_queue_type {
@@ -954,6 +956,7 @@ struct rtw_regd {
 
 struct rtw_chip_ops {
 	int (*mac_init)(struct rtw_dev *rtwdev);
+	int (*llt_init_legacy)(struct rtw_dev *rtwdev, u32 boundary);
 	int (*dump_fw_crash)(struct rtw_dev *rtwdev);
 	void (*shutdown)(struct rtw_dev *rtwdev);
 	int (*read_efuse)(struct rtw_dev *rtwdev, u8 *map);
@@ -1310,6 +1313,7 @@ struct rtw_chip_info {
 
 	u16 fw_fifo_addr[RTW_FW_FIFO_MAX];
 	const struct rtw_fwcd_segs *fwcd_segs;
+	u8 c2h_ra_report_size;
 
 	u8 default_1ss_tx_path;
 
@@ -1898,6 +1902,8 @@ struct rtw_efuse {
 	bool share_ant;
 	u8 bt_setting;
 
+	u8 usb_mode_switch;
+
 	struct {
 		u8 hci;
 		u8 bw;
@@ -1931,6 +1937,7 @@ struct rtw_phy_cond {
 	u32 intf:4;
 	u32 rfe:8;
 #endif
+
 	/* for intf:4 */
 	#define INTF_PCIE	BIT(0)
 	#define INTF_USB	BIT(1)
@@ -1940,6 +1947,20 @@ struct rtw_phy_cond {
 	#define BRANCH_ELIF	1
 	#define BRANCH_ELSE	2
 	#define BRANCH_ENDIF	3
+};
+
+struct rtw_phy_cond2 {
+#ifdef __LITTLE_ENDIAN
+	u8 type_glna;
+	u8 type_gpa;
+	u8 type_alna;
+	u8 type_apa;
+#else
+	u8 type_apa;
+	u8 type_alna;
+	u8 type_gpa;
+	u8 type_glna;
+#endif
 };
 
 struct rtw_fifo_conf {
@@ -2023,6 +2044,7 @@ struct rtw_hal {
 	u8 oem_id;
 	u8 pkg_type;
 	struct rtw_phy_cond phy_cond;
+	struct rtw_phy_cond2 phy_cond2;
 	bool rfe_btg;
 
 	u8 ps_mode;
@@ -2045,6 +2067,7 @@ struct rtw_hal {
 	u32 antenna_rx;
 	u8 bfee_sts_cap;
 	bool txrx_1ss;
+	bool cck_high_power;
 
 	/* protect tx power section */
 	struct mutex tx_power_mutex;
