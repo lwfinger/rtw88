@@ -955,6 +955,8 @@ struct rtw_regd {
 };
 
 struct rtw_chip_ops {
+	int (*power_on)(struct rtw_dev *rtwdev);
+	void (*power_off)(struct rtw_dev *rtwdev);
 	int (*mac_init)(struct rtw_dev *rtwdev);
 	int (*llt_init_legacy)(struct rtw_dev *rtwdev, u32 boundary);
 	int (*dump_fw_crash)(struct rtw_dev *rtwdev);
@@ -1314,6 +1316,7 @@ struct rtw_chip_info {
 	u16 fw_fifo_addr[RTW_FW_FIFO_MAX];
 	const struct rtw_fwcd_segs *fwcd_segs;
 	u8 c2h_ra_report_size;
+	bool old_datarate_fb_limit;
 
 	u8 default_1ss_tx_path;
 
@@ -1937,7 +1940,6 @@ struct rtw_phy_cond {
 	u32 intf:4;
 	u32 rfe:8;
 #endif
-
 	/* for intf:4 */
 	#define INTF_PCIE	BIT(0)
 	#define INTF_USB	BIT(1)
@@ -2316,6 +2318,7 @@ void rtw_core_scan_start(struct rtw_dev *rtwdev, struct rtw_vif *rtwvif,
 void rtw_core_scan_complete(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
 			    bool hw_scan);
 int rtw_core_start(struct rtw_dev *rtwdev);
+void rtw_power_off(struct rtw_dev *rtwdev);
 void rtw_core_stop(struct rtw_dev *rtwdev);
 int rtw_chip_info_setup(struct rtw_dev *rtwdev);
 int rtw_core_init(struct rtw_dev *rtwdev);
@@ -2330,6 +2333,8 @@ int rtw_sta_add(struct rtw_dev *rtwdev, struct ieee80211_sta *sta,
 void rtw_sta_remove(struct rtw_dev *rtwdev, struct ieee80211_sta *sta,
 		    bool fw_exist);
 void rtw_fw_recovery(struct rtw_dev *rtwdev);
+int rtw_wait_firmware_completion(struct rtw_dev *rtwdev);
+int rtw_power_on(struct rtw_dev *rtwdev);
 void rtw_core_fw_scan_notify(struct rtw_dev *rtwdev, bool start);
 int rtw_dump_fw(struct rtw_dev *rtwdev, const u32 ocp_src, u32 size,
 		u32 fwcd_item);

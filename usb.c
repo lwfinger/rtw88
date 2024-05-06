@@ -93,6 +93,11 @@ static u32 rtw_usb_read(struct rtw_dev *rtwdev, u32 addr, u16 len)
 	    rtwdev->chip->id == RTW_CHIP_TYPE_8821C)
 		rtw_usb_reg_sec(rtwdev, addr, data);
 
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8822C ||
+	    rtwdev->chip->id == RTW_CHIP_TYPE_8822B ||
+	    rtwdev->chip->id == RTW_CHIP_TYPE_8821C)
+		rtw_usb_reg_sec(rtwdev, addr, data);
+
 	return le32_to_cpu(*data);
 }
 
@@ -119,6 +124,11 @@ static void rtw_usb_write(struct rtw_dev *rtwdev, u32 addr, u32 val, int len)
 	__le32 *data;
 	int idx, ret;
 	static int count;
+
+#if 0
+	if (addr < 0x1000 || addr > 0x1fff)
+		pr_err("rtw88_8821au write%d 0x%03x = %#x\n", len * 8, addr, val);
+#endif
 
 	spin_lock_irqsave(&rtwusb->usb_lock, flags);
 
@@ -450,7 +460,7 @@ static int rtw_usb_write_data(struct rtw_dev *rtwdev,
 	skb_put_data(skb, buf, size);
 	skb_push(skb, chip->tx_pkt_desc_sz);
 	memset(skb->data, 0, chip->tx_pkt_desc_sz);
-	rtw_tx_fill_tx_desc(pkt_info, skb);
+	rtw_tx_fill_tx_desc(rtwdev, pkt_info, skb);
 	rtw_tx_fill_txdesc_checksum(rtwdev, pkt_info, skb->data);
 
 	ret = rtw_usb_write_port(rtwdev, qsel, skb,
@@ -517,7 +527,7 @@ static int rtw_usb_tx_write(struct rtw_dev *rtwdev,
 	pkt_desc = skb_push(skb, chip->tx_pkt_desc_sz);
 	memset(pkt_desc, 0, chip->tx_pkt_desc_sz);
 	ep = qsel_to_ep(rtwusb, pkt_info->qsel);
-	rtw_tx_fill_tx_desc(pkt_info, skb);
+	rtw_tx_fill_tx_desc(rtwdev, pkt_info, skb);
 	rtw_tx_fill_txdesc_checksum(rtwdev, pkt_info, skb->data);
 	tx_data = rtw_usb_get_tx_data(skb);
 	tx_data->sn = pkt_info->sn;

@@ -4985,6 +4985,8 @@ static struct rtw_prioq_addrs prioq_addrs_8822c = {
 };
 
 static struct rtw_chip_ops rtw8822c_ops = {
+	.power_on		= rtw_power_on,
+	.power_off		= rtw_power_off,
 	.phy_set_param		= rtw8822c_phy_set_param,
 	.read_efuse		= rtw8822c_read_efuse,
 	.query_rx_desc		= rtw8822c_query_rx_desc,
@@ -5398,7 +5400,6 @@ const struct rtw_chip_info rtw8822c_hw_spec = {
 	.rx_ldpc = true,
 	.tx_stbc = true,
 	.has_hw_feature_report = true,
-	.c2h_ra_report_size = 7,
 	.edcca_th = rtw8822c_edcca_th,
 	.l2h_th_ini_cs = 60,
 	.l2h_th_ini_ad = 45,

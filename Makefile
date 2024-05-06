@@ -25,10 +25,6 @@ endif
 ifneq ("","$(wildcard $(MODDESTDIR)/*.ko.xz)")
 COMPRESS_XZ := y
 endif
-ifneq ("","$(wildcard $(MODDESTDIR)/*.ko.zst)")
-COMPRESS_ZSTD := y
-endif
-
 ifeq ("","$(wildcard MOK.der)")
 NO_SKIP_SIGN := y
 endif
@@ -130,6 +126,9 @@ rtw_8821ae-objs		:= rtw8821ae.o
 obj-m	   += rtw_8821au.o
 rtw_8821au-objs		:= rtw8821au.o
 
+obj-m	   += rtw_8812au.o
+rtw_8812au-objs		:= rtw8812au.o
+
 obj-m	   += rtw_8821cs.o
 rtw_8821cs-objs		:= rtw8821cs.o
 
@@ -162,35 +161,23 @@ ifeq ($(COMPRESS_GZIP), y)
 	@gzip -f $(MODDESTDIR)/*.ko
 endif
 ifeq ($(COMPRESS_XZ), y)
-	@xz -f -C crc32 $(MODDESTDIR)/*.ko
-endif
-ifeq ($(COMPRESS_ZSTD), y)
-	@zstd -f -q --rm $(MODDESTDIR)/*.ko
+	@xz -f $(MODDESTDIR)/*.ko
 endif
 
-	depmod $(DEPMOD_ARGS) -a $(KVER)
+	@depmod $(DEPMOD_ARGS) -a $(KVER)
 
 	@echo "Install rtw88 SUCCESS"
 
 uninstall:
 	@modprobe -r rtw_8822be
-	@modprobe -r rtw_8822bs
-	@modprobe -r rtw_8822bu
 	@modprobe -r rtw_8822ce
-	@modprobe -r rtw_8822cs
-	@modprobe -r rtw_8822cu
 	@modprobe -r rtw_8723de
 	@modprobe -r rtw_8723de
 	@modprobe -r rtw_8723de
 	@modprobe -r rtw_8723de
 	@modprobe -r rtw_8723de
 	@modprobe -r rtw_8723de
-	@modprobe -r rtw_8723ds
-	@modprobe -r rtw_8723cs
-	@modprobe -r rtw_8723du
-	@modprobe -r rtw_8821cs
-	@modprobe -r rtw_8821cu
-	@rm -f $(MODDESTDIR)/rtw_*.ko*
+	@rm -f $(MODDESTDIR)/rtw_*.ko
 	
 	@depmod $(DEPMOD_ARGS)
 	

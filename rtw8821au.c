@@ -65,20 +65,14 @@ static const struct usb_device_id rtw_8821au_id_table[] = {
 };
 MODULE_DEVICE_TABLE(usb, rtw_8821au_id_table);
 
-static int rtw_8821au_probe(struct usb_interface *intf,
-			    const struct usb_device_id *id)
-{
-	return rtw_usb_probe(intf, id);
-}
-
 static struct usb_driver rtw_8821au_driver = {
 	.name = "rtw_8821au",
 	.id_table = rtw_8821au_id_table,
-	.probe = rtw_8821au_probe,
+	.probe = rtw_usb_probe,
 	.disconnect = rtw_usb_disconnect,
 };
 module_usb_driver(rtw_8821au_driver);
 
-MODULE_AUTHOR("Hans Ulli Kroll <linux@ulli-kroll.de>");
-MODULE_DESCRIPTION("Realtek 802.11ac wireless 8821au driver");
+MODULE_AUTHOR("Bitterblue Smith <rtl8821cerfe2@gmail.com>");
+MODULE_DESCRIPTION("Realtek 802.11ac wireless 8821au/8811au driver");
 MODULE_LICENSE("Dual BSD/GPL");

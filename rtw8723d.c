@@ -1431,6 +1431,8 @@ static void rtw8723d_pwr_track(struct rtw_dev *rtwdev)
 }
 
 static struct rtw_chip_ops rtw8723d_ops = {
+	.power_on		= rtw_power_on,
+	.power_off		= rtw_power_off,
 	.phy_set_param		= rtw8723d_phy_set_param,
 	.read_efuse		= rtw8723x_read_efuse,
 	.query_rx_desc		= rtw8723d_query_rx_desc,
@@ -2196,7 +2198,6 @@ const struct rtw_chip_info rtw8723d_hw_spec = {
 	.rfe_defs_size = ARRAY_SIZE(rtw8723d_rfe_defs),
 	.rx_ldpc = false,
 	.has_hw_feature_report = true,
-	.c2h_ra_report_size = 7,
 	.pwr_track_tbl = &rtw8723d_rtw_pwr_track_tbl,
 	.iqk_threshold = 8,
 	.ampdu_density = IEEE80211_HT_MPDU_DENSITY_16,
