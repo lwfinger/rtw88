@@ -2478,7 +2478,7 @@ static void rtw8821a_tx_power_training(struct rtw_dev *rtwdev, u8 bw,
 		else
 			power_level -= 6;
 
-		write_data |= max(power_level, 2) << (i * 8);
+		write_data |= max_t(u32, power_level, 2) << (i * 8);
 	}
 
 	rtw_write32_mask(rtwdev, write_offset[path], 0xffffff, write_data);
