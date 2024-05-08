@@ -168,18 +168,30 @@ endif
 
 	@echo "Install rtw88 SUCCESS"
 
+
+
 uninstall:
-	@modprobe -r rtw_8822be
-	@modprobe -r rtw_8822ce
-	@modprobe -r rtw_8723de
-	@modprobe -r rtw_8723de
-	@modprobe -r rtw_8723de
-	@modprobe -r rtw_8723de
-	@modprobe -r rtw_8723de
-	@modprobe -r rtw_8723de
-	@rm -f $(MODDESTDIR)/rtw_*.ko
+	modprobe -r rtw_8723cs
+	modprobe -r rtw_8723de
+	modprobe -r rtw_8723ds
+	modprobe -r rtw_8723du
+	modprobe -r rtw_8812au
+	modprobe -r rtw_8821au
+	modprobe -r rtw_8821ae
+	modprobe -r rtw_8821au
+	modprobe -r rtw_8821ce
+	modprobe -r rtw_8821cs
+	modprobe -r rtw_8821cu
+	modprobe -r rtw_8822be
+	modprobe -r rtw_8822bs
+	modprobe -r rtw_8822bu
+	modprobe -r rtw_8822ce
+	modprobe -r rtw_8822cs
+	modprobe -r rtw_8822cu
 	
-	@depmod $(DEPMOD_ARGS)
+	rm -f $(MODDESTDIR)/rtw_*.ko*
+	
+	depmod $(DEPMOD_ARGS)
 	
 	@echo "Uninstall rtw88 SUCCESS"
 
