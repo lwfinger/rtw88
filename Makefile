@@ -176,7 +176,6 @@ uninstall:
 	modprobe -r rtw_8723ds
 	modprobe -r rtw_8723du
 	modprobe -r rtw_8812au
-	modprobe -r rtw_8821au
 	modprobe -r rtw_8821ae
 	modprobe -r rtw_8821au
 	modprobe -r rtw_8821ce
