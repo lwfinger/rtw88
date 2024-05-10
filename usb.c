@@ -551,6 +551,8 @@ static void rtw_usb_rx_handler(struct work_struct *work)
 	const struct rtw_chip_info *chip = rtwdev->chip;
 	struct rtw_rx_pkt_stat pkt_stat;
 	struct ieee80211_rx_status rx_status;
+	struct ieee80211_rx_status *status;
+	struct ieee80211_supported_band *sband;
 	struct sk_buff *skb;
 	u32 pkt_desc_sz = chip->rx_pkt_desc_sz;
 	u32 pkt_offset;
@@ -565,6 +567,15 @@ static void rtw_usb_rx_handler(struct work_struct *work)
 		rx_desc = skb->data;
 		chip->ops->query_rx_desc(rtwdev, rx_desc, &pkt_stat,
 					 &rx_status);
+
+		status = IEEE80211_SKB_RXCB(skb);
+		sband = rtwdev->hw->wiphy->bands[status->band];
+		if (!sband) {
+			/* rtw8821au has malformed RX packet */
+			rtw_info(rtwdev, "band wrong, packet dropped\n");
+			dev_kfree_skb_any(skb);
+			continue;
+		}
 		pkt_offset = pkt_desc_sz + pkt_stat.drv_info_sz +
 			     pkt_stat.shift;
 
