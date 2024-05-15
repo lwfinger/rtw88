@@ -315,13 +315,6 @@ static int rtw_mac_power_switch(struct rtw_dev *rtwdev, bool pwr_on)
 		    chip->id == RTW_CHIP_TYPE_8822B ||
 		    chip->id == RTW_CHIP_TYPE_8821C)
 			rtw_write8_clr(rtwdev, REG_SYS_STATUS1 + 1, BIT(0));
-	}
-
-	if (pwr_on && rtw_hci_type(rtwdev) == RTW_HCI_TYPE_USB) {
-		if (chip->id == RTW_CHIP_TYPE_8822C ||
-		    chip->id == RTW_CHIP_TYPE_8822B ||
-		    chip->id == RTW_CHIP_TYPE_8821C)
-			rtw_write8_clr(rtwdev, REG_SYS_STATUS1 + 1, BIT(0));
 
 		if (chip->id == RTW_CHIP_TYPE_8821A) {
 			if (rtw_read8(rtwdev, REG_SYS_CFG1 + 3) & BIT(0))
