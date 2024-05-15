@@ -30,10 +30,12 @@ NO_SKIP_SIGN := y
 endif
 
 EXTRA_CFLAGS += -O2
+ifeq ($(CONFIG_PCI), y)
 EXTRA_CFLAGS += -DCONFIG_RTW88_8822BE=1
 EXTRA_CFLAGS += -DCONFIG_RTW88_8821CE=1
 EXTRA_CFLAGS += -DCONFIG_RTW88_8822CE=1
 EXTRA_CFLAGS += -DCONFIG_RTW88_8723DE=1
+endif
 EXTRA_CFLAGS += -DCONFIG_RTW88_DEBUG=1
 EXTRA_CFLAGS += -DCONFIG_RTW88_DEBUGFS=1
 #EXTRA_CFLAGS += -DCONFIG_RTW88_REGD_USER_REG_HINTS
@@ -60,8 +62,10 @@ rtw_core-objs += main.o \
 obj-m       += rtw_8822b.o
 rtw_8822b-objs                := rtw8822b.o rtw8822b_table.o
 
+ifeq ($(CONFIG_PCI), y)
 obj-m      += rtw_8822be.o
 rtw_8822be-objs               := rtw8822be.o
+endif
 
 obj-m      += rtw_8822bu.o
 rtw_8822bu-objs		:= rtw8822bu.o
@@ -72,8 +76,10 @@ rtw_8822bs-objs		:= rtw8822bs.o
 obj-m       += rtw_8822c.o
 rtw_8822c-objs                := rtw8822c.o rtw8822c_table.o
 
+ifeq ($(CONFIG_PCI), y)
 obj-m      += rtw_8822ce.o
 rtw_8822ce-objs               := rtw8822ce.o
+endif
 
 obj-m      += rtw_8822cu.o
 rtw_8822cu-objs		:= rtw8822cu.o
@@ -102,8 +108,10 @@ rtw_8723cs-objs		:= rtw8723cs.o
 obj-m       += rtw_8723d.o
 rtw_8723d-objs          := rtw8723d.o rtw8723d_table.o
 
+ifeq ($(CONFIG_PCI), y)
 obj-m      += rtw_8723de.o
 rtw_8723de-objs               := rtw8723de.o
+endif
 
 obj-m      += rtw_8723du.o
 rtw_8723du-objs		:= rtw8723du.o
@@ -114,14 +122,18 @@ rtw_8723ds-objs		:= rtw8723ds.o
 obj-m	+= rtw_8821c.o
 rtw_8821c-objs		:= rtw8821c.o rtw8821c_table.o
 
+ifeq ($(CONFIG_PCI), y)
 obj-m	+= rtw_8821ce.o
 rtw_8821ce-objs		:= rtw8821ce.o
+endif
 
 obj-m	+= rtw_8821a.o
 rtw_8821a-objs		:= rtw8821a.o rtw8821a_table.o
 
+ifeq ($(CONFIG_PCI), y)
 obj-m	   += rtw_8821ae.o
 rtw_8821ae-objs		:= rtw8821ae.o
+endif
 
 obj-m	   += rtw_8821au.o
 rtw_8821au-objs		:= rtw8821au.o
@@ -135,8 +147,10 @@ rtw_8821cs-objs		:= rtw8821cs.o
 obj-m	+= rtw_8821cu.o
 rtw_8821cu-objs		:= rtw8821cu.o
 
+ifeq ($(CONFIG_PCI), y)
 obj-m			+= rtw_pci.o
 rtw_pci-objs		:= pci.o
+endif
 
 obj-m			+= rtw_sdio.o
 rtw_sdio-objs		:= sdio.o
@@ -172,19 +186,29 @@ endif
 
 uninstall:
 	modprobe -r rtw_8723cs
+ifeq ($(CONFIG_PCI), y)
 	modprobe -r rtw_8723de
+endif
 	modprobe -r rtw_8723ds
 	modprobe -r rtw_8723du
 	modprobe -r rtw_8812au
+ifeq ($(CONFIG_PCI), y)
 	modprobe -r rtw_8821ae
+endif
 	modprobe -r rtw_8821au
+ifeq ($(CONFIG_PCI), y)
 	modprobe -r rtw_8821ce
+endif
 	modprobe -r rtw_8821cs
 	modprobe -r rtw_8821cu
+ifeq ($(CONFIG_PCI), y)
 	modprobe -r rtw_8822be
+endif
 	modprobe -r rtw_8822bs
 	modprobe -r rtw_8822bu
+ifeq ($(CONFIG_PCI), y)
 	modprobe -r rtw_8822ce
+endif
 	modprobe -r rtw_8822cs
 	modprobe -r rtw_8822cu
 	
@@ -209,28 +233,40 @@ ifeq ($(NO_SKIP_SIGN), y)
 else
 	echo "Skipping key creation"
 endif
+ifeq ($(CONFIG_PCI), y)
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_pci.ko
+endif
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_usb.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_sdio.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_core.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723d.ko
+ifeq ($(CONFIG_PCI), y)
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723de.ko
+endif
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723du.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723ds.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822b.ko
+ifeq ($(CONFIG_PCI), y)
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822be.ko
+endif
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822bu.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822bs.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821c.ko
+ifeq ($(CONFIG_PCI), y)
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821ce.ko
+endif
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821cu.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821cs.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822c.ko
+ifeq ($(CONFIG_PCI), y)
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822ce.ko
+endif
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822cu.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822cs.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821a.ko
+ifeq ($(CONFIG_PCI), y)
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821ae.ko
+endif
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821au.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8703b.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723x.ko
