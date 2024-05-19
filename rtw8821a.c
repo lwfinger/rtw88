@@ -1192,6 +1192,18 @@ static void rtw8821a_init_edca(struct rtw_dev *rtwdev)
 	rtw_write8(rtwdev, REG_USTIME_EDCA, 0x50);
 }
 
+static void rtw8821au_tx_aggregation(struct rtw_dev *rtwdev)
+{
+	const struct rtw_chip_info *chip = rtwdev->chip;
+
+	rtw_write32_mask(rtwdev, REG_DWBCN0_CTRL, 0xf0,
+			 chip->usb_tx_agg_desc_num);
+
+	if (chip->id == RTW_CHIP_TYPE_8821A)
+		rtw_write8(rtwdev, REG_DWBCN1_CTRL,
+			   chip->usb_tx_agg_desc_num << 1);
+}
+
 static void rtw8821a_init_beacon_parameters(struct rtw_dev *rtwdev)
 {
 	u16 val16;
@@ -1260,12 +1272,6 @@ static void rtw8821au_init_burst_pkt_len(struct rtw_dev *rtwdev)
 		 */
 		rtw_write8_clr(rtwdev, 0xf008, BIT(4) | BIT(3));
 	}
-
-#ifdef CONFIG_USB_TX_AGGREGATION
-	/* rtw_write8(rtwdev, REG_TDECTRL_8195, 0x30); */
-#else
-	rtw_write8(rtwdev, REG_DWBCN0_CTRL, 0x10);
-#endif
 
 	/* This has no effect: temp is only u8, it doesn't have BIT(10). */
 	// rtw_write8_clr(rtwdev, REG_SYS_FUNC_EN, BIT(10)); /* reset 8051 */
@@ -1591,7 +1597,8 @@ static int rtw8821a_power_on(struct rtw_dev *rtwdev)
 	rtw_write8_set(rtwdev, REG_FWHW_TXQ_CTRL, BIT(7));
 	rtw_write8(rtwdev, REG_ACKTO, 0x80);
 
-	/* init_UsbAggregationSetting_8812A(); no aggregation for now */
+	rtw8821au_tx_aggregation(rtwdev);
+	// rtw8821au_rx_aggregation(rtwdev);
 
 	rtw8821a_init_beacon_parameters(rtwdev);
 	rtw_write8(rtwdev, REG_BCN_MAX_ERR, 0xff);
@@ -4287,6 +4294,7 @@ const struct rtw_chip_info rtw8821a_hw_spec = {
 	.has_hw_feature_report = false,
 	.c2h_ra_report_size = 4,
 	.old_datarate_fb_limit = true,
+	.usb_tx_agg_desc_num = 6,
 	.pwr_track_tbl = &rtw8821a_rtw_pwr_track_tbl,
 	.iqk_threshold = 8,
 	// .bfer_su_max_num = 2,
@@ -4372,6 +4380,7 @@ const struct rtw_chip_info rtw8812a_hw_spec = {
 	.has_hw_feature_report = false,
 	.c2h_ra_report_size = 4,
 	.old_datarate_fb_limit = true,
+	.usb_tx_agg_desc_num = 1,
 	.pwr_track_tbl = &rtw8812a_rtw_pwr_track_tbl,
 	.iqk_threshold = 8,
 	// .bfer_su_max_num = 2,
