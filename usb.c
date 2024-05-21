@@ -551,11 +551,12 @@ static void rtw_usb_rx_handler(struct work_struct *work)
 	struct rtw_usb *rtwusb = container_of(work, struct rtw_usb, rx_work);
 	struct rtw_dev *rtwdev = rtwusb->rtwdev;
 	const struct rtw_chip_info *chip = rtwdev->chip;
-	struct rtw_rx_pkt_stat pkt_stat;
-	struct ieee80211_rx_status rx_status;
-	struct sk_buff *skb;
 	u32 pkt_desc_sz = chip->rx_pkt_desc_sz;
-	u32 pkt_offset;
+	struct ieee80211_rx_status rx_status;
+	u32 pkt_offset, next_pkt, urb_len;
+	struct rtw_rx_pkt_stat pkt_stat;
+	struct sk_buff *next_skb = NULL;
+	struct sk_buff *skb;
 	u8 *rx_desc;
 	int limit;
 
@@ -564,28 +565,43 @@ static void rtw_usb_rx_handler(struct work_struct *work)
 		if (!skb)
 			break;
 
-		rx_desc = skb->data;
-		chip->ops->query_rx_desc(rtwdev, rx_desc, &pkt_stat,
-					 &rx_status);
-		pkt_offset = pkt_desc_sz + pkt_stat.drv_info_sz +
-			     pkt_stat.shift;
-
-		if (pkt_stat.is_c2h) {
-			skb_put(skb, pkt_stat.pkt_len + pkt_offset);
-			rtw_fw_c2h_cmd_rx_irqsafe(rtwdev, pkt_offset, skb);
-			continue;
-		}
-
 		if (skb_queue_len(&rtwusb->rx_queue) >= RTW_USB_MAX_RXQ_LEN) {
 			dev_dbg_ratelimited(rtwdev->dev, "failed to get rx_queue, overflow\n");
 			dev_kfree_skb_any(skb);
 			continue;
 		}
 
-		skb_put(skb, pkt_stat.pkt_len);
-		skb_reserve(skb, pkt_offset);
-		memcpy(skb->cb, &rx_status, sizeof(rx_status));
-		ieee80211_rx_irqsafe(rtwdev->hw, skb);
+		urb_len = skb->len;
+
+		do {
+			rx_desc = skb->data;
+			chip->ops->query_rx_desc(rtwdev, rx_desc, &pkt_stat,
+						 &rx_status);
+			pkt_offset = pkt_desc_sz + pkt_stat.drv_info_sz +
+				     pkt_stat.shift;
+
+			next_pkt = round_up(pkt_stat.pkt_len + pkt_offset, 8);
+
+			if (urb_len >= next_pkt + pkt_desc_sz)
+				next_skb = skb_clone(skb, GFP_KERNEL);
+
+			if (pkt_stat.is_c2h) {
+				skb_put(skb, pkt_stat.pkt_len + pkt_offset);
+				rtw_fw_c2h_cmd_rx_irqsafe(rtwdev, pkt_offset, skb);
+			} else {
+				skb_pull(skb, pkt_offset);
+				skb_trim(skb, pkt_stat.pkt_len);
+				memcpy(skb->cb, &rx_status, sizeof(rx_status));
+				ieee80211_rx_irqsafe(rtwdev->hw, skb);
+			}
+
+			skb = next_skb;
+			if (skb)
+				skb_pull(next_skb, next_pkt);
+
+			urb_len -= next_pkt;
+			next_skb = NULL;
+		} while (skb && urb_len >= pkt_desc_sz);
 	}
 }
 
@@ -629,6 +645,7 @@ static void rtw_usb_read_port_complete(struct urb *urb)
 			if (skb)
 				dev_kfree_skb_any(skb);
 		} else {
+			skb_put(skb, urb->actual_length);
 			skb_queue_tail(&rtwusb->rx_queue, skb);
 			queue_work(rtwusb->rxwq, &rtwusb->rx_work);
 		}
