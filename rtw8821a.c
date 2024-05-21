@@ -1503,278 +1503,16 @@ static void rtw8821a_power_off(struct rtw_dev *rtwdev)
 
 ///TODO: chip identification needs to be copied as well
 
-static int rtw8821a_power_on(struct rtw_dev *rtwdev)
-{
-	const struct rtw_chip_info *chip = rtwdev->chip;
-	struct rtw_efuse *efuse = &rtwdev->efuse;
-	bool wifi_only;
-	int ret;
-	u8 val8;
-
-	/* Override rtw_chip_efuse_info_setup() */
-	if (chip->id == RTW_CHIP_TYPE_8821A)
-		efuse->btcoex = rtw_read32_mask(rtwdev, REG_WL_BT_PWR_CTRL,
-						BIT_BT_FUNC_EN);
-
-	/* Override rtw_chip_efuse_info_setup() */
-	if (chip->id == RTW_CHIP_TYPE_8812A)
-		rtw8812a_read_amplifier_type(rtwdev);
-
-	ret = rtw_hci_setup(rtwdev);
-	if (ret) {
-		rtw_err(rtwdev, "failed to setup hci\n");
-		goto err;
-	}
-
-	///TODO: change to rtw_dbg
-	val8 = rtw_read8(rtwdev, REG_CR);
-	if (val8 != 0 && val8 != 0xEA &&
-	    (rtw_read8(rtwdev, REG_SYS_CLKR + 1) & BIT(3)))
-		rtw_info(rtwdev, "MAC has already power on\n");
-	else
-		rtw_info(rtwdev, "MAC has not been powered on yet\n");
-
-	/* Revise for U2/U3 switch we can not update RF-A/B reset.
-	 * Reset after MAC power on to prevent RF R/W error.
-	 * Is it a right method?
-	 */
-	if (chip->id == RTW_CHIP_TYPE_8812A) {
-		rtw_write8(rtwdev, REG_RF_CTRL, 5);
-		rtw_write8(rtwdev, REG_RF_CTRL, 7);
-		rtw_write8(rtwdev, REG_RF_B_CTRL, 5);
-		rtw_write8(rtwdev, REG_RF_B_CTRL, 7);
-	}
-
-	/* If HW didn't go through a complete de-initial procedure,
-	 * it probably occurs some problem for double initial
-	 * procedure.
-	 */
-	rtw8812au_hw_reset(rtwdev);
-
-	ret = rtw8812au_init_power_on(rtwdev);
-	if (ret) {
-		rtw_err(rtwdev, "failed to power on\n");
-		goto err;
-	}
-
-	if (rtwdev->efuse.btcoex)
-		rtw_coex_power_on_setting(rtwdev);
-
-	ret = set_trx_fifo_info(rtwdev);
-	if (ret) {
-		rtw_err(rtwdev, "failed to set trx fifo info\n");
-		goto err;
-	}
-
-	///TODO: undo that commit which introduced this function. move it here
-	ret = rtw_llt_init_legacy_old(rtwdev, rtwdev->fifo.rsvd_boundary);
-	if (ret) {
-		rtw_err(rtwdev, "failed to init llt\n");
-		goto err;
-	}
-
-	rtw_write32_set(rtwdev, REG_TXDMA_OFFSET_CHK, BIT_DROP_DATA_EN);
-
-	ret = rtw_wait_firmware_completion(rtwdev);
-	if (ret) {
-		rtw_err(rtwdev, "failed to wait firmware completion\n");
-		goto err_off;
-	}
-
-	ret = rtw_download_firmware(rtwdev, &rtwdev->fw);
-	if (ret) {
-		rtw_err(rtwdev, "failed to download firmware\n");
-		goto err_off;
-	}
-
-	rtw_write8(rtwdev, REG_HMETFR, 0xf);
-
-	rtw_load_table(rtwdev, chip->mac_tbl);
-
-	rtw8821au_init_queue_reserved_page(rtwdev);
-	rtw8821au_init_tx_buffer_boundary(rtwdev);
-	rtw8821au_init_queue_priority(rtwdev);
-
-	rtw_write16(rtwdev, REG_TRXFF_BNDY + 2,
-		    chip->rxff_size - REPORT_BUF - 1);
-
-	if (chip->id == RTW_CHIP_TYPE_8812A)
-		rtw_write8(rtwdev, REG_PBP,
-			   u8_encode_bits(PBP_512, PBP_TX_MASK) |
-			   u8_encode_bits(PBP_64, PBP_RX_MASK));
-
-	rtw_write8(rtwdev, REG_RX_DRVINFO_SZ, PHY_STATUS_SIZE);
-
-	rtw_write32(rtwdev, REG_HIMR0, 0);
-	rtw_write32(rtwdev, REG_HIMR1, 0);
-
-	rtw_write32_mask(rtwdev, REG_CR, 0x30000, 0x2);
-
-	rtw8821a_init_wmac_setting(rtwdev);
-	rtw8821a_init_adaptive_ctrl(rtwdev);
-	rtw8821a_init_edca(rtwdev);
-
-	rtw_write8_set(rtwdev, REG_FWHW_TXQ_CTRL, BIT(7));
-	rtw_write8(rtwdev, REG_ACKTO, 0x80);
-
-	rtw8821au_tx_aggregation(rtwdev);
-	rtw8821au_rx_aggregation(rtwdev);
-
-	rtw8821a_init_beacon_parameters(rtwdev);
-	rtw_write8(rtwdev, REG_BCN_MAX_ERR, 0xff);
-
-	if (rtwdev->hci.type == RTW_HCI_TYPE_USB)
-		rtw8821au_init_burst_pkt_len(rtwdev);
-
-	rtw_write8_set(rtwdev, REG_CR, MACTXEN | MACRXEN);
-
-	///TODO: blinking controlled by mac80211
-	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A)
-		rtw_write8(rtwdev, REG_LED_CFG + 2, BIT(1) | BIT(5));
-	else
-		rtw_write8(rtwdev, REG_LED_CFG, BIT(1) | BIT(5));
-
-	rtw8821a_phy_bb_config(rtwdev);
-	rtw8821a_phy_rf_config(rtwdev);
-
-	if (chip->id == RTW_CHIP_TYPE_8812A && rtwdev->hal.rf_path_num == 1)
-		rtw8812a_config_1t(rtwdev);
-
-	// rtw8821a_switch_band(rtwdev, 36, RTW_CHANNEL_WIDTH_20);
-	// rtw8821a_switch_band(rtwdev, 1, RTW_CHANNEL_WIDTH_20);///TODO is this needed?
-
-	rtw_write32(rtwdev, RTW_SEC_CMD_REG, BIT(31) | BIT(30));
-
-	rtw_write8(rtwdev, REG_HWSEQ_CTRL, 0xff);
-	rtw_write32(rtwdev, REG_BAR_MODE_CTRL, 0x0201ffff);
-	rtw_write8(rtwdev, REG_NAV_CTRL + 2, 0);
-
-	rtw_phy_init(rtwdev);
-
-	rtw8821a_pwrtrack_init(rtwdev);
-
-	/* 0x4c6[3] 1: RTS BW = Data BW
-	 * 0: RTS BW depends on CCA / secondary CCA result.
-	 */
-	rtw_write8_clr(rtwdev, REG_QUEUE_CTRL, BIT(3));
-
-	/* enable Tx report. */
-	rtw_write8(rtwdev, REG_FWHW_TXQ_CTRL + 1, 0x0f);
-
-	/* Pretx_en, for WEP/TKIP SEC */
-	rtw_write8(rtwdev, REG_EARLY_MODE_CONTROL + 3, 0x01);
-
-	rtw_write16(rtwdev, REG_TX_RPT_TIME, 0x3df0);
-
-	/* Reset USB mode switch setting */
-	rtw_write8(rtwdev, REG_SYS_SDIO_CTRL, 0x0);
-	rtw_write8(rtwdev, REG_ACLK_MON, 0x0);
-
-	rtw_write8(rtwdev, REG_USB_HRPWM, 0);
-
-	/* ack for xmit mgmt frames. */
-	rtw_write32_set(rtwdev, REG_FWHW_TXQ_CTRL, BIT(12));
-
-	/// From Hal_PatchwithJaguar_8812:
-	rtw_write8(rtwdev, 0x8c3, 0x3f);
-
-	rtwdev->hal.cck_high_power = rtw_read32_mask(rtwdev, REG_CCK_RPT_FORMAT,
-						     BIT_CCK_RPT_FORMAT);
-
-	// rtw8821a_phy_bf_init(rtwdev);
-
-	ret = rtw_hci_start(rtwdev);
-	if (ret) {
-		rtw_err(rtwdev, "failed to start hci\n");
-		goto err_off;
-	}
-
-	wifi_only = !rtwdev->efuse.btcoex;
-	if (efuse->btcoex) {
-		rtw_coex_power_on_setting(rtwdev);
-		rtw_coex_init_hw_config(rtwdev, wifi_only);
-	}
-
-	return 0;
-
-err_off:
-	rtw8821a_power_off(rtwdev);
-
-err:
-	return ret;
-}
-
-// static void rtw8821a_phy_bf_init(struct rtw_dev *rtwdev)
-// {
-// 	rtw_bf_phy_init(rtwdev);
-// 	/* Grouping bitmap parameters */
-// 	rtw_write32(rtwdev, 0x1C94, 0xAFFFAFFF);
-// }
-
-static int rtw8821a_mac_init(struct rtw_dev *rtwdev)
-{
-	rtw_err(rtwdev, "%s: useless function\n", __func__);
-	return 0;
-}
-
-static u32 rtw8821a_phy_read_rf(struct rtw_dev *rtwdev,
-				enum rtw_rf_path rf_path, u32 addr, u32 mask)
-{
-	static const u32 pi_addr[2] = { 0xc00, 0xe00 };
-	static const u32 read_addr[2][2] = {
-		{ REG_SI_READ_A, REG_SI_READ_B },
-		{ REG_PI_READ_A, REG_PI_READ_B }
-	};
-	const struct rtw_chip_info *chip = rtwdev->chip;
-	const struct rtw_hal *hal = &rtwdev->hal;
-	bool set_cca, pi_mode;
-	u32 val;
-
-	if (rf_path >= hal->rf_phy_num) {
-		rtw_err(rtwdev, "8821a unsupported rf path (%d)\n", rf_path);
-		return INV_RF_DATA;
-	}
-
-	/* CCA off to avoid reading the wrong value.
-	 * Toggling CCA would affect RF 0x0, skip it.
-	 */
-	set_cca = addr != 0x0 && chip->id == RTW_CHIP_TYPE_8812A &&
-		  hal->cut_version != RTW_CHIP_VER_CUT_C;
-
-	if (set_cca)
-		rtw_write32_set(rtwdev, REG_CCA2ND, BIT(3));
-
-	addr &= 0xff;
-
-	pi_mode = rtw_read32_mask(rtwdev, pi_addr[rf_path], 0x4);
-
-	rtw_write32_mask(rtwdev, REG_HSSI_READ, MASKBYTE0, addr);
-
-	if (chip->id == RTW_CHIP_TYPE_8821A || hal->cut_version == RTW_CHIP_VER_CUT_C)
-		udelay(20);
-
-	val = rtw_read32_mask(rtwdev, read_addr[pi_mode][rf_path], mask);
-
-	/* CCA on */
-	if (set_cca)
-		rtw_write32_clr(rtwdev, REG_CCA2ND, BIT(3));
-
-	return val;
-}
-
-static void rtw8821a_cfg_ldo25(struct rtw_dev *rtwdev, bool enable)
-{
-	/* Nothing to do. */
-}
-
-static u32 rtw8821a_get_bb_swing(struct rtw_dev *rtwdev, u8 channel, u8 path)
+static u32 rtw8821a_get_bb_swing(struct rtw_dev *rtwdev, u8 band, u8 path)
 {
 	static const u32 swing2setting[4] = {0x200, 0x16a, 0x101, 0x0b6};
 	struct rtw_efuse efuse = rtwdev->efuse;
 	u8 tx_bb_swing;
 
-	tx_bb_swing = channel <= 14 ? efuse.tx_bb_swing_setting_2g :
-				      efuse.tx_bb_swing_setting_5g;
+	if (band == RTW_BAND_2G)
+		tx_bb_swing = efuse.tx_bb_swing_setting_2g;
+	else
+		tx_bb_swing = efuse.tx_bb_swing_setting_5g;
 
 	if (path == RF_PATH_B)
 		tx_bb_swing >>= 2;
@@ -1783,12 +1521,12 @@ static u32 rtw8821a_get_bb_swing(struct rtw_dev *rtwdev, u8 channel, u8 path)
 	return swing2setting[tx_bb_swing];
 }
 
-static void rtw8821a_set_channel_bb_swing(struct rtw_dev *rtwdev, u8 channel)
+static void rtw8821a_set_channel_bb_swing(struct rtw_dev *rtwdev, u8 band)
 {
 	rtw_write32_mask(rtwdev, REG_TXSCALE_A, BB_SWING_MASK,
-			 rtw8821a_get_bb_swing(rtwdev, channel, RF_PATH_A));
+			 rtw8821a_get_bb_swing(rtwdev, band, RF_PATH_A));
 	rtw_write32_mask(rtwdev, REG_TXSCALE_B, BB_SWING_MASK,
-			 rtw8821a_get_bb_swing(rtwdev, channel, RF_PATH_B));
+			 rtw8821a_get_bb_swing(rtwdev, band, RF_PATH_B));
 	rtw8821a_pwrtrack_init(rtwdev);
 }
 
@@ -1953,24 +1691,10 @@ static void rtw8812a_phy_set_rfe_reg_5g(struct rtw_dev *rtwdev)
 	}
 }
 
-static void rtw8821a_switch_band(struct rtw_dev *rtwdev, u8 channel, u8 bw)
+static void rtw8821a_switch_band(struct rtw_dev *rtwdev, u8 new_band, u8 bw)
 {
 	const struct rtw_chip_info *chip = rtwdev->chip;
 	u16 basic_rates, reg_41a;
-	u8 old_band, new_band;
-
-	if (rtw_read8(rtwdev, REG_CCK_CHECK) & BIT_CHECK_CCK_EN)
-		old_band = RTW_BAND_5G;
-	else
-		old_band = RTW_BAND_2G;
-
-	if (channel > 14)
-		new_band = RTW_BAND_5G;
-	else
-		new_band = RTW_BAND_2G;
-
-	if (new_band == old_band)
-		return;
 
 	/* 8811au one antenna module doesn't support antenna div, so driver must
 	 * control antenna band, otherwise one of the band will have issue
@@ -2043,7 +1767,270 @@ static void rtw8821a_switch_band(struct rtw_dev *rtwdev, u8 channel, u8 bw)
 		rtw_write32_mask(rtwdev, REG_RRSR, 0xfffff, basic_rates);
 	}
 
-	rtw8821a_set_channel_bb_swing(rtwdev, channel);
+	rtw8821a_set_channel_bb_swing(rtwdev, new_band);
+}
+
+static int rtw8821a_power_on(struct rtw_dev *rtwdev)
+{
+	const struct rtw_chip_info *chip = rtwdev->chip;
+	struct rtw_efuse *efuse = &rtwdev->efuse;
+	bool wifi_only;
+	int ret;
+	u8 val8;
+
+	/* Override rtw_chip_efuse_info_setup() */
+	if (chip->id == RTW_CHIP_TYPE_8821A)
+		efuse->btcoex = rtw_read32_mask(rtwdev, REG_WL_BT_PWR_CTRL,
+						BIT_BT_FUNC_EN);
+
+	/* Override rtw_chip_efuse_info_setup() */
+	if (chip->id == RTW_CHIP_TYPE_8812A)
+		rtw8812a_read_amplifier_type(rtwdev);
+
+	ret = rtw_hci_setup(rtwdev);
+	if (ret) {
+		rtw_err(rtwdev, "failed to setup hci\n");
+		goto err;
+	}
+
+	///TODO: change to rtw_dbg
+	val8 = rtw_read8(rtwdev, REG_CR);
+	if (val8 != 0 && val8 != 0xEA &&
+	    (rtw_read8(rtwdev, REG_SYS_CLKR + 1) & BIT(3)))
+		rtw_info(rtwdev, "MAC has already power on\n");
+	else
+		rtw_info(rtwdev, "MAC has not been powered on yet\n");
+
+	/* Revise for U2/U3 switch we can not update RF-A/B reset.
+	 * Reset after MAC power on to prevent RF R/W error.
+	 * Is it a right method?
+	 */
+	if (chip->id == RTW_CHIP_TYPE_8812A) {
+		rtw_write8(rtwdev, REG_RF_CTRL, 5);
+		rtw_write8(rtwdev, REG_RF_CTRL, 7);
+		rtw_write8(rtwdev, REG_RF_B_CTRL, 5);
+		rtw_write8(rtwdev, REG_RF_B_CTRL, 7);
+	}
+
+	/* If HW didn't go through a complete de-initial procedure,
+	 * it probably occurs some problem for double initial
+	 * procedure.
+	 */
+	rtw8812au_hw_reset(rtwdev);
+
+	ret = rtw8812au_init_power_on(rtwdev);
+	if (ret) {
+		rtw_err(rtwdev, "failed to power on\n");
+		goto err;
+	}
+
+	if (rtwdev->efuse.btcoex)
+		rtw_coex_power_on_setting(rtwdev);
+
+	ret = set_trx_fifo_info(rtwdev);
+	if (ret) {
+		rtw_err(rtwdev, "failed to set trx fifo info\n");
+		goto err;
+	}
+
+	///TODO: undo that commit which introduced this function. move it here
+	ret = rtw_llt_init_legacy_old(rtwdev, rtwdev->fifo.rsvd_boundary);
+	if (ret) {
+		rtw_err(rtwdev, "failed to init llt\n");
+		goto err;
+	}
+
+	rtw_write32_set(rtwdev, REG_TXDMA_OFFSET_CHK, BIT_DROP_DATA_EN);
+
+	ret = rtw_wait_firmware_completion(rtwdev);
+	if (ret) {
+		rtw_err(rtwdev, "failed to wait firmware completion\n");
+		goto err_off;
+	}
+
+	ret = rtw_download_firmware(rtwdev, &rtwdev->fw);
+	if (ret) {
+		rtw_err(rtwdev, "failed to download firmware\n");
+		goto err_off;
+	}
+
+	rtw_write8(rtwdev, REG_HMETFR, 0xf);
+
+	rtw_load_table(rtwdev, chip->mac_tbl);
+
+	rtw8821au_init_queue_reserved_page(rtwdev);
+	rtw8821au_init_tx_buffer_boundary(rtwdev);
+	rtw8821au_init_queue_priority(rtwdev);
+
+	rtw_write16(rtwdev, REG_TRXFF_BNDY + 2,
+		    chip->rxff_size - REPORT_BUF - 1);
+
+	if (chip->id == RTW_CHIP_TYPE_8812A)
+		rtw_write8(rtwdev, REG_PBP,
+			   u8_encode_bits(PBP_512, PBP_TX_MASK) |
+			   u8_encode_bits(PBP_64, PBP_RX_MASK));
+
+	rtw_write8(rtwdev, REG_RX_DRVINFO_SZ, PHY_STATUS_SIZE);
+
+	rtw_write32(rtwdev, REG_HIMR0, 0);
+	rtw_write32(rtwdev, REG_HIMR1, 0);
+
+	rtw_write32_mask(rtwdev, REG_CR, 0x30000, 0x2);
+
+	rtw8821a_init_wmac_setting(rtwdev);
+	rtw8821a_init_adaptive_ctrl(rtwdev);
+	rtw8821a_init_edca(rtwdev);
+
+	rtw_write8_set(rtwdev, REG_FWHW_TXQ_CTRL, BIT(7));
+	rtw_write8(rtwdev, REG_ACKTO, 0x80);
+
+	rtw8821au_tx_aggregation(rtwdev);
+	rtw8821au_rx_aggregation(rtwdev);
+
+	rtw8821a_init_beacon_parameters(rtwdev);
+	rtw_write8(rtwdev, REG_BCN_MAX_ERR, 0xff);
+
+	if (rtwdev->hci.type == RTW_HCI_TYPE_USB)
+		rtw8821au_init_burst_pkt_len(rtwdev);
+
+	rtw_write8_set(rtwdev, REG_CR, MACTXEN | MACRXEN);
+
+	///TODO: blinking controlled by mac80211
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A)
+		rtw_write8(rtwdev, REG_LED_CFG + 2, BIT(1) | BIT(5));
+	else
+		rtw_write8(rtwdev, REG_LED_CFG, BIT(1) | BIT(5));
+
+	rtw8821a_phy_bb_config(rtwdev);
+	rtw8821a_phy_rf_config(rtwdev);
+
+	if (chip->id == RTW_CHIP_TYPE_8812A && rtwdev->hal.rf_path_num == 1)
+		rtw8812a_config_1t(rtwdev);
+
+	rtw8821a_switch_band(rtwdev, RTW_BAND_2G, RTW_CHANNEL_WIDTH_20);
+
+	rtw_write32(rtwdev, RTW_SEC_CMD_REG, BIT(31) | BIT(30));
+
+	rtw_write8(rtwdev, REG_HWSEQ_CTRL, 0xff);
+	rtw_write32(rtwdev, REG_BAR_MODE_CTRL, 0x0201ffff);
+	rtw_write8(rtwdev, REG_NAV_CTRL + 2, 0);
+
+	rtw_phy_init(rtwdev);
+
+	rtw8821a_pwrtrack_init(rtwdev);
+
+	/* 0x4c6[3] 1: RTS BW = Data BW
+	 * 0: RTS BW depends on CCA / secondary CCA result.
+	 */
+	rtw_write8_clr(rtwdev, REG_QUEUE_CTRL, BIT(3));
+
+	/* enable Tx report. */
+	rtw_write8(rtwdev, REG_FWHW_TXQ_CTRL + 1, 0x0f);
+
+	/* Pretx_en, for WEP/TKIP SEC */
+	rtw_write8(rtwdev, REG_EARLY_MODE_CONTROL + 3, 0x01);
+
+	rtw_write16(rtwdev, REG_TX_RPT_TIME, 0x3df0);
+
+	/* Reset USB mode switch setting */
+	rtw_write8(rtwdev, REG_SYS_SDIO_CTRL, 0x0);
+	rtw_write8(rtwdev, REG_ACLK_MON, 0x0);
+
+	rtw_write8(rtwdev, REG_USB_HRPWM, 0);
+
+	/* ack for xmit mgmt frames. */
+	rtw_write32_set(rtwdev, REG_FWHW_TXQ_CTRL, BIT(12));
+
+	/// From Hal_PatchwithJaguar_8812:
+	rtw_write8(rtwdev, 0x8c3, 0x3f);
+
+	rtwdev->hal.cck_high_power = rtw_read32_mask(rtwdev, REG_CCK_RPT_FORMAT,
+						     BIT_CCK_RPT_FORMAT);
+
+	// rtw8821a_phy_bf_init(rtwdev);
+
+	ret = rtw_hci_start(rtwdev);
+	if (ret) {
+		rtw_err(rtwdev, "failed to start hci\n");
+		goto err_off;
+	}
+
+	wifi_only = !rtwdev->efuse.btcoex;
+	if (efuse->btcoex) {
+		rtw_coex_power_on_setting(rtwdev);
+		rtw_coex_init_hw_config(rtwdev, wifi_only);
+	}
+
+	return 0;
+
+err_off:
+	rtw8821a_power_off(rtwdev);
+
+err:
+	return ret;
+}
+
+// static void rtw8821a_phy_bf_init(struct rtw_dev *rtwdev)
+// {
+// 	rtw_bf_phy_init(rtwdev);
+// 	/* Grouping bitmap parameters */
+// 	rtw_write32(rtwdev, 0x1C94, 0xAFFFAFFF);
+// }
+
+static int rtw8821a_mac_init(struct rtw_dev *rtwdev)
+{
+	rtw_err(rtwdev, "%s: useless function\n", __func__);
+	return 0;
+}
+
+static u32 rtw8821a_phy_read_rf(struct rtw_dev *rtwdev,
+				enum rtw_rf_path rf_path, u32 addr, u32 mask)
+{
+	static const u32 pi_addr[2] = { 0xc00, 0xe00 };
+	static const u32 read_addr[2][2] = {
+		{ REG_SI_READ_A, REG_SI_READ_B },
+		{ REG_PI_READ_A, REG_PI_READ_B }
+	};
+	const struct rtw_chip_info *chip = rtwdev->chip;
+	const struct rtw_hal *hal = &rtwdev->hal;
+	bool set_cca, pi_mode;
+	u32 val;
+
+	if (rf_path >= hal->rf_phy_num) {
+		rtw_err(rtwdev, "8821a unsupported rf path (%d)\n", rf_path);
+		return INV_RF_DATA;
+	}
+
+	/* CCA off to avoid reading the wrong value.
+	 * Toggling CCA would affect RF 0x0, skip it.
+	 */
+	set_cca = addr != 0x0 && chip->id == RTW_CHIP_TYPE_8812A &&
+		  hal->cut_version != RTW_CHIP_VER_CUT_C;
+
+	if (set_cca)
+		rtw_write32_set(rtwdev, REG_CCA2ND, BIT(3));
+
+	addr &= 0xff;
+
+	pi_mode = rtw_read32_mask(rtwdev, pi_addr[rf_path], 0x4);
+
+	rtw_write32_mask(rtwdev, REG_HSSI_READ, MASKBYTE0, addr);
+
+	if (chip->id == RTW_CHIP_TYPE_8821A || hal->cut_version == RTW_CHIP_VER_CUT_C)
+		udelay(20);
+
+	val = rtw_read32_mask(rtwdev, read_addr[pi_mode][rf_path], mask);
+
+	/* CCA on */
+	if (set_cca)
+		rtw_write32_clr(rtwdev, REG_CCA2ND, BIT(3));
+
+	return val;
+}
+
+static void rtw8821a_cfg_ldo25(struct rtw_dev *rtwdev, bool enable)
+{
+	/* Nothing to do. */
 }
 
 static void rtw8821a_phy_set_param(struct rtw_dev *rtwdev)
@@ -2251,7 +2238,20 @@ static void rtw8821a_set_channel_rf(struct rtw_dev *rtwdev, u8 channel, u8 bw)
 static void rtw8821a_set_channel(struct rtw_dev *rtwdev, u8 channel, u8 bw,
 				 u8 primary_chan_idx)
 {
-	rtw8821a_switch_band(rtwdev, channel, bw);
+	u8 old_band, new_band;
+
+	if (rtw_read8(rtwdev, REG_CCK_CHECK) & BIT_CHECK_CCK_EN)
+		old_band = RTW_BAND_5G;
+	else
+		old_band = RTW_BAND_2G;
+
+	if (channel > 14)
+		new_band = RTW_BAND_5G;
+	else
+		new_band = RTW_BAND_2G;
+
+	if (new_band != old_band)
+		rtw8821a_switch_band(rtwdev, new_band, bw);
 
 	rtw8821a_switch_channel(rtwdev, channel, bw);
 
