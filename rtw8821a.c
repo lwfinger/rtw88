@@ -1204,6 +1204,26 @@ static void rtw8821au_tx_aggregation(struct rtw_dev *rtwdev)
 			   chip->usb_tx_agg_desc_num << 1);
 }
 
+static void rtw8821au_rx_aggregation(struct rtw_dev *rtwdev)
+{
+	u8 rxagg_usb_size, rxagg_usb_timeout;
+	bool usb3 = false;///TODO
+	u16 val16;
+
+	if (usb3) {
+		rxagg_usb_size = 0x7;
+		rxagg_usb_timeout = 0x1a;
+	} else {
+		rxagg_usb_size = 0x5;
+		rxagg_usb_timeout = 0x20;
+	}
+
+	val16 = (rxagg_usb_timeout << 8) | rxagg_usb_size;
+	rtw_write16(rtwdev, REG_RXDMA_AGG_PG_TH, val16);
+
+	rtw_write8_set(rtwdev, REG_TXDMA_PQ_MAP, BIT_RXDMA_AGG_EN);
+}
+
 static void rtw8821a_init_beacon_parameters(struct rtw_dev *rtwdev)
 {
 	u16 val16;
@@ -1598,7 +1618,7 @@ static int rtw8821a_power_on(struct rtw_dev *rtwdev)
 	rtw_write8(rtwdev, REG_ACKTO, 0x80);
 
 	rtw8821au_tx_aggregation(rtwdev);
-	// rtw8821au_rx_aggregation(rtwdev);
+	rtw8821au_rx_aggregation(rtwdev);
 
 	rtw8821a_init_beacon_parameters(rtwdev);
 	rtw_write8(rtwdev, REG_BCN_MAX_ERR, 0xff);
