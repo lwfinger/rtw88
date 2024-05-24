@@ -163,11 +163,11 @@ rtw_usb-objs                := usb.o
 
 ccflags-y += -D__CHECK_ENDIAN__
 
-all: 
+all:
 	$(MAKE) -C $(KSRC) M=$(PWD) modules
 install: all
 	@mkdir -p $(MODDESTDIR)
-	@install -p -D -m 644 *.ko $(MODDESTDIR)	
+	@install -p -D -m 644 *.ko $(MODDESTDIR)
 	@#copy firmware images to target folder
 	@mkdir -p $(FIRMWAREDIR)/rtw88/
 	@cp -f *.bin $(FIRMWAREDIR)/rtw88/
@@ -211,11 +211,11 @@ ifeq ($(CONFIG_PCI), y)
 endif
 	modprobe -r rtw_8822cs
 	modprobe -r rtw_8822cu
-	
+
 	rm -f $(MODDESTDIR)/rtw_*.ko*
-	
+
 	depmod $(DEPMOD_ARGS)
-	
+
 	@echo "Uninstall rtw88 SUCCESS"
 
 clean:
