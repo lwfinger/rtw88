@@ -271,6 +271,7 @@ struct rtw8821a_phy_status_rpt {
 #define REG_ADC40				0x8c8
 #define REG_CHFIR				0x8f0
 #define REG_ANTSEL_SW				0x900
+#define REG_SINGLE_TONE_CONT_TX			0x914
 #define REG_CDDTXP				0x93c
 #define REG_TXPSEL1				0x940
 #define REG_ACBB0				0x948
@@ -370,5 +371,6 @@ struct rtw8821a_phy_status_rpt {
 #define RF_MODE_TABLE_ADDR			0x30
 #define RF_MODE_TABLE_DATA0			0x31
 #define RF_MODE_TABLE_DATA1			0x32
+#define RF_LCK					0xb4
 
 #endif
