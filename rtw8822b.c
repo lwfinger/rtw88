@@ -2578,6 +2578,7 @@ const struct rtw_chip_info rtw8822b_hw_spec = {
 	.rx_ldpc = true,
 	.has_hw_feature_report = true,
 	.usb_tx_agg_desc_num = 3,
+	.c2h_ra_report_size = 7,
 	.edcca_th = rtw8822b_edcca_th,
 	.l2h_th_ini_cs = 10 + EDCCA_IGI_BASE,
 	.l2h_th_ini_ad = -14 + EDCCA_IGI_BASE,
