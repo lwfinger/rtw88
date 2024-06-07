@@ -1781,6 +1781,7 @@ static int rtw8821a_power_on(struct rtw_dev *rtwdev)
 {
 	const struct rtw_chip_info *chip = rtwdev->chip;
 	struct rtw_efuse *efuse = &rtwdev->efuse;
+	struct rtw_hal *hal = &rtwdev->hal;
 	bool wifi_only;
 	int ret;
 	u8 val8;
@@ -1831,7 +1832,7 @@ static int rtw8821a_power_on(struct rtw_dev *rtwdev)
 		goto err;
 	}
 
-	if (rtwdev->efuse.btcoex)
+	if (efuse->btcoex)
 		rtw_coex_power_on_setting(rtwdev);
 
 	ret = set_trx_fifo_info(rtwdev);
@@ -1911,7 +1912,7 @@ static int rtw8821a_power_on(struct rtw_dev *rtwdev)
 	rtw8821a_phy_bb_config(rtwdev);
 	rtw8821a_phy_rf_config(rtwdev);
 
-	if (chip->id == RTW_CHIP_TYPE_8812A && rtwdev->hal.rf_path_num == 1)
+	if (chip->id == RTW_CHIP_TYPE_8812A && hal->rf_path_num == 1)
 		rtw8812a_config_1t(rtwdev);
 
 	rtw8821a_switch_band(rtwdev, RTW_BAND_2G, RTW_CHANNEL_WIDTH_20);
@@ -1951,8 +1952,8 @@ static int rtw8821a_power_on(struct rtw_dev *rtwdev)
 	/// From Hal_PatchwithJaguar_8812:
 	rtw_write8(rtwdev, 0x8c3, 0x3f);
 
-	rtwdev->hal.cck_high_power = rtw_read32_mask(rtwdev, REG_CCK_RPT_FORMAT,
-						     BIT_CCK_RPT_FORMAT);
+	hal->cck_high_power = rtw_read32_mask(rtwdev, REG_CCK_RPT_FORMAT,
+					      BIT_CCK_RPT_FORMAT);
 
 	// rtw8821a_phy_bf_init(rtwdev);
 
@@ -1962,7 +1963,7 @@ static int rtw8821a_power_on(struct rtw_dev *rtwdev)
 		goto err_off;
 	}
 
-	wifi_only = !rtwdev->efuse.btcoex;
+	wifi_only = !efuse->btcoex;
 	if (efuse->btcoex) {
 		rtw_coex_power_on_setting(rtwdev);
 		rtw_coex_init_hw_config(rtwdev, wifi_only);
