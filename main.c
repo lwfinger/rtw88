@@ -264,6 +264,8 @@ static void rtw_watch_dog_work(struct work_struct *work)
 	/* make sure BB/RF is working for dynamic mech */
 	rtw_leave_lps(rtwdev);
 
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8812A)
+		goto unlock;
 	rtw_phy_dynamic_mechanism(rtwdev);
 
 	data.rtwdev = rtwdev;
