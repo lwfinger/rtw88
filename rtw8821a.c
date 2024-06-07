@@ -3744,12 +3744,6 @@ static struct rtw_hw_reg rtw8821a_dig[] = {
 	[1] = { .addr = 0xe50, .mask = 0x7f },
 };
 
-static const struct rtw_ltecoex_addr rtw8821a_ltecoex_addr = {
-	.ctrl = 0x7c0 /*REG_LTECOEX_CTRL*/,
-	.wdata = 0x7c4 /*REG_LTECOEX_WRITE_DATA*/,
-	.rdata = 0x7c8 /*REG_LTECOEX_READ_DATA*/,
-};
-
 static struct rtw_page_table page_table_8821a[] = {
 	/* hq_num, nq_num, lq_num, exq_num, gapq_num */
 	{0, 0, 0, 0, 0},	// unused by USB
