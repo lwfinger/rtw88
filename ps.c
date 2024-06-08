@@ -29,6 +29,11 @@ int rtw_enter_ips(struct rtw_dev *rtwdev)
 	if (!test_bit(RTW_FLAG_POWERON, rtwdev->flags))
 		return 0;
 
+	///TODO: They don't work right if they're allowed to enter ips.
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A ||
+	    rtwdev->chip->id == RTW_CHIP_TYPE_8812A)
+		return 0;
+
 	rtw_coex_ips_notify(rtwdev, COEX_IPS_ENTER);
 
 	rtw_core_stop(rtwdev);
