@@ -571,6 +571,11 @@ static void rtw_usb_rx_handler(struct work_struct *work)
 			continue;
 		}
 
+		if (!test_bit(RTW_FLAG_RUNNING, rtwdev->flags)) {
+			dev_kfree_skb_any(skb);
+			continue;
+		}
+
 		urb_len = skb->len;
 
 		do {
@@ -745,6 +750,30 @@ static void rtw_usb_interface_cfg(struct rtw_dev *rtwdev)
 	/* empty function for rtw_hci_ops */
 }
 
+static void rtw_usb_stop_rx(struct rtw_dev *rtwdev)
+{
+	struct rtw_usb *rtwusb = rtw_get_usb_priv(rtwdev);
+	rtw_usb_cancel_rx_bufs(rtwusb);
+	rtwusb->rx_enabled = false;
+}
+
+static void rtw_usb_start_rx(struct rtw_dev *rtwdev)
+{
+	struct rtw_usb *rtwusb = rtw_get_usb_priv(rtwdev);
+	int i;
+
+	if (rtwusb->rx_enabled)
+		return;
+
+	for (i = 0; i < RTW_USB_RXCB_NUM; i++) {
+		struct rx_usb_ctrl_block *rxcb = &rtwusb->rx_cb[i];
+
+		rtw_usb_rx_resubmit(rtwusb, rxcb);
+	}
+
+	rtwusb->rx_enabled = true;
+}
+
 static struct rtw_hci_ops rtw_usb_ops = {
 	.tx_write = rtw_usb_tx_write,
 	.tx_kick_off = rtw_usb_tx_kick_off,
@@ -754,6 +783,8 @@ static struct rtw_hci_ops rtw_usb_ops = {
 	.deep_ps = rtw_usb_deep_ps,
 	.link_ps = rtw_usb_link_ps,
 	.interface_cfg = rtw_usb_interface_cfg,
+	.stop_rx = rtw_usb_stop_rx,
+	.start_rx = rtw_usb_start_rx,
 
 	.write8  = rtw_usb_write8,
 	.write16 = rtw_usb_write16,
@@ -779,20 +810,6 @@ static int rtw_usb_init_rx(struct rtw_dev *rtwdev)
 	skb_queue_head_init(&rtwusb->rx_queue);
 
 	INIT_WORK(&rtwusb->rx_work, rtw_usb_rx_handler);
-
-	return 0;
-}
-
-static void rtw_usb_setup_rx(struct rtw_dev *rtwdev)
-{
-	struct rtw_usb *rtwusb = rtw_get_usb_priv(rtwdev);
-	int i;
-
-	for (i = 0; i < RTW_USB_RXCB_NUM; i++) {
-		struct rx_usb_ctrl_block *rxcb = &rtwusb->rx_cb[i];
-
-		rtw_usb_rx_resubmit(rtwusb, rxcb);
-	}
 
 	return 0;
 }
@@ -931,7 +948,7 @@ int rtw_usb_probe(struct usb_interface *intf, const struct usb_device_id *id)
 		goto err_destroy_rxwq;
 	}
 
-	rtw_usb_setup_rx(rtwdev);
+	rtw_usb_start_rx(rtwdev);
 
 	return 0;
 

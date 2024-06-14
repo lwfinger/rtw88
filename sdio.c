@@ -1146,6 +1146,10 @@ static void rtw_sdio_declaim(struct rtw_dev *rtwdev,
 	sdio_release_host(sdio_func);
 }
 
+static void rtw_sdio_nop(struct rtw_dev *rtwdev)
+{
+}
+
 static struct rtw_hci_ops rtw_sdio_ops = {
 	.tx_write = rtw_sdio_tx_write,
 	.tx_kick_off = rtw_sdio_tx_kick_off,
@@ -1155,6 +1159,8 @@ static struct rtw_hci_ops rtw_sdio_ops = {
 	.deep_ps = rtw_sdio_deep_ps,
 	.link_ps = rtw_sdio_link_ps,
 	.interface_cfg = rtw_sdio_interface_cfg,
+	.stop_rx = rtw_sdio_nop,
+	.start_rx = rtw_sdio_nop,
 
 	.read8 = rtw_sdio_read8,
 	.read16 = rtw_sdio_read16,

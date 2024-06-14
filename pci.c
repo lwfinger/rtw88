@@ -1590,6 +1590,10 @@ static void rtw_pci_destroy(struct rtw_dev *rtwdev, struct pci_dev *pdev)
 	rtw_pci_io_unmapping(rtwdev, pdev);
 }
 
+static void rtw_pci_nop(struct rtw_dev *rtwdev)
+{
+}
+
 static struct rtw_hci_ops rtw_pci_ops = {
 	.tx_write = rtw_pci_tx_write,
 	.tx_kick_off = rtw_pci_tx_kick_off,
@@ -1600,6 +1604,8 @@ static struct rtw_hci_ops rtw_pci_ops = {
 	.deep_ps = rtw_pci_deep_ps,
 	.link_ps = rtw_pci_link_ps,
 	.interface_cfg = rtw_pci_interface_cfg,
+	.stop_rx = rtw_pci_nop,
+	.start_rx = rtw_pci_nop,
 
 	.read8 = rtw_pci_read8,
 	.read16 = rtw_pci_read16,

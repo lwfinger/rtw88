@@ -1508,6 +1508,9 @@ int rtw_power_on(struct rtw_dev *rtwdev)
 	rtw_coex_power_on_setting(rtwdev);
 	rtw_coex_init_hw_config(rtwdev, wifi_only);
 
+success:
+	rtw_hci_start_rx(rtwdev);
+
 	return 0;
 
 err_off:
@@ -1611,6 +1614,7 @@ int rtw_core_start(struct rtw_dev *rtwdev)
 
 void rtw_power_off(struct rtw_dev *rtwdev)
 {
+	rtw_hci_stop_rx(rtwdev);
 	rtw_hci_stop(rtwdev);
 	rtw_coex_power_off_setting(rtwdev);
 	rtw_mac_power_off(rtwdev);

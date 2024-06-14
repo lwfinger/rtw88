@@ -18,6 +18,8 @@ struct rtw_hci_ops {
 	void (*deep_ps)(struct rtw_dev *rtwdev, bool enter);
 	void (*link_ps)(struct rtw_dev *rtwdev, bool enter);
 	void (*interface_cfg)(struct rtw_dev *rtwdev);
+	void (*stop_rx)(struct rtw_dev *rtwdev);
+	void (*start_rx)(struct rtw_dev *rtwdev);
 
 	int (*write_data_rsvd_page)(struct rtw_dev *rtwdev, u8 *buf, u32 size);
 	int (*write_data_h2c)(struct rtw_dev *rtwdev, u8 *buf, u32 size);
@@ -55,6 +57,16 @@ static inline int rtw_hci_start(struct rtw_dev *rtwdev)
 static inline void rtw_hci_stop(struct rtw_dev *rtwdev)
 {
 	rtwdev->hci.ops->stop(rtwdev);
+}
+
+static inline void rtw_hci_start_rx(struct rtw_dev *rtwdev)
+{
+	rtwdev->hci.ops->start_rx(rtwdev);
+}
+
+static inline void rtw_hci_stop_rx(struct rtw_dev *rtwdev)
+{
+	rtwdev->hci.ops->stop_rx(rtwdev);
 }
 
 static inline void rtw_hci_deep_ps(struct rtw_dev *rtwdev, bool enter)

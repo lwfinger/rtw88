@@ -82,6 +82,7 @@ struct rtw_usb {
 	struct rx_usb_ctrl_block rx_cb[RTW_USB_RXCB_NUM];
 	struct sk_buff_head rx_queue;
 	struct work_struct rx_work;
+	bool rx_enabled;
 };
 
 static inline struct rtw_usb_tx_data *rtw_usb_get_tx_data(struct sk_buff *skb)
