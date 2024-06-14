@@ -955,18 +955,6 @@ static int __rtw_download_firmware_legacy(struct rtw_dev *rtwdev,
 		rtw_write8(rtwdev, REG_MCUFW_CTRL, 0x00);
 	}
 
-	/* reset firmware if still present */
-	if (rtwdev->chip->id == RTW_CHIP_TYPE_8703B &&
-	    rtw_read8_mask(rtwdev, REG_MCUFW_CTRL, BIT_RAM_DL_SEL)) {
-		rtw_write8(rtwdev, REG_MCUFW_CTRL, 0x00);
-	}
-
-	/* reset firmware if still present */
-	if (rtwdev->chip->id == RTW_CHIP_TYPE_8703B &&
-	    rtw_read8_mask(rtwdev, REG_MCUFW_CTRL, BIT_RAM_DL_SEL)) {
-		rtw_write8(rtwdev, REG_MCUFW_CTRL, 0x00);
-	}
-
 	en_download_firmware_legacy(rtwdev, true);
 	ret = download_firmware_legacy(rtwdev, fw->firmware->data, fw->firmware->size);
 	en_download_firmware_legacy(rtwdev, false);
@@ -1155,7 +1143,7 @@ int set_trx_fifo_info(struct rtw_dev *rtwdev)
 
 	/* config rsvd page num */
 	fifo->rsvd_drv_pg_num = chip->rsvd_drv_pg_num;
-	fifo->txff_pg_num = chip->txff_size >> 7;
+	fifo->txff_pg_num = chip->txff_size / chip->page_size;
 	if (rtw_chip_wcpu_11n(rtwdev))
 		fifo->rsvd_pg_num = fifo->rsvd_drv_pg_num;
 	else

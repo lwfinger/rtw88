@@ -2034,6 +2034,7 @@ const struct rtw_chip_info rtw8821c_hw_spec = {
 	.rx_ldpc = false,
 	.has_hw_feature_report = true,
 	.usb_tx_agg_desc_num = 3,
+	.c2h_ra_report_size = 7,
 	.pwr_track_tbl = &rtw8821c_rtw_pwr_track_tbl,
 	.iqk_threshold = 8,
 	.bfer_su_max_num = 2,

@@ -1106,20 +1106,26 @@ static bool check_positive(struct rtw_dev *rtwdev, struct rtw_phy_cond cond, str
 	if (cond.intf && cond.intf != drv_cond.intf)
 		return false;
 
-	if (cond.rfe != drv_cond.rfe)
-		return false;
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8812A ||
+	    rtwdev->chip->id == RTW_CHIP_TYPE_8821A) {
+		if (cond.rfe & 0x0f) {
+			if ((cond.rfe & drv_cond.rfe) != cond.rfe)
+				return false;
 
-	if (cond.rfe & 0x0f) {
-		if ((cond.rfe & BIT(0)) && cond2.type_glna != drv_cond2.type_glna)
-			return false;
+			if ((cond.rfe & BIT(0)) && cond2.type_glna != drv_cond2.type_glna)
+				return false;
 
-		if ((cond.rfe & BIT(1)) && cond2.type_gpa != drv_cond2.type_gpa)
-			return false;
+			if ((cond.rfe & BIT(1)) && cond2.type_gpa != drv_cond2.type_gpa)
+				return false;
 
-		if ((cond.rfe & BIT(2)) && cond2.type_alna != drv_cond2.type_alna)
-			return false;
+			if ((cond.rfe & BIT(2)) && cond2.type_alna != drv_cond2.type_alna)
+				return false;
 
-		if ((cond.rfe & BIT(3)) && cond2.type_apa != drv_cond2.type_apa)
+			if ((cond.rfe & BIT(3)) && cond2.type_apa != drv_cond2.type_apa)
+				return false;
+		}
+	} else {
+		if (cond.rfe != drv_cond.rfe)
 			return false;
 	}
 
@@ -2180,8 +2186,8 @@ void rtw_get_tx_power_params(struct rtw_dev *rtwdev, u8 path, u8 rate, u8 bw,
 
 	*limit = rtw_phy_get_tx_power_limit(rtwdev, band, bw, path,
 					    rate, ch, regd);
-	*remnant = (rate <= DESC_RATE11M ? dm_info->txagc_remnant_cck :
-		    dm_info->txagc_remnant_ofdm);
+	*remnant = rate <= DESC_RATE11M ? dm_info->txagc_remnant_cck :
+					  dm_info->txagc_remnant_ofdm[path];
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
 	*sar = rtw_phy_get_tx_power_sar(rtwdev, hal->sar_band, path, rate);
 #endif

@@ -93,11 +93,6 @@ static u32 rtw_usb_read(struct rtw_dev *rtwdev, u32 addr, u16 len)
 	    rtwdev->chip->id == RTW_CHIP_TYPE_8821C)
 		rtw_usb_reg_sec(rtwdev, addr, data);
 
-	if (rtwdev->chip->id == RTW_CHIP_TYPE_8822C ||
-	    rtwdev->chip->id == RTW_CHIP_TYPE_8822B ||
-	    rtwdev->chip->id == RTW_CHIP_TYPE_8821C)
-		rtw_usb_reg_sec(rtwdev, addr, data);
-
 	return le32_to_cpu(*data);
 }
 
