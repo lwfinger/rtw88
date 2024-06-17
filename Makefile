@@ -100,12 +100,6 @@ rtw_8723x-objs		:= rtw8723x.o
 obj-m	   += rtw_8822cs.o
 rtw_8822cs-objs		:= rtw8822cs.o
 
-obj-m			+= rtw_8723x.o
-rtw_8723x-objs	:= rtw8723x.o
-
-obj-m	    += rtw_8723cs.o
-rtw_8723cs-objs		:= rtw8723cs.o
-
 obj-m	    += rtw_8723cs.o
 rtw_8723cs-objs		:= rtw8723cs.o
 
