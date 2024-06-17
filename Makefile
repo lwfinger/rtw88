@@ -70,8 +70,10 @@ endif
 obj-m      += rtw_8822bu.o
 rtw_8822bu-objs		:= rtw8822bu.o
 
+ifeq ($(CONFIG_MMC), y)
 obj-m	   += rtw_8822bs.o
 rtw_8822bs-objs		:= rtw8822bs.o
+endif
 
 obj-m       += rtw_8822c.o
 rtw_8822c-objs                := rtw8822c.o rtw8822c_table.o
@@ -93,11 +95,13 @@ rtw_8703b-objs		:= rtw8703b.o rtw8703b_tables.o
 obj-m	   += rtw_8723x.o
 rtw_8723x-objs		:= rtw8723x.o
 
+ifeq ($(CONFIG_MMC), y)
 obj-m	   += rtw_8822cs.o
 rtw_8822cs-objs		:= rtw8822cs.o
 
 obj-m	    += rtw_8723cs.o
 rtw_8723cs-objs		:= rtw8723cs.o
+endif
 
 obj-m       += rtw_8723d.o
 rtw_8723d-objs          := rtw8723d.o rtw8723d_table.o
@@ -110,8 +114,10 @@ endif
 obj-m      += rtw_8723du.o
 rtw_8723du-objs		:= rtw8723du.o
 
+ifeq ($(CONFIG_MMC), y)
 obj-m      += rtw_8723ds.o
 rtw_8723ds-objs		:= rtw8723ds.o
+endif
 
 obj-m	+= rtw_8821c.o
 rtw_8821c-objs		:= rtw8821c.o rtw8821c_table.o
@@ -135,8 +141,10 @@ rtw_8821au-objs		:= rtw8821au.o
 obj-m	   += rtw_8812au.o
 rtw_8812au-objs		:= rtw8812au.o
 
+ifeq ($(CONFIG_MMC), y)
 obj-m	   += rtw_8821cs.o
 rtw_8821cs-objs		:= rtw8821cs.o
+endif
 
 obj-m	+= rtw_8821cu.o
 rtw_8821cu-objs		:= rtw8821cu.o
@@ -146,8 +154,10 @@ obj-m			+= rtw_pci.o
 rtw_pci-objs		:= pci.o
 endif
 
+ifeq ($(CONFIG_MMC), y)
 obj-m			+= rtw_sdio.o
 rtw_sdio-objs		:= sdio.o
+endif
 
 obj-m			+= rtw_usb.o
 rtw_usb-objs		:= usb.o
