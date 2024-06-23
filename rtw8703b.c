@@ -2036,7 +2036,7 @@ const struct rtw_chip_info rtw8703b_hw_spec = {
 	.max_power_index = 0x3f,
 	.ampdu_density = IEEE80211_HT_MPDU_DENSITY_16,
 	.has_hw_feature_report = true,
-	.usb_tx_agg_desc_num = 1,
+	.usb_tx_agg_desc_num = 1, /* Not sure if this chip has USB interface */
 	.c2h_ra_report_size = 7,
 	.old_datarate_fb_limit = true,
 
