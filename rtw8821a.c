@@ -4430,16 +4430,6 @@ static const struct rtw_intf_phy_para_table phy_para_table_8821a = {
 	.n_usb3_para	= ARRAY_SIZE(usb2_param_8821a),
 };
 
-static const struct rtw_rfe_def rtw8821a_rfe_defs[] = {
-	[0] = { .phy_pg_tbl	= &rtw8821a_bb_pg_tbl,
-		.txpwr_lmt_tbl	= &rtw8821a_txpwr_lmt_tbl, },
-};
-
-static const struct rtw_rfe_def rtw8812a_rfe_defs[] = {
-	[0] = { .phy_pg_tbl	= &rtw8812a_bb_pg_tbl,
-		.txpwr_lmt_tbl	= &rtw8812a_txpwr_lmt_tbl, },
-};
-
 static struct rtw_hw_reg rtw8821a_dig[] = {
 	[0] = { .addr = 0xc50, .mask = 0x7f },
 	[1] = { .addr = 0xe50, .mask = 0x7f },
@@ -4795,7 +4785,6 @@ static const struct rtw_pwr_track_tbl rtw8821a_rtw_pwr_track_tbl = {///done
 	.pwrtrk_2g_ccka_p = rtw8821a_pwrtrk_2g_cck_a_p,
 };
 
-
 static const u8 rtw8812a_pwrtrk_5gb_n[][RTW_PWR_TRK_TBL_SZ] = {
 	{0, 1, 1, 2, 2, 3, 4, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12,
 	 12, 13, 13, 14, 14, 14, 14, 14, 14},
@@ -4895,6 +4884,120 @@ static const struct rtw_pwr_track_tbl rtw8812a_rtw_pwr_track_tbl = {
 	.pwrtrk_2g_ccka_p = rtw8812a_pwrtrk_2g_cck_a_p,
 };
 
+static const u8 rtw8812a_pwrtrk_rfe3_5gb_n[][RTW_PWR_TRK_TBL_SZ] = {
+	{0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 12, 13,
+	 13, 14, 15, 16, 16, 17, 17, 18, 18},
+	{0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 6, 7, 8, 8, 9, 9, 10, 10, 11, 11, 11,
+	 12, 14, 13, 13, 14, 14, 14, 15, 15},
+	{0, 1, 1, 2, 2, 3, 4, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12,
+	 12, 13, 13, 14, 14, 15, 15, 16, 16},
+};
+
+static const u8 rtw8812a_pwrtrk_rfe3_5gb_p[][RTW_PWR_TRK_TBL_SZ] = {
+	{0, 1, 1, 2, 3, 3, 4, 5, 6, 7, 7, 8, 9, 9, 10, 10, 11, 11, 11, 11, 11,
+	 11, 11, 11, 11, 11, 11, 11, 11, 11},
+	{0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 6, 7, 8, 8, 9, 9, 10, 10, 11, 11, 11,
+	 11, 11, 11, 11, 11, 11, 11, 11, 11},
+	{0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 6, 6, 7, 7, 8, 9, 10, 10, 11, 11, 11,
+	 11, 11, 11, 11, 11, 11, 11, 11, 11},
+};
+
+static const u8 rtw8812a_pwrtrk_rfe3_5ga_n[][RTW_PWR_TRK_TBL_SZ] = {
+	{0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12,
+	 13, 14, 15, 16, 16, 17, 17, 18, 18},
+	{0, 1, 1, 2, 3, 3, 4, 4, 5, 6, 6, 7, 7, 8, 9, 9, 10, 10, 11, 11, 12,
+	 12, 13, 13, 14, 15, 16, 16, 17, 17},
+	{0, 1, 1, 2, 3, 3, 4, 4, 5, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 12, 13,
+	 13, 14, 14, 15, 15, 16, 17, 18, 18},
+};
+
+static const u8 rtw8812a_pwrtrk_rfe3_5ga_p[][RTW_PWR_TRK_TBL_SZ] = {
+	{0, 1, 1, 2, 2, 3, 4, 5, 6, 7, 7, 8, 9, 9, 10, 10, 11, 11, 11, 11, 11,
+	 11, 11, 11, 11, 11, 11, 11, 11, 11},
+	{0, 1, 2, 3, 4, 4, 5, 5, 6, 7, 7, 8, 9, 9, 10, 11, 11, 11, 11, 11, 11,
+	 11, 11, 11, 11, 11, 11, 11, 11, 11},
+	{0, 1, 2, 3, 4, 4, 5, 5, 6, 7, 7, 8, 9, 9, 10, 11, 11, 11, 11, 11, 11,
+	 11, 11, 11, 11, 11, 11, 11, 11, 11},
+};
+
+static const u8 rtw8812a_pwrtrk_rfe3_2gb_n[] = {
+	0, 1, 1, 2, 2, 3, 3, 4, 4, 4, 5, 5, 6, 6, 6, 7,
+	7, 7, 8, 8, 9, 9, 10, 11, 12, 12, 13, 14, 15, 15
+};
+
+static const u8 rtw8812a_pwrtrk_rfe3_2gb_p[] = {
+	0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5, 6,
+	6, 7, 7, 8, 9, 10, 10, 10, 10, 11, 11, 11, 11, 11
+};
+
+static const u8 rtw8812a_pwrtrk_rfe3_2ga_n[] = {
+	0, 1, 1, 2, 2, 3, 4, 5, 6, 6, 6, 7, 7, 8, 8, 9,
+	10, 10, 11, 11, 12, 12, 13, 13, 13, 13, 14, 14, 15, 15
+};
+
+static const u8 rtw8812a_pwrtrk_rfe3_2ga_p[] = {
+	0, 0, 1, 1, 1, 2, 2, 3, 3, 4, 4, 4, 5, 5, 5, 6,
+	6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 11, 11, 11
+};
+
+static const u8 rtw8812a_pwrtrk_rfe3_2g_cck_b_n[] = {
+	0, 1, 1, 2, 2, 3, 3, 4, 4, 4, 5, 5, 6, 6, 6, 7,
+	7, 7, 8, 8, 9, 9, 10, 11, 12, 12, 13, 14, 15, 15
+};
+
+static const u8 rtw8812a_pwrtrk_rfe3_2g_cck_b_p[] = {
+	0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5, 6,
+	6, 7, 7, 8, 9, 10, 10, 10, 10, 11, 11, 11, 11, 11
+};
+
+static const u8 rtw8812a_pwrtrk_rfe3_2g_cck_a_n[] = {
+	0, 1, 1, 2, 2, 3, 4, 5, 6, 6, 6, 7, 7, 8, 8, 9,
+	10, 10, 11, 11, 12, 12, 13, 13, 13, 13, 14, 14, 15, 15
+};
+
+static const u8 rtw8812a_pwrtrk_rfe3_2g_cck_a_p[] = {
+	0, 0, 1, 1, 1, 2, 2, 3, 3, 4, 4, 4, 5, 5, 5, 6,
+	6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 11, 11, 11
+};
+
+static const struct rtw_pwr_track_tbl rtw8812a_rtw_pwr_track_rfe3_tbl = {
+	.pwrtrk_5gb_n[0] = rtw8812a_pwrtrk_rfe3_5gb_n[0],
+	.pwrtrk_5gb_n[1] = rtw8812a_pwrtrk_rfe3_5gb_n[1],
+	.pwrtrk_5gb_n[2] = rtw8812a_pwrtrk_rfe3_5gb_n[2],
+	.pwrtrk_5gb_p[0] = rtw8812a_pwrtrk_rfe3_5gb_p[0],
+	.pwrtrk_5gb_p[1] = rtw8812a_pwrtrk_rfe3_5gb_p[1],
+	.pwrtrk_5gb_p[2] = rtw8812a_pwrtrk_rfe3_5gb_p[2],
+	.pwrtrk_5ga_n[0] = rtw8812a_pwrtrk_rfe3_5ga_n[0],
+	.pwrtrk_5ga_n[1] = rtw8812a_pwrtrk_rfe3_5ga_n[1],
+	.pwrtrk_5ga_n[2] = rtw8812a_pwrtrk_rfe3_5ga_n[2],
+	.pwrtrk_5ga_p[0] = rtw8812a_pwrtrk_rfe3_5ga_p[0],
+	.pwrtrk_5ga_p[1] = rtw8812a_pwrtrk_rfe3_5ga_p[1],
+	.pwrtrk_5ga_p[2] = rtw8812a_pwrtrk_rfe3_5ga_p[2],
+	.pwrtrk_2gb_n = rtw8812a_pwrtrk_rfe3_2gb_n,
+	.pwrtrk_2gb_p = rtw8812a_pwrtrk_rfe3_2gb_p,
+	.pwrtrk_2ga_n = rtw8812a_pwrtrk_rfe3_2ga_n,
+	.pwrtrk_2ga_p = rtw8812a_pwrtrk_rfe3_2ga_p,
+	.pwrtrk_2g_cckb_n = rtw8812a_pwrtrk_rfe3_2g_cck_b_n,
+	.pwrtrk_2g_cckb_p = rtw8812a_pwrtrk_rfe3_2g_cck_b_p,
+	.pwrtrk_2g_ccka_n = rtw8812a_pwrtrk_rfe3_2g_cck_a_n,
+	.pwrtrk_2g_ccka_p = rtw8812a_pwrtrk_rfe3_2g_cck_a_p,
+};
+
+static const struct rtw_rfe_def rtw8821a_rfe_defs[] = {
+	[0] = { .phy_pg_tbl	= &rtw8821a_bb_pg_tbl,
+		.txpwr_lmt_tbl	= &rtw8821a_txpwr_lmt_tbl,
+		.pwr_track_tbl	= &rtw8821a_rtw_pwr_track_tbl, },
+};
+
+static const struct rtw_rfe_def rtw8812a_rfe_defs[] = {
+	[0] = { .phy_pg_tbl	= &rtw8812a_bb_pg_tbl,
+		.txpwr_lmt_tbl	= &rtw8812a_txpwr_lmt_tbl,
+		.pwr_track_tbl	= &rtw8812a_rtw_pwr_track_tbl, },
+	[3] = { .phy_pg_tbl	= &rtw8812a_bb_pg_rfe3_tbl,
+		.txpwr_lmt_tbl	= &rtw8812a_txpwr_lmt_tbl,
+		.pwr_track_tbl	= &rtw8812a_rtw_pwr_track_rfe3_tbl, },
+};
+
 static const struct rtw_reg_domain coex_info_hw_regs_8821a[] = {
 	{0xCB0, MASKDWORD, RTW_REG_DOMAIN_MAC32},
 	{0xCB4, MASKDWORD, RTW_REG_DOMAIN_MAC32},
@@ -4966,7 +5069,6 @@ const struct rtw_chip_info rtw8821a_hw_spec = {
 	.c2h_ra_report_size = 4,
 	.old_datarate_fb_limit = true,
 	.usb_tx_agg_desc_num = 6,
-	.pwr_track_tbl = &rtw8821a_rtw_pwr_track_tbl,
 	.iqk_threshold = 8,
 	// .bfer_su_max_num = 2,
 	// .bfer_mu_max_num = 1,
@@ -5052,7 +5154,6 @@ const struct rtw_chip_info rtw8812a_hw_spec = {
 	.c2h_ra_report_size = 4,
 	.old_datarate_fb_limit = true,
 	.usb_tx_agg_desc_num = 1,
-	.pwr_track_tbl = &rtw8812a_rtw_pwr_track_tbl,
 	.iqk_threshold = 8,
 	// .bfer_su_max_num = 2,
 	// .bfer_mu_max_num = 1,
