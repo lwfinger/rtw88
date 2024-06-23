@@ -314,7 +314,7 @@ struct rtw8821a_phy_status_rpt {
 #define REG_RFESEL8				0xcb4
 #define REG_RFE_INV_A				0xcb4
 #define RFE_INV_MASK				0x3ff00000
-#define REG_RFECTL				0xcb8
+#define REG_RFECTL_A				0xcb8
 #define B_BTG_SWITCH				BIT(16)
 #define B_CTRL_SWITCH				BIT(18)
 #define B_WL_SWITCH				(BIT(20) | BIT(22))
@@ -326,12 +326,17 @@ struct rtw8821a_phy_status_rpt {
 #define REG_PI_READ_B				0xd44
 #define REG_SI_READ_B				0xd48
 #define REG_AGCTR_B				0xe08
+#define REG_RX_IQC_AB_B				0xe10
 #define REG_TXSCALE_B				0xe1c
 #define REG_RXIGI_B				0xe50
 #define REG_TX_PWR_TRAINING_B			0xe54
+#define REG_AFE_PWR1_B				0xe60
+#define REG_AFE_PWR2_B				0xe64
+#define REG_RX_WAIT_CCA_TX_CCK_RFON_B		0xe68
 #define REG_LSSI_WRITE_B			0xe90
 #define REG_RFE_PINMUX_B			0xeb0
 #define REG_RFE_INV_B				0xeb4
+#define REG_RFECTL_B				0xeb8
 #define REG_CRC_CCK				0xf04
 #define REG_CRC_OFDM				0xf14
 #define REG_CRC_HT				0xf10

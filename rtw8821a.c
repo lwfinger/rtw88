@@ -2684,7 +2684,7 @@ static void rtw8821a_iqk_restore_afe(struct rtw_dev *rtwdev, u32 *afe_backup,
 	rtw_write32(rtwdev, 0xc94, 0x00000000);
 	rtw_write32(rtwdev, 0xcc4, 0x20040000);
 	rtw_write32(rtwdev, 0xcc8, 0x20000000);
-	rtw_write32(rtwdev, REG_RFECTL, 0x0);
+	rtw_write32(rtwdev, REG_RFECTL_A, 0x0);
 }
 
 static void rtw8821a_iqk_restore_mac_bb(struct rtw_dev *rtwdev,
@@ -2831,12 +2831,12 @@ static void rtw8821a_iqk(struct rtw_dev *rtwdev)
 		rtw_write32(rtwdev, 0xc80, 0x18008c10);
 		/* RX_Tone_idx[9:0], RxK_Mask[29] */
 		rtw_write32(rtwdev, 0xc84, 0x38008c10);
-		rtw_write32(rtwdev, REG_RFECTL, 0x00100000);
+		rtw_write32(rtwdev, REG_RFECTL_A, 0x00100000);
 		rtw_write32(rtwdev, 0x980, 0xfa000000);
 		rtw_write32(rtwdev, 0x980, 0xf8000000);
 
 		mdelay(10); /* delay 10ms */
-		rtw_write32(rtwdev, REG_RFECTL, 0x00000000);
+		rtw_write32(rtwdev, REG_RFECTL_A, 0x00000000);
 
 		/* [31] = 0 --> Page C */
 		rtw_write32_mask(rtwdev, REG_CCASEL, BIT(31), 0x0);
@@ -2917,7 +2917,7 @@ static void rtw8821a_iqk(struct rtw_dev *rtwdev)
 					break;
 				}
 
-				rtw_write32(rtwdev, REG_RFECTL, 0x00100000);
+				rtw_write32(rtwdev, REG_RFECTL_A, 0x00100000);
 				cal_retry = 0;
 				while (1) {
 					/* one shot */
@@ -2926,7 +2926,7 @@ static void rtw8821a_iqk(struct rtw_dev *rtwdev)
 
 					mdelay(10);
 
-					rtw_write32(rtwdev, REG_RFECTL, 0x00000000);
+					rtw_write32(rtwdev, REG_RFECTL_A, 0x00000000);
 
 					delay_count = 0;
 					while (1) {
@@ -2954,10 +2954,10 @@ static void rtw8821a_iqk(struct rtw_dev *rtwdev)
 						tx_fail = false;
 
 						if (!tx_fail) {
-							rtw_write32(rtwdev, REG_RFECTL, 0x02000000);
+							rtw_write32(rtwdev, REG_RFECTL_A, 0x02000000);
 							vdf_X[k] = rtw_read32_mask(rtwdev, 0xd00, 0x07ff0000) << 21;
 
-							rtw_write32(rtwdev, REG_RFECTL, 0x04000000);
+							rtw_write32(rtwdev, REG_RFECTL_A, 0x04000000);
 							vdf_Y[k] = rtw_read32_mask(rtwdev, 0xd00, 0x07ff0000) << 21;
 
 							tx0iqkok = true;
@@ -2999,7 +2999,7 @@ static void rtw8821a_iqk(struct rtw_dev *rtwdev)
 				rtw_write32(rtwdev, 0x980, 0xf8000000);
 
 				mdelay(10);
-				rtw_write32(rtwdev, REG_RFECTL, 0x00000000);
+				rtw_write32(rtwdev, REG_RFECTL_A, 0x00000000);
 
 				delay_count = 0;
 				while (1) {
@@ -3027,10 +3027,10 @@ static void rtw8821a_iqk(struct rtw_dev *rtwdev)
 					tx_fail = false;
 
 					if (!tx_fail) {
-						rtw_write32(rtwdev, REG_RFECTL, 0x02000000);
+						rtw_write32(rtwdev, REG_RFECTL_A, 0x02000000);
 						tx_x0[cal] = rtw_read32_mask(rtwdev, 0xd00, 0x07ff0000) << 21;
 
-						rtw_write32(rtwdev, REG_RFECTL, 0x04000000);
+						rtw_write32(rtwdev, REG_RFECTL_A, 0x04000000);
 						tx_y0[cal] = rtw_read32_mask(rtwdev, 0xd00, 0x07ff0000) << 21;
 
 						tx0iqkok = true;
@@ -3099,7 +3099,7 @@ static void rtw8821a_iqk(struct rtw_dev *rtwdev)
 				rtw_write32(rtwdev, 0xc8c, 0x28160d00);
 			}
 
-			rtw_write32(rtwdev, REG_RFECTL, 0x00100000);
+			rtw_write32(rtwdev, REG_RFECTL_A, 0x00100000);
 
 			cal_retry = 0;
 			while (1) {
@@ -3109,7 +3109,7 @@ static void rtw8821a_iqk(struct rtw_dev *rtwdev)
 
 				mdelay(10);
 
-				rtw_write32(rtwdev, REG_RFECTL, 0x00000000);
+				rtw_write32(rtwdev, REG_RFECTL_A, 0x00000000);
 
 				delay_count = 0;
 				while (1) {
@@ -3131,10 +3131,10 @@ static void rtw8821a_iqk(struct rtw_dev *rtwdev)
 					/* ============RXIQK Check============== */
 					rx_fail = rtw_read32_mask(rtwdev, 0xd00, BIT(11));
 					if (rx_fail == 0) {
-						rtw_write32(rtwdev, REG_RFECTL, 0x06000000);
+						rtw_write32(rtwdev, REG_RFECTL_A, 0x06000000);
 						rx_x0[i][cal] = rtw_read32_mask(rtwdev, 0xd00, 0x07ff0000) << 21;
 
-						rtw_write32(rtwdev, REG_RFECTL, 0x08000000);
+						rtw_write32(rtwdev, REG_RFECTL_A, 0x08000000);
 						rx_y0[i][cal] = rtw_read32_mask(rtwdev, 0xd00, 0x07ff0000) << 21;
 
 						rx0iqkok = true;
@@ -3310,9 +3310,722 @@ static void rtw8821a_do_iqk(struct rtw_dev *rtwdev)
 				    backup_macbb_reg, MACBB_REG_NUM_8821A);
 }
 
+static void rtw8812a_iqk_backup_rf(struct rtw_dev *rtwdev, u32 *rfa_backup,
+				   u32 *rfb_backup, const u32 *backup_rf_reg,
+				   u32 rf_num)
+{
+	u32 i;
+
+	/* [31] = 0 --> Page C */
+	rtw_write32_mask(rtwdev, REG_CCASEL, BIT(31), 0x0);
+
+	/* Save RF Parameters */
+	for (i = 0; i < rf_num; i++) {
+		rfa_backup[i] = rtw_read_rf(rtwdev, RF_PATH_A,
+					    backup_rf_reg[i], MASKDWORD);
+		rfb_backup[i] = rtw_read_rf(rtwdev, RF_PATH_B,
+					    backup_rf_reg[i], MASKDWORD);
+	}
+}
+
+static void rtw8812a_iqk_restore_rf(struct rtw_dev *rtwdev,
+				    enum rtw_rf_path path,
+				    const u32 *backup_rf_reg,
+				    u32 *RF_backup, u32 rf_reg_num)
+{
+	u32 i;
+
+	/* [31] = 0 --> Page C */
+	rtw_write32_mask(rtwdev, REG_CCASEL, BIT(31), 0x0);
+
+	for (i = 0; i < rf_reg_num; i++)
+		rtw_write_rf(rtwdev, path, backup_rf_reg[i],
+			     RFREG_MASK, RF_backup[i]);
+
+	rtw_write_rf(rtwdev, path, RF_LUTWE, RFREG_MASK, 0);
+}
+
+static void rtw8812a_iqk_restore_afe(struct rtw_dev *rtwdev, u32 *afe_backup,
+				     const u32 *backup_afe_reg, u32 afe_num)
+{
+	u32 i;
+
+	/* [31] = 0 --> Page C */
+	rtw_write32_mask(rtwdev, REG_CCASEL, BIT(31), 0x0);
+
+	/* Reload AFE Parameters */
+	for (i = 0; i < afe_num; i++)
+		rtw_write32(rtwdev, backup_afe_reg[i], afe_backup[i]);
+
+	/* [31] = 1 --> Page C1 */
+	rtw_write32_mask(rtwdev, REG_CCASEL, BIT(31), 0x1);
+
+	rtw_write32(rtwdev, 0xc80, 0x0);
+	rtw_write32(rtwdev, 0xc84, 0x0);
+	rtw_write32(rtwdev, 0xc88, 0x0);
+	rtw_write32(rtwdev, 0xc8c, 0x3c000000);
+	rtw_write32_mask(rtwdev, REG_LSSI_WRITE_A, BIT(7), 1);
+	rtw_write32_mask(rtwdev, 0xcc4, BIT(18), 1);
+	rtw_write32_mask(rtwdev, 0xcc4, BIT(29), 1);
+	rtw_write32_mask(rtwdev, 0xcc8, BIT(29), 1);
+
+	rtw_write32(rtwdev, 0xe80, 0x0);
+	rtw_write32(rtwdev, 0xe84, 0x0);
+	rtw_write32(rtwdev, 0xe88, 0x0);
+	rtw_write32(rtwdev, 0xe8c, 0x3c000000);
+	rtw_write32_mask(rtwdev, REG_LSSI_WRITE_B, BIT(7), 1);
+	rtw_write32_mask(rtwdev, 0xec4, BIT(18), 1);
+	rtw_write32_mask(rtwdev, 0xec4, BIT(29), 1);
+	rtw_write32_mask(rtwdev, 0xec8, BIT(29), 1);
+}
+
+static void rtw8812a_iqk_rx_fill(struct rtw_dev *rtwdev, enum rtw_rf_path path,
+				 unsigned int rx_x, unsigned int rx_y)
+{
+	switch (path) {
+	case RF_PATH_A: {
+		/* [31] = 0 --> Page C */
+		rtw_write32_mask(rtwdev, REG_CCASEL, BIT(31), 0x0);
+		if (rx_x >> 1 >= 0x112 || (rx_y >> 1 >= 0x12 && rx_y >> 1 <= 0x3ee)) {
+			rtw_write32_mask(rtwdev, REG_RX_IQC_AB_A, 0x000003ff, 0x100);
+			rtw_write32_mask(rtwdev, REG_RX_IQC_AB_A, 0x03ff0000, 0);
+		} else {
+			rtw_write32_mask(rtwdev, REG_RX_IQC_AB_A, 0x000003ff, rx_x >> 1);
+			rtw_write32_mask(rtwdev, REG_RX_IQC_AB_A, 0x03ff0000, rx_y >> 1);
+		}
+		rtw_dbg(rtwdev, RTW_DBG_RFK,
+		       "rx_x = %x;;rx_y = %x ====>fill to IQC\n",
+		       rx_x >> 1 & 0x000003ff, rx_y >> 1 & 0x000003ff);
+		rtw_dbg(rtwdev, RTW_DBG_RFK, "0xc10 = %x ====>fill to IQC\n",
+		       rtw_read32(rtwdev, REG_RX_IQC_AB_A));
+	} break;
+	case RF_PATH_B: {
+		/* [31] = 0 --> Page C */
+		rtw_write32_mask(rtwdev, REG_CCASEL, BIT(31), 0x0);
+		if (rx_x >> 1 >= 0x112 || (rx_y >> 1 >= 0x12 && rx_y >> 1 <= 0x3ee)) {
+			rtw_write32_mask(rtwdev, REG_RX_IQC_AB_B, 0x000003ff, 0x100);
+			rtw_write32_mask(rtwdev, REG_RX_IQC_AB_B, 0x03ff0000, 0);
+			rtw_dbg(rtwdev, RTW_DBG_RFK,
+			       "rx_x = %x;;rx_y = %x ====>fill to IQC\n",
+			       rx_x >> 1 & 0x000003ff, rx_y >> 1 & 0x000003ff);
+		} else {
+			rtw_write32_mask(rtwdev, REG_RX_IQC_AB_B, 0x000003ff, rx_x >> 1);
+			rtw_write32_mask(rtwdev, REG_RX_IQC_AB_B, 0x03ff0000, rx_y >> 1);
+			rtw_dbg(rtwdev, RTW_DBG_RFK,
+			       "rx_x = %x;;rx_y = %x====>fill to IQC\n ",
+			       rx_x >> 1 & 0x000003ff, rx_y >> 1 & 0x000003ff);
+			rtw_dbg(rtwdev, RTW_DBG_RFK, "0xe10 = %x====>fill to IQC\n",
+			       rtw_read32(rtwdev, REG_RX_IQC_AB_B));
+		}
+	} break;
+	default:
+		break;
+	};
+}
+
+static void rtw8812a_iqk_tx_fill(struct rtw_dev *rtwdev, enum rtw_rf_path path,
+				 unsigned int tx_x, unsigned int tx_y)
+{
+	switch (path) {
+	case RF_PATH_A: {
+		/* [31] = 1 --> Page C1 */
+		rtw_write32_mask(rtwdev, REG_CCASEL, BIT(31), 0x1);
+		rtw_write32_mask(rtwdev, 0xc90, BIT(7), 0x1);
+		rtw_write32_mask(rtwdev, 0xcc4, BIT(18), 0x1);
+		rtw_write32_mask(rtwdev, 0xcc4, BIT(29), 0x1);
+		rtw_write32_mask(rtwdev, 0xcc8, BIT(29), 0x1);
+		rtw_write32_mask(rtwdev, 0xccc, 0x000007ff, tx_y);
+		rtw_write32_mask(rtwdev, 0xcd4, 0x000007ff, tx_x);
+		rtw_dbg(rtwdev, RTW_DBG_RFK,
+		       "tx_x = %x;;tx_y = %x =====> fill to IQC\n",
+		       tx_x & 0x000007ff, tx_y & 0x000007ff);
+		rtw_dbg(rtwdev, RTW_DBG_RFK,
+		       "0xcd4 = %x;;0xccc = %x ====>fill to IQC\n",
+		       rtw_read32_mask(rtwdev, 0xcd4, 0x000007ff),
+		       rtw_read32_mask(rtwdev, 0xccc, 0x000007ff));
+	} break;
+	case RF_PATH_B: {
+		/* [31] = 1 --> Page C1 */
+		rtw_write32_mask(rtwdev, REG_CCASEL, BIT(31), 0x1);
+		rtw_write32_mask(rtwdev, 0xe90, BIT(7), 0x1);
+		rtw_write32_mask(rtwdev, 0xec4, BIT(18), 0x1);
+		rtw_write32_mask(rtwdev, 0xec4, BIT(29), 0x1);
+		rtw_write32_mask(rtwdev, 0xec8, BIT(29), 0x1);
+		rtw_write32_mask(rtwdev, 0xecc, 0x000007ff, tx_y);
+		rtw_write32_mask(rtwdev, 0xed4, 0x000007ff, tx_x);
+		rtw_dbg(rtwdev, RTW_DBG_RFK,
+		       "tx_x = %x;;tx_y = %x =====> fill to IQC\n",
+		       tx_x & 0x000007ff, tx_y & 0x000007ff);
+		rtw_dbg(rtwdev, RTW_DBG_RFK,
+		       "0xed4 = %x;;0xecc = %x ====>fill to IQC\n",
+		       rtw_read32_mask(rtwdev, 0xed4, 0x000007ff),
+		       rtw_read32_mask(rtwdev, 0xecc, 0x000007ff));
+	} break;
+	default:
+		break;
+	};
+}
+
+static void rtw8812a_iqk(struct rtw_dev *rtwdev)
+{
+	struct rtw_efuse *efuse = &rtwdev->efuse;
+	u8 delay_count;
+	u8 cal0_retry, cal1_retry;
+	u8 tx0_average = 0, tx1_average = 0, rx0_average = 0, rx1_average = 0;
+	/* tx_iqc = [TX0_X, TX0_Y,TX1_X,TX1_Y]; for 3 times */
+	int tx_iqc_temp[10][4], tx_iqc[4] = {};
+	/* rx_iqc = [RX0_X, RX0_Y,RX1_X,RX1_Y]; for 3 times */
+	int rx_iqc_temp[10][4], rx_iqc[4] = {};
+	bool tx0_fail = true, rx0_fail = true;
+	bool iqk0_ready = false, tx0_finish = false, rx0_finish = false;
+	bool tx1_fail = true, rx1_fail = true;
+	bool iqk1_ready = false, tx1_finish = false, rx1_finish = false;
+	int i, ii, dx = 0, dy = 0;
+
+	/* [31] = 0 --> Page C */
+	rtw_write32_mask(rtwdev, REG_CCASEL, BIT(31), 0x0);
+
+	/* ========path-A AFE all on======== */
+	/* Port 0 DAC/ADC on */
+	rtw_write32(rtwdev, REG_AFE_PWR1_A, 0x77777777);
+	rtw_write32(rtwdev, REG_AFE_PWR2_A, 0x77777777);
+
+	/* Port 1 DAC/ADC on */
+	rtw_write32(rtwdev, REG_AFE_PWR1_B, 0x77777777);
+	rtw_write32(rtwdev, REG_AFE_PWR2_B, 0x77777777);
+
+	rtw_write32(rtwdev, REG_RX_WAIT_CCA_TX_CCK_RFON_A, 0x19791979);
+	rtw_write32(rtwdev, REG_RX_WAIT_CCA_TX_CCK_RFON_B, 0x19791979);
+
+	/* hardware 3-wire off */
+	rtw_write32_mask(rtwdev, 0xc00, 0xf, 0x4);
+	rtw_write32_mask(rtwdev, 0xe00, 0xf, 0x4);
+
+	/* DAC/ADC sampling rate (160 MHz) */
+	rtw_write32_mask(rtwdev, 0xc5c, BIT(26) | BIT(25) | BIT(24), 0x7);
+	rtw_write32_mask(rtwdev, 0xe5c, BIT(26) | BIT(25) | BIT(24), 0x7);
+
+	/* [31] = 0 --> Page C */
+	rtw_write32_mask(rtwdev, REG_CCASEL, BIT(31), 0x0);
+	/* ====== path A TX IQK RF setting ====== */
+	rtw_write_rf(rtwdev, RF_PATH_A, RF_LUTWE, RFREG_MASK, 0x80002);
+	rtw_write_rf(rtwdev, RF_PATH_A, RF_MODE_TABLE_ADDR, RFREG_MASK, 0x20000);
+	rtw_write_rf(rtwdev, RF_PATH_A, RF_MODE_TABLE_DATA0, RFREG_MASK, 0x3fffd);
+	rtw_write_rf(rtwdev, RF_PATH_A, RF_MODE_TABLE_DATA1, RFREG_MASK, 0xfe83f);
+	rtw_write_rf(rtwdev, RF_PATH_A, 0x65, RFREG_MASK, 0x931d5);
+	rtw_write_rf(rtwdev, RF_PATH_A, 0x8f, RFREG_MASK, 0x8a001);
+
+	/* ====== path B TX IQK RF setting ====== */
+	rtw_write_rf(rtwdev, RF_PATH_B, RF_LUTWE, RFREG_MASK, 0x80002);
+	rtw_write_rf(rtwdev, RF_PATH_B, RF_MODE_TABLE_ADDR, RFREG_MASK, 0x20000);
+	rtw_write_rf(rtwdev, RF_PATH_B, RF_MODE_TABLE_DATA0, RFREG_MASK, 0x3fffd);
+	rtw_write_rf(rtwdev, RF_PATH_B, RF_MODE_TABLE_DATA1, RFREG_MASK, 0xfe83f);
+	rtw_write_rf(rtwdev, RF_PATH_B, 0x65, RFREG_MASK, 0x931d5);
+	rtw_write_rf(rtwdev, RF_PATH_B, 0x8f, RFREG_MASK, 0x8a001);
+
+	rtw_write32(rtwdev, 0x90c, 0x00008000);
+	rtw_write32_mask(rtwdev, 0xc94, BIT(0), 0x1);
+	rtw_write32_mask(rtwdev, 0xe94, BIT(0), 0x1);
+	rtw_write32(rtwdev, 0x978, 0x29002000); /* TX (X,Y) */
+	rtw_write32(rtwdev, 0x97c, 0xa9002000); /* RX (X,Y) */
+	rtw_write32(rtwdev, 0x984, 0x00462910); /* [0]:AGC_en, [15]:idac_K_Mask */
+	/* [31] = 1 --> Page C1 */
+	rtw_write32_mask(rtwdev, REG_CCASEL, BIT(31), 0x1);
+
+	if (efuse->ext_pa_5g) {
+		if (efuse->rfe_option == 1) {
+			rtw_write32(rtwdev, 0xc88, 0x821403e3);
+			rtw_write32(rtwdev, 0xe88, 0x821403e3);
+		} else {
+			rtw_write32(rtwdev, 0xc88, 0x821403f7);
+			rtw_write32(rtwdev, 0xe88, 0x821403f7);
+		}
+	} else {
+		rtw_write32(rtwdev, 0xc88, 0x821403f1);
+		rtw_write32(rtwdev, 0xe88, 0x821403f1);
+	}
+
+	if (rtwdev->hal.current_band_type == RTW_BAND_5G) {
+		rtw_write32(rtwdev, 0xc8c, 0x68163e96);
+		rtw_write32(rtwdev, 0xe8c, 0x68163e96);
+	} else {
+		rtw_write32(rtwdev, 0xc8c, 0x28163e96);
+		rtw_write32(rtwdev, 0xe8c, 0x28163e96);
+
+		if (efuse->rfe_option == 3) {
+			if (efuse->ext_pa_2g)
+				rtw_write32(rtwdev, 0xc88, 0x821403e3);
+			else
+				rtw_write32(rtwdev, 0xc88, 0x821403f7);
+		}
+	}
+
+	rtw_write32(rtwdev, 0xc80, 0x18008c10); /* TX_Tone_idx[9:0], TxK_Mask[29] TX_Tone = 16 */
+	rtw_write32(rtwdev, 0xc84, 0x38008c10); /* RX_Tone_idx[9:0], RxK_Mask[29] */
+	rtw_write32(rtwdev, 0xce8, 0x00000000);
+	rtw_write32(rtwdev, 0xe80, 0x18008c10); /* TX_Tone_idx[9:0], TxK_Mask[29] TX_Tone = 16 */
+	rtw_write32(rtwdev, 0xe84, 0x38008c10); /* RX_Tone_idx[9:0], RxK_Mask[29] */
+	rtw_write32(rtwdev, 0xee8, 0x00000000);
+
+	cal0_retry = 0;
+	cal1_retry = 0;
+	while (1) {
+		/* one shot */
+		rtw_write32(rtwdev, REG_RFECTL_A, 0x00100000);
+		rtw_write32(rtwdev, REG_RFECTL_B, 0x00100000);
+		rtw_write32(rtwdev, 0x980, 0xfa000000);
+		rtw_write32(rtwdev, 0x980, 0xf8000000);
+
+		mdelay(10);
+
+		rtw_write32(rtwdev, REG_RFECTL_A, 0x00000000);
+		rtw_write32(rtwdev, REG_RFECTL_B, 0x00000000);
+
+		delay_count = 0;
+		while (1) {
+			if (!tx0_finish)
+				iqk0_ready = rtw_read32_mask(rtwdev, 0xd00, BIT(10));
+			if (!tx1_finish)
+				iqk1_ready = rtw_read32_mask(rtwdev, 0xd40, BIT(10));
+			if ((iqk0_ready && iqk1_ready) || delay_count > 20)
+				break;
+
+			mdelay(1);
+			delay_count++;
+		}
+
+		rtw_dbg(rtwdev, RTW_DBG_RFK, "TX delay_count = %d\n", delay_count);
+
+		if (delay_count < 20) { /* If 20ms No Result, then cal_retry++ */
+			/* ============TXIQK Check============== */
+			tx0_fail = rtw_read32_mask(rtwdev, 0xd00, BIT(12));
+			tx1_fail = rtw_read32_mask(rtwdev, 0xd40, BIT(12));
+
+			if (!(tx0_fail || tx0_finish)) {
+				rtw_write32(rtwdev, REG_RFECTL_A, 0x02000000);
+				tx_iqc_temp[tx0_average][0] = rtw_read32_mask(rtwdev, 0xd00, 0x07ff0000) << 21;
+				rtw_write32(rtwdev, REG_RFECTL_A, 0x04000000);
+				tx_iqc_temp[tx0_average][1] = rtw_read32_mask(rtwdev, 0xd00, 0x07ff0000) << 21;
+
+				rtw_dbg(rtwdev, RTW_DBG_RFK, "tx_x0[%d] = %x ;; tx_y0[%d] = %x\n",
+					tx0_average, tx_iqc_temp[tx0_average][0] >> 21 & 0x000007ff,
+					tx0_average, tx_iqc_temp[tx0_average][1] >> 21 & 0x000007ff);
+
+				tx0_average++;
+			} else {
+				cal0_retry++;
+				if (cal0_retry == 10)
+					break;
+			}
+
+			if (!(tx1_fail || tx1_finish)) {
+				rtw_write32(rtwdev, REG_RFECTL_B, 0x02000000);
+				tx_iqc_temp[tx1_average][2] = rtw_read32_mask(rtwdev, 0xd40, 0x07ff0000) << 21;
+				rtw_write32(rtwdev, REG_RFECTL_B, 0x04000000);
+				tx_iqc_temp[tx1_average][3] = rtw_read32_mask(rtwdev, 0xd40, 0x07ff0000) << 21;
+
+				rtw_dbg(rtwdev, RTW_DBG_RFK, "tx_x1[%d] = %x ;; tx_y1[%d] = %x\n",
+					tx1_average, tx_iqc_temp[tx1_average][2] >> 21 & 0x000007ff,
+					tx1_average, tx_iqc_temp[tx1_average][3] >> 21 & 0x000007ff);
+
+				tx1_average++;
+			} else {
+				cal1_retry++;
+				if (cal1_retry == 10)
+					break;
+			}
+		} else {
+			cal0_retry++;
+			cal1_retry++;
+
+			rtw_dbg(rtwdev, RTW_DBG_RFK,
+				"delay 20ms TX IQK Not Ready!!!!!\n");
+
+			if (cal0_retry == 10)
+				break;
+		}
+
+		if (tx0_average >= 2) {
+			for (i = 0; i < tx0_average; i++) {
+				for (ii = i + 1; ii < tx0_average; ii++) {
+					dx = (tx_iqc_temp[i][0] >> 21) - (tx_iqc_temp[ii][0] >> 21);
+
+					if (dx < 4 && dx > -4) {
+						dy = (tx_iqc_temp[i][1] >> 21) - (tx_iqc_temp[ii][1] >> 21);
+
+						if (dy < 4 && dy > -4) {
+							tx_iqc[0] = ((tx_iqc_temp[i][0] >> 21) + (tx_iqc_temp[ii][0] >> 21)) / 2;
+							tx_iqc[1] = ((tx_iqc_temp[i][1] >> 21) + (tx_iqc_temp[ii][1] >> 21)) / 2;
+
+							rtw_dbg(rtwdev, RTW_DBG_RFK, "TXA_X = %x;;TXA_Y = %x\n",
+								tx_iqc[0] & 0x000007ff, tx_iqc[1] & 0x000007ff);
+
+							tx0_finish = true;
+						}
+					}
+				}
+			}
+		}
+
+		if (tx1_average >= 2) {
+			for (i = 0; i < tx1_average; i++) {
+				for (ii = i + 1; ii < tx1_average; ii++) {
+					dx = (tx_iqc_temp[i][2] >> 21) - (tx_iqc_temp[ii][2] >> 21);
+
+					if (dx < 4 && dx > -4) {
+						dy = (tx_iqc_temp[i][3] >> 21) - (tx_iqc_temp[ii][3] >> 21);
+
+						if (dy < 4 && dy > -4) {
+							tx_iqc[2] = ((tx_iqc_temp[i][2] >> 21) + (tx_iqc_temp[ii][2] >> 21)) / 2;
+							tx_iqc[3] = ((tx_iqc_temp[i][3] >> 21) + (tx_iqc_temp[ii][3] >> 21)) / 2;
+
+							rtw_dbg(rtwdev, RTW_DBG_RFK, "TXB_X = %x;;TXB_Y = %x\n",
+								tx_iqc[2] & 0x000007ff, tx_iqc[3] & 0x000007ff);
+
+							tx1_finish = true;
+						}
+					}
+				}
+			}
+		}
+
+		rtw_dbg(rtwdev, RTW_DBG_RFK,
+			"tx0_average = %d, tx1_average = %d\n",
+			tx0_average, tx1_average);
+		rtw_dbg(rtwdev, RTW_DBG_RFK,
+			"tx0_finish = %d, tx1_finish = %d\n", tx0_finish,
+			tx1_finish);
+
+		if (tx0_finish && tx1_finish)
+			break;
+
+		if ((cal0_retry + tx0_average) >= 10 || (cal1_retry + tx1_average) >= 10)
+			break;
+	}
+
+	rtw_dbg(rtwdev, RTW_DBG_RFK, "TXA_cal_retry = %d\n", cal0_retry);
+	rtw_dbg(rtwdev, RTW_DBG_RFK, "TXB_cal_retry = %d\n", cal1_retry);
+
+	/* [31] = 0 --> Page C */
+	rtw_write32_mask(rtwdev, REG_CCASEL, BIT(31), 0x0);
+	rtw_write_rf(rtwdev, RF_PATH_A, 0x58, 0x7fe00,
+		     rtw_read_rf(rtwdev, RF_PATH_A, 0x8, 0xffc00)); /* Load LOK */
+	rtw_write_rf(rtwdev, RF_PATH_B, 0x58, 0x7fe00,
+		     rtw_read_rf(rtwdev, RF_PATH_B, 0x8, 0xffc00)); /* Load LOK */
+	/* [31] = 1 --> Page C1 */
+	rtw_write32_mask(rtwdev, REG_CCASEL, BIT(31), 0x1);
+
+	/* [31] = 0 --> Page C */
+	rtw_write32_mask(rtwdev, REG_CCASEL, BIT(31), 0x0);
+	if (tx0_finish) {
+		/* ====== path A RX IQK RF setting====== */
+		rtw_write_rf(rtwdev, RF_PATH_A, RF_LUTWE, RFREG_MASK, 0x80000);
+		rtw_write_rf(rtwdev, RF_PATH_A, RF_MODE_TABLE_ADDR, RFREG_MASK, 0x30000);
+		rtw_write_rf(rtwdev, RF_PATH_A, RF_MODE_TABLE_DATA0, RFREG_MASK, 0x3f7ff);
+		rtw_write_rf(rtwdev, RF_PATH_A, RF_MODE_TABLE_DATA1, RFREG_MASK, 0xfe7bf);
+		rtw_write_rf(rtwdev, RF_PATH_A, 0x8f, RFREG_MASK, 0x88001);
+		rtw_write_rf(rtwdev, RF_PATH_A, 0x65, RFREG_MASK, 0x931d1);
+		rtw_write_rf(rtwdev, RF_PATH_A, RF_LUTWE, RFREG_MASK, 0x00000);
+	}
+	if (tx1_finish) {
+		/* ====== path B RX IQK RF setting====== */
+		rtw_write_rf(rtwdev, RF_PATH_B, RF_LUTWE, RFREG_MASK, 0x80000);
+		rtw_write_rf(rtwdev, RF_PATH_B, RF_MODE_TABLE_ADDR, RFREG_MASK, 0x30000);
+		rtw_write_rf(rtwdev, RF_PATH_B, RF_MODE_TABLE_DATA0, RFREG_MASK, 0x3f7ff);
+		rtw_write_rf(rtwdev, RF_PATH_B, RF_MODE_TABLE_DATA1, RFREG_MASK, 0xfe7bf);
+		rtw_write_rf(rtwdev, RF_PATH_B, 0x8f, RFREG_MASK, 0x88001);
+		rtw_write_rf(rtwdev, RF_PATH_B, 0x65, RFREG_MASK, 0x931d1);
+		rtw_write_rf(rtwdev, RF_PATH_B, RF_LUTWE, RFREG_MASK, 0x00000);
+	}
+
+	rtw_write32_mask(rtwdev, 0x978, BIT(31), 0x1);
+	rtw_write32_mask(rtwdev, 0x97c, BIT(31), 0x0);
+	rtw_write32(rtwdev, 0x90c, 0x00008000);
+
+	if (rtwdev->hci.type == RTW_HCI_TYPE_PCIE)
+		rtw_write32(rtwdev, 0x984, 0x0046a911);
+	else
+		rtw_write32(rtwdev, 0x984, 0x0046a890);
+
+	if (efuse->rfe_option == 1) {
+		rtw_write32(rtwdev, REG_RFE_PINMUX_A, 0x77777717);
+		rtw_write32(rtwdev, REG_RFE_INV_A, 0x00000077);
+		rtw_write32(rtwdev, REG_RFE_PINMUX_B, 0x77777717);
+		rtw_write32(rtwdev, REG_RFE_INV_B, 0x00000077);
+	} else {
+		rtw_write32(rtwdev, REG_RFE_PINMUX_A, 0x77777717);
+		rtw_write32(rtwdev, REG_RFE_INV_A, 0x02000077);
+		rtw_write32(rtwdev, REG_RFE_PINMUX_B, 0x77777717);
+		rtw_write32(rtwdev, REG_RFE_INV_B, 0x02000077);
+	}
+
+	/* [31] = 1 --> Page C1 */
+	rtw_write32_mask(rtwdev, REG_CCASEL, BIT(31), 0x1);
+	if (tx0_finish) {
+		/* TX_Tone_idx[9:0], TxK_Mask[29] TX_Tone = 16 */
+		rtw_write32(rtwdev, 0xc80, 0x38008c10);
+		/* RX_Tone_idx[9:0], RxK_Mask[29] */
+		rtw_write32(rtwdev, 0xc84, 0x18008c10);
+		rtw_write32(rtwdev, 0xc88, 0x82140119);
+	}
+	if (tx1_finish) {
+		/* TX_Tone_idx[9:0], TxK_Mask[29] TX_Tone = 16 */
+		rtw_write32(rtwdev, 0xe80, 0x38008c10);
+		/* RX_Tone_idx[9:0], RxK_Mask[29] */
+		rtw_write32(rtwdev, 0xe84, 0x18008c10);
+		rtw_write32(rtwdev, 0xe88, 0x82140119);
+	}
+
+	cal0_retry = 0;
+	cal1_retry = 0;
+	while (1) {
+		/* one shot */
+		/* [31] = 0 --> Page C */
+		rtw_write32_mask(rtwdev, REG_CCASEL, BIT(31), 0x0);
+		if (tx0_finish) {
+			rtw_write32_mask(rtwdev, 0x978, 0x03FF8000, tx_iqc[0] & 0x000007ff);
+			rtw_write32_mask(rtwdev, 0x978, 0x000007FF, tx_iqc[1] & 0x000007ff);
+			/* [31] = 1 --> Page C1 */
+			rtw_write32_mask(rtwdev, REG_CCASEL, BIT(31), 0x1);
+			if (efuse->rfe_option == 1)
+				rtw_write32(rtwdev, 0xc8c, 0x28161500);
+			else
+				rtw_write32(rtwdev, 0xc8c, 0x28160cc0);
+			rtw_write32(rtwdev, REG_RFECTL_A, 0x00300000);
+			rtw_write32(rtwdev, REG_RFECTL_A, 0x00100000);
+			mdelay(5);
+			rtw_write32(rtwdev, 0xc8c, 0x3c000000);
+			rtw_write32(rtwdev, REG_RFECTL_A, 0x00000000);
+		}
+		if (tx1_finish) {
+			/* [31] = 0 --> Page C */
+			rtw_write32_mask(rtwdev, REG_CCASEL, BIT(31), 0x0);
+			rtw_write32_mask(rtwdev, 0x978, 0x03FF8000, tx_iqc[2] & 0x000007ff);
+			rtw_write32_mask(rtwdev, 0x978, 0x000007FF, tx_iqc[3] & 0x000007ff);
+			/* [31] = 1 --> Page C1 */
+			rtw_write32_mask(rtwdev, REG_CCASEL, BIT(31), 0x1);
+			if (efuse->rfe_option == 1)
+				rtw_write32(rtwdev, 0xe8c, 0x28161500);
+			else
+				rtw_write32(rtwdev, 0xe8c, 0x28160ca0);
+			rtw_write32(rtwdev, REG_RFECTL_B, 0x00300000);
+			rtw_write32(rtwdev, REG_RFECTL_B, 0x00100000);
+			mdelay(5);
+			rtw_write32(rtwdev, 0xe8c, 0x3c000000);
+			rtw_write32(rtwdev, REG_RFECTL_B, 0x00000000);
+		}
+
+		delay_count = 0;
+		while (1) {
+			if (!rx0_finish && tx0_finish)
+				iqk0_ready = rtw_read32_mask(rtwdev, 0xd00, BIT(10));
+			if (!rx1_finish && tx1_finish)
+				iqk1_ready = rtw_read32_mask(rtwdev, 0xd40, BIT(10));
+			if ((iqk0_ready && iqk1_ready) || delay_count > 20)
+				break;
+
+			mdelay(1);
+			delay_count++;
+		}
+
+		rtw_dbg(rtwdev, RTW_DBG_RFK, "RX delay_count = %d\n",
+			delay_count);
+
+		if (delay_count < 20) { /* If 20ms No Result, then cal_retry++ */
+			/* ============RXIQK Check============== */
+			rx0_fail = rtw_read32_mask(rtwdev, 0xd00, BIT(11));
+			rx1_fail = rtw_read32_mask(rtwdev, 0xd40, BIT(11));
+			if (!(rx0_fail || rx0_finish) && tx0_finish) {
+				rtw_write32(rtwdev, REG_RFECTL_A, 0x06000000);
+				rx_iqc_temp[rx0_average][0] = rtw_read32_mask(rtwdev, 0xd00, 0x07ff0000) << 21;
+				rtw_write32(rtwdev, REG_RFECTL_A, 0x08000000);
+				rx_iqc_temp[rx0_average][1] = rtw_read32_mask(rtwdev, 0xd00, 0x07ff0000) << 21;
+
+				rtw_dbg(rtwdev, RTW_DBG_RFK, "rx_x0[%d] = %x ;; rx_y0[%d] = %x\n",
+					rx0_average, (rx_iqc_temp[rx0_average][0]) >> 21 & 0x000007ff,
+					rx0_average, (rx_iqc_temp[rx0_average][1]) >> 21 & 0x000007ff);
+
+				rx0_average++;
+			} else {
+				rtw_dbg(rtwdev, RTW_DBG_RFK, "1. RXA_cal_retry = %d\n", cal0_retry);
+
+				cal0_retry++;
+				if (cal0_retry == 10)
+					break;
+			}
+
+			if (!(rx1_fail || rx1_finish) && tx1_finish) {
+				rtw_write32(rtwdev, REG_RFECTL_B, 0x06000000);
+				rx_iqc_temp[rx1_average][2] = rtw_read32_mask(rtwdev, 0xd40, 0x07ff0000) << 21;
+				rtw_write32(rtwdev, REG_RFECTL_B, 0x08000000);
+				rx_iqc_temp[rx1_average][3] = rtw_read32_mask(rtwdev, 0xd40, 0x07ff0000) << 21;
+
+				rtw_dbg(rtwdev, RTW_DBG_RFK, "rx_x1[%d] = %x ;; rx_y1[%d] = %x\n",
+					rx1_average, (rx_iqc_temp[rx1_average][2]) >> 21 & 0x000007ff,
+					rx1_average, (rx_iqc_temp[rx1_average][3]) >> 21 & 0x000007ff);
+
+				rx1_average++;
+			} else {
+				cal1_retry++;
+				if (cal1_retry == 10)
+					break;
+			}
+		} else {
+			rtw_dbg(rtwdev, RTW_DBG_RFK,
+				"2. RXA_cal_retry = %d\n", cal0_retry);
+
+			cal0_retry++;
+			cal1_retry++;
+
+			rtw_dbg(rtwdev, RTW_DBG_RFK,
+				"delay 20ms RX IQK Not Ready!!!!!\n");
+
+			if (cal0_retry == 10)
+				break;
+		}
+
+		rtw_dbg(rtwdev, RTW_DBG_RFK, "3. RXA_cal_retry = %d\n",
+			cal0_retry);
+
+		if (rx0_average >= 2) {
+			for (i = 0; i < rx0_average; i++) {
+				for (ii = i + 1; ii < rx0_average; ii++) {
+					dx = (rx_iqc_temp[i][0] >> 21) - (rx_iqc_temp[ii][0] >> 21);
+
+					if (dx < 4 && dx > -4) {
+						dy = (rx_iqc_temp[i][1] >> 21) - (rx_iqc_temp[ii][1] >> 21);
+
+						if (dy < 4 && dy > -4) {
+							rx_iqc[0] = ((rx_iqc_temp[i][0] >> 21) + (rx_iqc_temp[ii][0] >> 21)) / 2;
+							rx_iqc[1] = ((rx_iqc_temp[i][1] >> 21) + (rx_iqc_temp[ii][1] >> 21)) / 2;
+
+							rx0_finish = true;
+
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		if (rx1_average >= 2) {
+			for (i = 0; i < rx1_average; i++) {
+				for (ii = i + 1; ii < rx1_average; ii++) {
+					dx = (rx_iqc_temp[i][2] >> 21) - (rx_iqc_temp[ii][2] >> 21);
+
+					if (dx < 4 && dx > -4) {
+						dy = (rx_iqc_temp[i][3] >> 21) - (rx_iqc_temp[ii][3] >> 21);
+
+						if (dy < 4 && dy > -4) {
+							rx_iqc[2] = ((rx_iqc_temp[i][2] >> 21) + (rx_iqc_temp[ii][2] >> 21)) / 2;
+							rx_iqc[3] = ((rx_iqc_temp[i][3] >> 21) + (rx_iqc_temp[ii][3] >> 21)) / 2;
+
+							rx1_finish = true;
+
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		rtw_dbg(rtwdev, RTW_DBG_RFK,
+			"rx0_average = %d, rx1_average = %d\n",
+			rx0_average, rx1_average);
+		rtw_dbg(rtwdev, RTW_DBG_RFK,
+			"rx0_finish = %d, rx1_finish = %d\n", rx0_finish,
+			rx1_finish);
+
+		if ((rx0_finish || !tx0_finish) && (rx1_finish || !tx1_finish))
+			break;
+
+		if ((cal0_retry + rx0_average) >= 10 || (cal1_retry + rx1_average) >= 10 || rx0_average == 3 || rx1_average == 3)
+			break;
+	}
+
+	rtw_dbg(rtwdev, RTW_DBG_RFK, "RXA_cal_retry = %d\n", cal0_retry);
+	rtw_dbg(rtwdev, RTW_DBG_RFK, "RXB_cal_retry = %d\n", cal1_retry);
+
+	/* FillIQK Result */
+	rtw_dbg(rtwdev, RTW_DBG_RFK, "========Path_A =======\n");
+
+	if (tx0_finish)
+		rtw8812a_iqk_tx_fill(rtwdev, RF_PATH_A, tx_iqc[0], tx_iqc[1]);
+	else
+		rtw8812a_iqk_tx_fill(rtwdev, RF_PATH_A, 0x200, 0x0);
+
+	if (rx0_finish)
+		rtw8812a_iqk_rx_fill(rtwdev, RF_PATH_A, rx_iqc[0], rx_iqc[1]);
+	else
+		rtw8812a_iqk_rx_fill(rtwdev, RF_PATH_A, 0x200, 0x0);
+
+	rtw_dbg(rtwdev, RTW_DBG_RFK, "========Path_B =======\n");
+
+	if (tx1_finish)
+		rtw8812a_iqk_tx_fill(rtwdev, RF_PATH_B, tx_iqc[2], tx_iqc[3]);
+	else
+		rtw8812a_iqk_tx_fill(rtwdev, RF_PATH_B, 0x200, 0x0);
+
+	if (rx1_finish)
+		rtw8812a_iqk_rx_fill(rtwdev, RF_PATH_B, rx_iqc[2], rx_iqc[3]);
+	else
+		rtw8812a_iqk_rx_fill(rtwdev, RF_PATH_B, 0x200, 0x0);
+}
+
+#define MACBB_REG_NUM_8812A 9
+#define AFE_REG_NUM_8812A 12
+#define RF_REG_NUM_8812A 3
+
 static void rtw8812a_do_iqk(struct rtw_dev *rtwdev)
 {
+	static const u32 backup_macbb_reg[MACBB_REG_NUM_8812A] = {
+		0x520, 0x550, 0x808, 0xa04, 0x90c, 0xc00, 0xe00, 0x838, 0x82c
+	};
+	static const u32 backup_afe_reg[AFE_REG_NUM_8812A] = {
+		0xc5c, 0xc60, 0xc64, 0xc68, 0xcb0, 0xcb4,
+		0xe5c, 0xe60, 0xe64, 0xe68, 0xeb0, 0xeb4
+	};
+	static const u32 backup_rf_reg[RF_REG_NUM_8812A] = {
+		0x65, 0x8f, 0x0
+	};
+	u32 macbb_backup[MACBB_REG_NUM_8812A] = {0};
+	u32 afe_backup[AFE_REG_NUM_8812A] = {0};
+	u32 rfa_backup[RF_REG_NUM_8812A] = {0};
+	u32 rfb_backup[RF_REG_NUM_8812A] = {0};
+	u32 reg_cb8, reg_eb8;
 
+	rtw8821a_iqk_backup_mac_bb(rtwdev, macbb_backup,
+				   backup_macbb_reg, MACBB_REG_NUM_8812A);
+
+	rtw_write32_set(rtwdev, REG_CCASEL, BIT(31));
+	reg_cb8 = rtw_read32(rtwdev, REG_RFECTL_A);
+	reg_eb8 = rtw_read32(rtwdev, REG_RFECTL_B);
+	rtw_write32_clr(rtwdev, REG_CCASEL, BIT(31));
+
+	rtw8821a_iqk_backup_afe(rtwdev, afe_backup,
+				backup_afe_reg, AFE_REG_NUM_8812A);
+	rtw8812a_iqk_backup_rf(rtwdev, rfa_backup, rfb_backup,
+			       backup_rf_reg, RF_REG_NUM_8812A);
+
+	rtw8821a_iqk_configure_mac(rtwdev);
+
+	rtw8812a_iqk(rtwdev);
+
+	rtw8812a_iqk_restore_rf(rtwdev, RF_PATH_A, backup_rf_reg,
+				rfa_backup, RF_REG_NUM_8812A);
+	rtw8812a_iqk_restore_rf(rtwdev, RF_PATH_B, backup_rf_reg,
+				rfb_backup, RF_REG_NUM_8812A);
+
+	rtw8812a_iqk_restore_afe(rtwdev, afe_backup,
+				 backup_afe_reg, AFE_REG_NUM_8812A);
+
+	rtw_write32_set(rtwdev, REG_CCASEL, BIT(31));
+	rtw_write32(rtwdev, REG_RFECTL_A, reg_cb8);
+	rtw_write32(rtwdev, REG_RFECTL_B, reg_eb8);
+	rtw_write32_clr(rtwdev, REG_CCASEL, BIT(31));
+
+	rtw8821a_iqk_restore_mac_bb(rtwdev, macbb_backup,
+				    backup_macbb_reg, MACBB_REG_NUM_8812A);
 }
 
 static void rtw8821a_phy_calibration(struct rtw_dev *rtwdev)
