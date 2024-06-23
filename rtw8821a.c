@@ -4034,10 +4034,22 @@ static void rtw8812a_do_iqk(struct rtw_dev *rtwdev)
 
 static void rtw8821a_phy_calibration(struct rtw_dev *rtwdev)
 {
-	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A)
+	u8 channel = rtwdev->hal.current_channel;
+
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A) {
 		rtw8821a_do_iqk(rtwdev);
-	else
+	} else {
 		rtw8812a_do_iqk(rtwdev);
+
+		/* The official driver wants to do this after connecting
+		 * but before first writing a new igi (phydm_get_new_igi).
+		 * Here seems close enough.
+		 */
+		if (channel >= 36 && channel <= 64)
+			rtw_load_table(rtwdev, &rtw8812a_agc_diff_lb_tbl);
+		else if (channel >= 100)
+			rtw_load_table(rtwdev, &rtw8812a_agc_diff_hb_tbl);
+	}
 }
 
 static void rtw8812a_do_lck(struct rtw_dev *rtwdev)
