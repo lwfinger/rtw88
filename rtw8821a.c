@@ -5174,7 +5174,7 @@ const struct rtw_chip_info rtw8812a_hw_spec = {
 
 	.coex_para_ver = 0, /* no coex code in 8812au driver */
 	.bt_desired_ver = 0,
-	.scbd_support = true,
+	.scbd_support = false,
 	.new_scbd10_def = false,
 	.ble_hid_profile_support = false,
 	.wl_mimo_ps_support = false,
@@ -5184,28 +5184,27 @@ const struct rtw_chip_info rtw8812a_hw_spec = {
 	.rssi_tolerance = 2,
 	.wl_rssi_step = wl_rssi_step_8821a,
 	.bt_rssi_step = bt_rssi_step_8821a,
-	.table_sant_num = ARRAY_SIZE(table_sant_8821a),
-	.table_sant = table_sant_8821a,
-	.table_nsant_num = ARRAY_SIZE(table_nsant_8821a),
-	.table_nsant = table_nsant_8821a,
-	.tdma_sant_num = ARRAY_SIZE(tdma_sant_8821a),
-	.tdma_sant = tdma_sant_8821a,
-	.tdma_nsant_num = ARRAY_SIZE(tdma_nsant_8821a),
-	.tdma_nsant = tdma_nsant_8821a,
+	.table_sant_num = 0,
+	.table_sant = NULL,
+	.table_nsant_num = 0,
+	.table_nsant = NULL,
+	.tdma_sant_num = 0,
+	.tdma_sant = NULL,
+	.tdma_nsant_num = 0,
+	.tdma_nsant = NULL,
 	.wl_rf_para_num = ARRAY_SIZE(rf_para_tx_8821a),
 	.wl_rf_para_tx = rf_para_tx_8821a,
 	.wl_rf_para_rx = rf_para_rx_8821a,
 	.bt_afh_span_bw20 = 0x20,
 	.bt_afh_span_bw40 = 0x30,
-	.afh_5g_num = ARRAY_SIZE(afh_5g_8821a),
-	.afh_5g = afh_5g_8821a,
+	.afh_5g_num = 0,
+	.afh_5g = NULL,
 
-	.coex_info_hw_regs_num = ARRAY_SIZE(coex_info_hw_regs_8821a),
-	.coex_info_hw_regs = coex_info_hw_regs_8821a,
+	.coex_info_hw_regs_num = 0,
+	.coex_info_hw_regs = NULL,
 };
 EXPORT_SYMBOL(rtw8812a_hw_spec);
 
-// MODULE_FIRMWARE("rtw88/rtw8811a_fw.bin");
 MODULE_FIRMWARE("rtw88/rtw8821a_fw.bin");
 MODULE_FIRMWARE("rtw88/rtw8812a_fw.bin");
 
