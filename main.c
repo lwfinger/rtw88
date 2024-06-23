@@ -258,6 +258,8 @@ static void rtw_watch_dog_work(struct work_struct *work)
 	if (test_bit(RTW_FLAG_SCANNING, rtwdev->flags))
 		goto unlock;
 
+	int received_beacons = rtwdev->dm_info.cur_pkt_count.num_bcn_pkt;
+
 	/* make sure BB/RF is working for dynamic mech */
 	rtw_leave_lps(rtwdev);
 
@@ -276,6 +278,15 @@ static void rtw_watch_dog_work(struct work_struct *work)
 	 * to avoid taking local->iflist_mtx mutex
 	 */
 	rtw_iterate_vifs(rtwdev, rtw_vif_watch_dog_iter, &data);
+
+	if (!rtw_fw_feature_check(&rtwdev->fw, FW_FEATURE_BCN_FILTER) &&
+	    data.rtwvif) {
+		int beacon_int = rtwvif_to_vif(data.rtwvif)->bss_conf.beacon_int;
+		int watchdog_delay = 2000000 / 1024; /* TU */
+		int expected_beacons = DIV_ROUND_UP(watchdog_delay, beacon_int);
+
+		rtwdev->beacon_loss = received_beacons < expected_beacons / 2;
+	}
 
 	/* fw supports only one station associated to enter lps, if there are
 	 * more than two stations associated to the AP, then we can not enter
