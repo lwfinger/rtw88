@@ -14,6 +14,11 @@
 #include "ps.h"
 #include "usb.h"
 
+static bool rtw_switch_usb_mode = true;
+module_param_named(switch_usb_mode, rtw_switch_usb_mode, bool, 0644);
+MODULE_PARM_DESC(switch_usb_mode,
+		 "Set to Y to switch to USB 3 mode (default: Y)");
+
 #define RTW_USB_MAX_RXQ_LEN	512
 
 struct rtw_usb_txcb {
@@ -858,6 +863,107 @@ static void rtw_usb_intf_deinit(struct rtw_dev *rtwdev,
 	usb_set_intfdata(intf, NULL);
 }
 
+static int rtw_usb_switch_mode_old(struct rtw_dev *rtwdev)
+{
+	struct rtw_usb *rtwusb = rtw_get_usb_priv(rtwdev);
+	enum usb_device_speed cur_speed = rtwusb->udev->speed;
+	u8 hci_opt;
+
+	if (cur_speed == USB_SPEED_HIGH) {
+		hci_opt = rtw_read8(rtwdev, REG_HCI_OPT_CTRL);
+
+		if ((hci_opt & (BIT(2) | BIT(3))) != BIT(3)) {
+			rtw_write8(rtwdev, REG_HCI_OPT_CTRL, 0x8);
+			rtw_write8(rtwdev, REG_SYS_SDIO_CTRL, 0x2);
+			rtw_write8(rtwdev, 0x3e, 0x1);
+			rtw_write8(rtwdev, 0x3d, 0x3);
+			/* usb disconnect */
+			rtw_write8(rtwdev, REG_SYS_PW_CTRL + 1, 0x80);
+			return 1;
+		}
+	} else if (cur_speed == USB_SPEED_SUPER) {
+		rtw_write8_clr(rtwdev, REG_SYS_SDIO_CTRL, BIT(1));
+		rtw_write8_clr(rtwdev, 0x3e, BIT(0));
+	}
+
+	return 0;
+}
+
+static int rtw_usb_switch_mode_new(struct rtw_dev *rtwdev)
+{
+	enum usb_device_speed cur_speed;
+	u8 id = rtwdev->chip->id;
+	bool can_switch;
+	u32 pad_ctrl2;
+
+	if (rtw_read8(rtwdev, REG_SYS_CFG2 + 3) == 0x20)
+		cur_speed = USB_SPEED_SUPER;
+	else
+		cur_speed = USB_SPEED_HIGH;
+
+	if (cur_speed == USB_SPEED_SUPER)
+		return 0;
+
+	pad_ctrl2 = rtw_read32(rtwdev, REG_PAD_CTRL2);
+
+	can_switch = !!(pad_ctrl2 & (BIT_MASK_USB23_SW_MODE_V1 |
+				     BIT_USB3_USB2_TRANSITION));
+
+	if (!can_switch) {
+		rtw_info(rtwdev,
+			 "Switching to USB 3 mode unsupported by the chip\n");
+		return 0;
+	}
+
+	/* At this point cur_speed is USB_SPEED_HIGH. If we already tried
+	 * to switch don't try again - it's a USB 2 port.
+	 */
+	if ((u32_get_bits(pad_ctrl2, BIT_MASK_USB23_SW_MODE_V1) == BIT_USB_MODE_U3))
+		return 0;
+
+	/* Enable IO wrapper timeout */
+	if (id == RTW_CHIP_TYPE_8822B || id == RTW_CHIP_TYPE_8821C)
+		rtw_write8_clr(rtwdev, REG_SW_MDIO + 3, BIT(0));
+
+	u32p_replace_bits(&pad_ctrl2, BIT_USB_MODE_U3, BIT_MASK_USB23_SW_MODE_V1);
+	pad_ctrl2 |= BIT_RSM_EN_V1;
+
+	rtw_write32(rtwdev, REG_PAD_CTRL2, pad_ctrl2);
+	rtw_write8(rtwdev, REG_PAD_CTRL2 + 1, 4);
+
+	rtw_write16_set(rtwdev, REG_SYS_PW_CTRL, BIT_APFM_OFFMAC);
+	usleep_range(1000, 1001);
+	rtw_write32_set(rtwdev, REG_PAD_CTRL2, BIT_NO_PDN_CHIPOFF_V1);
+
+	return 1;
+}
+
+static int rtw_usb_switch_mode(struct rtw_dev *rtwdev)
+{
+	u8 id = rtwdev->chip->id;
+
+	if (id != RTW_CHIP_TYPE_8822C && id != RTW_CHIP_TYPE_8822B &&
+	    id != RTW_CHIP_TYPE_8812A)
+		return 0;
+
+	if (!rtwdev->efuse.usb_mode_switch) {
+		rtw_info(rtwdev,
+			 "Switching to USB 3 mode disabled by chip's efuse\n");
+		return 0;
+	}
+
+	if (!rtw_switch_usb_mode) {
+		rtw_info(rtwdev,
+			 "Switching to USB 3 mode disabled by module parameter\n");
+		return 0;
+	}
+
+	if (id == RTW_CHIP_TYPE_8812A)
+		return rtw_usb_switch_mode_old(rtwdev);
+	else /* RTL8822CU, RTL8822BU */
+		return rtw_usb_switch_mode_new(rtwdev);
+}
+
 int rtw_usb_probe(struct usb_interface *intf, const struct usb_device_id *id)
 {
 	struct rtw_dev *rtwdev;
@@ -910,6 +1016,14 @@ int rtw_usb_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	ret = rtw_chip_info_setup(rtwdev);
 	if (ret) {
 		rtw_err(rtwdev, "failed to setup chip information\n");
+		goto err_destroy_rxwq;
+	}
+
+	ret = rtw_usb_switch_mode(rtwdev);
+	if (ret) {
+		/* Not a fail, but we do need to skip rtw_register_hw. */
+		rtw_info(rtwdev, "switching to USB 3 mode\n");
+		ret = 0;
 		goto err_destroy_rxwq;
 	}
 
