@@ -2056,7 +2056,7 @@ static int rtw_dump_hw_feature(struct rtw_dev *rtwdev)
 	u8 bw;
 	int i;
 
-	if (!rtwdev->chip->has_hw_feature_report)
+	if (!rtwdev->chip->hw_feature_report)
 		goto print_hw_cap;
 
 	id = rtw_read8(rtwdev, REG_C2HEVT);
