@@ -265,6 +265,10 @@ static void rtw_watch_dog_work(struct work_struct *work)
 	rtw_coex_query_bt_hid_list(rtwdev);
 	if (rtwdev->chip->id == RTW_CHIP_TYPE_8812A)
 		goto unlock;
+
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A && rtwdev->efuse.btcoex)
+		rtw_coex_query_bt_info(rtwdev);
+
 	rtw_phy_dynamic_mechanism(rtwdev);
 
 	data.rtwdev = rtwdev;

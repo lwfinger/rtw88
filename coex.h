@@ -384,6 +384,7 @@ u32 rtw_coex_read_indirect_reg(struct rtw_dev *rtwdev, u16 addr);
 void rtw_coex_write_indirect_reg(struct rtw_dev *rtwdev, u16 addr,
 				 u32 mask, u32 val);
 void rtw_coex_write_scbd(struct rtw_dev *rtwdev, u16 bitpos, bool set);
+void rtw_coex_query_bt_info(struct rtw_dev *rtwdev);
 
 void rtw_coex_bt_relink_work(struct work_struct *work);
 void rtw_coex_bt_reenable_work(struct work_struct *work);
