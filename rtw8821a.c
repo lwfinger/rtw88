@@ -1832,9 +1832,6 @@ static int rtw8821a_power_on(struct rtw_dev *rtwdev)
 		goto err;
 	}
 
-	if (efuse->btcoex)
-		rtw_coex_power_on_setting(rtwdev);
-
 	ret = set_trx_fifo_info(rtwdev);
 	if (ret) {
 		rtw_err(rtwdev, "failed to set trx fifo info\n");
@@ -3361,200 +3358,120 @@ static void rtw8812a_do_lck(struct rtw_dev *rtwdev)
 	rtw_write_rf(rtwdev, RF_PATH_A, RF_CFGCH, RFREG_MASK, lc_cal);
 }
 
-/* for coex */
 static void rtw8821a_coex_cfg_init(struct rtw_dev *rtwdev)
 {
-// 	/* enable TBTT nterrupt */
-// 	rtw_write8_set(rtwdev, REG_BCN_CTRL, BIT_EN_BCN_FUNCTION);
-//
-// 	/* BT report packet sample rate */
-// 	rtw_write8_mask(rtwdev, REG_BT_TDMA_TIME, BIT_MASK_SAMPLE_RATE, 0x5);
-//
-// 	/* enable BT counter statistics */
-// 	rtw_write8(rtwdev, REG_BT_STAT_CTRL, BT_CNT_ENABLE);
-//
-// 	/* enable PTA (3-wire function form BT side) */
-// 	rtw_write32_set(rtwdev, REG_GPIO_MUXCFG, BIT_BT_PTA_EN);
-// 	rtw_write32_set(rtwdev, REG_GPIO_MUXCFG, BIT_PO_BT_PTA_PINS);
-//
-// 	/* enable PTA (tx/rx signal form WiFi side) */
-// 	rtw_write8_set(rtwdev, REG_QUEUE_CTRL, BIT_PTA_WL_TX_EN);
-// 	/* wl tx signal to PTA not case EDCCA */
-// 	rtw_write8_clr(rtwdev, REG_QUEUE_CTRL, BIT_PTA_EDCCA_EN);
-// 	/* GNT_BT=1 while select both */
-// 	rtw_write16_set(rtwdev, REG_BT_COEX_V2, BIT_GNT_BT_POLARITY);
-//
-// 	/* beacon queue always hi-pri  */
-// 	rtw_write8_mask(rtwdev, REG_BT_COEX_TABLE_H + 3, BIT_BCN_QUEUE,
-// 			BCN_PRI_EN);
+	u8 val8;
+
+	/* BT report packet sample rate */
+	rtw_write8_mask(rtwdev, REG_BT_TDMA_TIME, BIT_MASK_SAMPLE_RATE, 0x5);
+
+	val8 = BIT_STATIS_BT_EN;
+	if (rtwdev->efuse.share_ant)
+		val8 |= BIT_R_GRANTALL_WLMASK;
+	rtw_write8(rtwdev, REG_BT_COEX_ENH_INTR_CTRL, val8);
+
+	/* enable BT counter statistics */
+	rtw_write8(rtwdev, REG_BT_STAT_CTRL, 0x3);
+
+	/* enable PTA */
+	rtw_write32_set(rtwdev, REG_GPIO_MUXCFG, BIT_BT_PTA_EN);
 }
 
 static void rtw8821a_coex_cfg_ant_switch(struct rtw_dev *rtwdev, u8 ctrl_type,
 					 u8 pos_type)
 {
-// 	struct rtw_coex *coex = &rtwdev->coex;
-// 	struct rtw_coex_dm *coex_dm = &coex->dm;
-// 	struct rtw_coex_rfe *coex_rfe = &coex->rfe;
-// 	u32 switch_status = FIELD_PREP(CTRL_TYPE_MASK, ctrl_type) | pos_type;
-// 	bool polarity_inverse;
-// 	u8 regval = 0;
-//
-// 	if (switch_status == coex_dm->cur_switch_status)
-// 		return;
-//
-// 	if (coex_rfe->wlg_at_btg) {
-// 		ctrl_type = COEX_SWITCH_CTRL_BY_BBSW;
-//
-// 		if (coex_rfe->ant_switch_polarity)
-// 			pos_type = COEX_SWITCH_TO_WLA;
-// 		else
-// 			pos_type = COEX_SWITCH_TO_WLG_BT;
-// 	}
-//
-// 	coex_dm->cur_switch_status = switch_status;
-//
-// 	if (coex_rfe->ant_switch_diversity &&
-// 	    ctrl_type == COEX_SWITCH_CTRL_BY_BBSW)
-// 		ctrl_type = COEX_SWITCH_CTRL_BY_ANTDIV;
-//
-// 	polarity_inverse = (coex_rfe->ant_switch_polarity == 1);
-//
-// 	switch (ctrl_type) {
-// 	default:
-// 	case COEX_SWITCH_CTRL_BY_BBSW:
-// 		rtw_write32_clr(rtwdev, REG_LED_CFG, BIT_DPDT_SEL_EN);
-// 		rtw_write32_set(rtwdev, REG_LED_CFG, BIT_DPDT_WL_SEL);
-// 		/* BB SW, DPDT use RFE_ctrl8 and RFE_ctrl9 as ctrl pin */
-// 		rtw_write8_mask(rtwdev, REG_RFE_CTRL8, BIT_MASK_RFE_SEL89,
-// 				DPDT_CTRL_PIN);
-//
-// 		if (pos_type == COEX_SWITCH_TO_WLG_BT) {
-// 			if (coex_rfe->rfe_module_type != 0x4 &&
-// 			    coex_rfe->rfe_module_type != 0x2)
-// 				regval = 0x3;
-// 			else
-// 				regval = (!polarity_inverse ? 0x2 : 0x1);
-// 		} else if (pos_type == COEX_SWITCH_TO_WLG) {
-// 			regval = (!polarity_inverse ? 0x2 : 0x1);
-// 		} else {
-// 			regval = (!polarity_inverse ? 0x1 : 0x2);
-// 		}
-//
-// 		rtw_write32_mask(rtwdev, REG_RFE_CTRL8, BIT_MASK_R_RFE_SEL_15,
-// 				 regval);
-// 		break;
-// 	case COEX_SWITCH_CTRL_BY_PTA:
-// 		rtw_write32_clr(rtwdev, REG_LED_CFG, BIT_DPDT_SEL_EN);
-// 		rtw_write32_set(rtwdev, REG_LED_CFG, BIT_DPDT_WL_SEL);
-// 		/* PTA,  DPDT use RFE_ctrl8 and RFE_ctrl9 as ctrl pin */
-// 		rtw_write8_mask(rtwdev, REG_RFE_CTRL8, BIT_MASK_RFE_SEL89,
-// 				PTA_CTRL_PIN);
-//
-// 		regval = (!polarity_inverse ? 0x2 : 0x1);
-// 		rtw_write32_mask(rtwdev, REG_RFE_CTRL8, BIT_MASK_R_RFE_SEL_15,
-// 				 regval);
-// 		break;
-// 	case COEX_SWITCH_CTRL_BY_ANTDIV:
-// 		rtw_write32_clr(rtwdev, REG_LED_CFG, BIT_DPDT_SEL_EN);
-// 		rtw_write32_set(rtwdev, REG_LED_CFG, BIT_DPDT_WL_SEL);
-// 		rtw_write8_mask(rtwdev, REG_RFE_CTRL8, BIT_MASK_RFE_SEL89,
-// 				ANTDIC_CTRL_PIN);
-// 		break;
-// 	case COEX_SWITCH_CTRL_BY_MAC:
-// 		rtw_write32_set(rtwdev, REG_LED_CFG, BIT_DPDT_SEL_EN);
-//
-// 		regval = (!polarity_inverse ? 0x0 : 0x1);
-// 		rtw_write8_mask(rtwdev, REG_PAD_CTRL1, BIT_SW_DPDT_SEL_DATA,
-// 				regval);
-// 		break;
-// 	case COEX_SWITCH_CTRL_BY_FW:
-// 		rtw_write32_clr(rtwdev, REG_LED_CFG, BIT_DPDT_SEL_EN);
-// 		rtw_write32_set(rtwdev, REG_LED_CFG, BIT_DPDT_WL_SEL);
-// 		break;
-// 	case COEX_SWITCH_CTRL_BY_BT:
-// 		rtw_write32_clr(rtwdev, REG_LED_CFG, BIT_DPDT_SEL_EN);
-// 		rtw_write32_clr(rtwdev, REG_LED_CFG, BIT_DPDT_WL_SEL);
-// 		break;
-// 	}
-//
-// 	if (ctrl_type == COEX_SWITCH_CTRL_BY_BT) {
-// 		rtw_write8_clr(rtwdev, REG_CTRL_TYPE, BIT_CTRL_TYPE1);
-// 		rtw_write8_clr(rtwdev, REG_CTRL_TYPE, BIT_CTRL_TYPE2);
-// 	} else {
-// 		rtw_write8_set(rtwdev, REG_CTRL_TYPE, BIT_CTRL_TYPE1);
-// 		rtw_write8_set(rtwdev, REG_CTRL_TYPE, BIT_CTRL_TYPE2);
-// 	}
+	struct rtw_coex *coex = &rtwdev->coex;
+	struct rtw_coex_dm *coex_dm = &coex->dm;
+	u32 phase = coex_dm->cur_ant_pos_type;
+	bool share_ant = rtwdev->efuse.share_ant;
+
+	if (!rtwdev->efuse.btcoex)
+		return;
+
+	switch (phase) {
+	case COEX_SET_ANT_POWERON:
+	case COEX_SET_ANT_INIT:
+		rtw_write32_clr(rtwdev, REG_LED_CFG, BIT_DPDT_SEL_EN);
+		rtw_write32_set(rtwdev, REG_LED_CFG, BIT_DPDT_WL_SEL);
+		rtw_write8_set(rtwdev, 0x765, 0x18);
+
+		rtw_write8_mask(rtwdev, REG_RFE_CTRL8, BIT_MASK_RFE_SEL89,
+				share_ant ? PTA_CTRL_PIN : DPDT_CTRL_PIN);
+		rtw_write32_mask(rtwdev, REG_RFE_CTRL8, 0x30000000, 0x1);
+		break;
+	case COEX_SET_ANT_WONLY:
+		rtw_write32_clr(rtwdev, REG_LED_CFG, BIT_DPDT_SEL_EN);
+		rtw_write32_set(rtwdev, REG_LED_CFG, BIT_DPDT_WL_SEL);
+		rtw_write8_clr(rtwdev, 0x765, 0x18);
+
+		rtw_write8_mask(rtwdev, REG_RFE_CTRL8,
+				BIT_MASK_RFE_SEL89, DPDT_CTRL_PIN);
+		rtw_write32_mask(rtwdev, REG_RFE_CTRL8, 0x30000000, 0x1);
+		break;
+	case COEX_SET_ANT_2G:
+		rtw_write32_clr(rtwdev, REG_LED_CFG, BIT_DPDT_SEL_EN);
+		rtw_write32_set(rtwdev, REG_LED_CFG, BIT_DPDT_WL_SEL);
+		rtw_write8_clr(rtwdev, 0x765, 0x18);
+
+		rtw_write8_mask(rtwdev, REG_RFE_CTRL8, BIT_MASK_RFE_SEL89,
+				share_ant ? PTA_CTRL_PIN : DPDT_CTRL_PIN);
+		rtw_write32_mask(rtwdev, REG_RFE_CTRL8, 0x30000000, 0x1);
+		break;
+	case COEX_SET_ANT_5G:
+		rtw_write32_clr(rtwdev, REG_LED_CFG, BIT_DPDT_SEL_EN);
+		rtw_write32_set(rtwdev, REG_LED_CFG, BIT_DPDT_WL_SEL);
+		rtw_write8_set(rtwdev, 0x765, 0x18);
+
+		rtw_write8_mask(rtwdev, REG_RFE_CTRL8,
+				BIT_MASK_RFE_SEL89, DPDT_CTRL_PIN);
+		rtw_write32_mask(rtwdev, REG_RFE_CTRL8, 0x30000000,
+				 share_ant ? 0x2 : 0x1);
+		break;
+	case COEX_SET_ANT_WOFF:
+		rtw_write32_clr(rtwdev, REG_LED_CFG, BIT_DPDT_SEL_EN);
+		rtw_write32_clr(rtwdev, REG_LED_CFG, BIT_DPDT_WL_SEL);
+		rtw_write8_set(rtwdev, 0x765, 0x18);
+
+		rtw_write8_mask(rtwdev, REG_RFE_CTRL8,
+				BIT_MASK_RFE_SEL89, DPDT_CTRL_PIN);
+		rtw_write32_mask(rtwdev, REG_RFE_CTRL8, 0x30000000,
+				 share_ant ? 0x2 : 0x1);
+		break;
+	default:
+		rtw_warn(rtwdev, "%s: not handling phase %d\n",
+			 __func__, phase);
+		break;
+	}
 }
 
 static void rtw8821a_coex_cfg_gnt_fix(struct rtw_dev *rtwdev)
 {}
 
 static void rtw8821a_coex_cfg_gnt_debug(struct rtw_dev *rtwdev)
-{
-// 	rtw_write32_clr(rtwdev, REG_PAD_CTRL1, BIT_BTGP_SPI_EN);
-// 	rtw_write32_clr(rtwdev, REG_PAD_CTRL1, BIT_BTGP_JTAG_EN);
-// 	rtw_write32_clr(rtwdev, REG_GPIO_MUXCFG, BIT_FSPI_EN);
-// 	rtw_write32_clr(rtwdev, REG_PAD_CTRL1, BIT_LED1DIS);
-// 	rtw_write32_clr(rtwdev, REG_SYS_SDIO_CTRL, BIT_SDIO_INT);
-// 	rtw_write32_clr(rtwdev, REG_SYS_SDIO_CTRL, BIT_DBG_GNT_WL_BT);
-}
+{}
 
 static void rtw8821a_coex_cfg_rfe_type(struct rtw_dev *rtwdev)
 {
-// 	struct rtw_coex *coex = &rtwdev->coex;
-// 	struct rtw_coex_rfe *coex_rfe = &coex->rfe;
-// 	struct rtw_efuse *efuse = &rtwdev->efuse;
-//
-// 	coex_rfe->rfe_module_type = efuse->rfe_option;
-// 	coex_rfe->ant_switch_polarity = 0;
-// 	coex_rfe->ant_switch_exist = true;
-// 	coex_rfe->wlg_at_btg = false;
-//
-// 	switch (coex_rfe->rfe_module_type) {
-// 	case 0:
-// 	case 8:
-// 	case 1:
-// 	case 9:  /* 1-Ant, Main, WLG */
-// 	default: /* 2-Ant, DPDT, WLG */
-// 		break;
-// 	case 2:
-// 	case 10: /* 1-Ant, Main, BTG */
-// 	case 7:
-// 	case 15: /* 2-Ant, DPDT, BTG */
-// 		coex_rfe->wlg_at_btg = true;
-// 		break;
-// 	case 3:
-// 	case 11: /* 1-Ant, Aux, WLG */
-// 		coex_rfe->ant_switch_polarity = 1;
-// 		break;
-// 	case 4:
-// 	case 12: /* 1-Ant, Aux, BTG */
-// 		coex_rfe->wlg_at_btg = true;
-// 		coex_rfe->ant_switch_polarity = 1;
-// 		break;
-// 	case 5:
-// 	case 13: /* 2-Ant, no switch, WLG */
-// 	case 6:
-// 	case 14: /* 2-Ant, no antenna switch, WLG */
-// 		coex_rfe->ant_switch_exist = false;
-// 		break;
-// 	}
+	struct rtw_coex *coex = &rtwdev->coex;
+	struct rtw_coex_rfe *coex_rfe = &coex->rfe;
+
+	coex_rfe->ant_switch_exist = true;
 }
 
 static void rtw8821a_coex_cfg_wl_tx_power(struct rtw_dev *rtwdev, u8 wl_pwr)
 {
-// 	struct rtw_coex *coex = &rtwdev->coex;
-// 	struct rtw_coex_dm *coex_dm = &coex->dm;
-// 	struct rtw_efuse *efuse = &rtwdev->efuse;
-// 	bool share_ant = efuse->share_ant;
-//
-// 	if (share_ant)
-// 		return;
-//
-// 	if (wl_pwr == coex_dm->cur_wl_pwr_lvl)
-// 		return;
-//
-// 	coex_dm->cur_wl_pwr_lvl = wl_pwr;
+	struct rtw_coex *coex = &rtwdev->coex;
+	struct rtw_coex_dm *coex_dm = &coex->dm;
+	struct rtw_efuse *efuse = &rtwdev->efuse;
+	bool share_ant = efuse->share_ant;
+
+	if (share_ant)
+		return;
+
+	if (wl_pwr == coex_dm->cur_wl_pwr_lvl)
+		return;
+
+	coex_dm->cur_wl_pwr_lvl = wl_pwr;
 }
 
 static void rtw8821a_coex_cfg_wl_rx_gain(struct rtw_dev *rtwdev, bool low_gain)
@@ -3903,18 +3820,28 @@ static struct rtw_chip_ops rtw8821a_ops = {
 static const u8 wl_rssi_step_8821a[] = {101, 45, 101, 40};
 static const u8 bt_rssi_step_8821a[] = {101, 101, 101, 101};
 
+/* table_sant_8821a, table_nsant_8821a, tdma_sant_8821a, and tdma_nsant_8821a
+ * are copied from rtw8821c.c because the 8821au driver's tables are not
+ * compatible with the coex code in rtw88.
+ *
+ * tdma case 112 (A2DP) byte 0 had to be modified from 0x61 to 0x51,
+ * otherwise the firmware gets confused after pausing the music:
+ * rtw_8821au 1-2:1.2: [BTCoex], Bt_info[1], len=7, data=[81 00 0a 01 00 00]
+ * - 81 means PAN (personal area network) when it should be 4x (A2DP)
+ * The music is not smooth with the PAN algorithm.
+ */
+
 /* Shared-Antenna Coex Table */
 static const struct coex_table_para table_sant_8821a[] = {
-///TODO: 8821au driver has only cases 0-8, and 19. What do we do about the rest? Cases 9-18 copied from 8821c.
 	{0x55555555, 0x55555555}, /* case-0 */
-	{0x55555555, 0x5a5a5a5a},
-	{0x5a5a5a5a, 0x5a5a5a5a},
-	{0x5a5a5a5a, 0xaaaaaaaa},
-	{0x55555555, 0x5a5a5a5a},
-	{0x5a5a5a5a, 0xaaaa5a5a}, /* case-5 */
-	{0x55555555, 0xaaaa5a5a},
+	{0x55555555, 0x55555555},
+	{0x66555555, 0x66555555},
 	{0xaaaaaaaa, 0xaaaaaaaa},
-	{0x55555555, 0xaaaaaaaa},
+	{0x5a5a5a5a, 0x5a5a5a5a},
+	{0xfafafafa, 0xfafafafa}, /* case-5 */
+	{0x6a5a5555, 0xaaaaaaaa},
+	{0x6a5a56aa, 0x6a5a56aa},
+	{0x6a5a5a5a, 0x6a5a5a5a},
 	{0x66555555, 0x5a5a5a5a},
 	{0x66555555, 0x6a5a5a5a}, /* case-10 */
 	{0x66555555, 0xaaaaaaaa},
@@ -3925,168 +3852,111 @@ static const struct coex_table_para table_sant_8821a[] = {
 	{0xffff55ff, 0xfafafafa},
 	{0xffff55ff, 0x6afa5afa},
 	{0xaaffffaa, 0xfafafafa},
-	{0xa5555555, 0x5a5a5a5a},
+	{0xaa5555aa, 0x5a5a5a5a},
+	{0xaa5555aa, 0x6a5a5a5a}, /* case-20 */
+	{0xaa5555aa, 0xaaaaaaaa},
+	{0xffffffff, 0x55555555},
+	{0xffffffff, 0x5a5a5a5a},
+	{0xffffffff, 0x5a5a5a5a},
+	{0xffffffff, 0x5a5a5aaa}, /* case-25 */
+	{0x55555555, 0x5a5a5a5a},
+	{0x55555555, 0xaaaaaaaa},
+	{0x66555555, 0x6a5a6a5a},
+	{0x66556655, 0x66556655},
+	{0x66556aaa, 0x6a5a6aaa}, /* case-30 */
+	{0xffffffff, 0x5aaa5aaa},
+	{0x56555555, 0x5a5a5aaa}
 };
 
 /* Non-Shared-Antenna Coex Table */
-static const struct coex_table_para table_nsant_8821a[] = {///done
-	{0x55555555, 0x55555555}, /* case-100 */
-	{0x55555555, 0x5afa5afa},
-	{0x5ada5ada, 0x5ada5ada},
-	{0xaaaaaaaa, 0xaaaaaaaa},
-	{0xffffffff, 0xffffffff},
-	{0x5fff5fff, 0x5fff5fff}, /* case-105 */
-	{0x55ff55ff, 0x5a5a5a5a},
-	{0x55dd55dd, 0x5ada5ada},
-	{0x55dd55dd, 0x5ada5ada},
-	{0x55dd55dd, 0x5ada5ada},
-	{0x55dd55dd, 0x5ada5ada}, /* case-110 */
-	{0x55dd55dd, 0x5ada5ada},
-	{0x55dd55dd, 0x5ada5ada},
-	{0x5fff5fff, 0xaaaaaaaa},
-	{0x5fff5fff, 0x5ada5ada},
-	{0x55dd55dd, 0xaaaaaaaa}, /* case-115 */
-	{0x5fdf5fdf, 0x5fdb5fdb},
-	{0xfafafafa, 0xfafafafa},
-	{0x5555555f, 0x5ada5ada},
-	{0x55555555, 0x5a5a5a5a},
-	{0x55555555, 0x5a5a5a5a}, /* case-120 */
-	{0xaaffffaa, 0x5a5a5a5a},
+static const struct coex_table_para table_nsant_8821a[] = {
+	{0xffffffff, 0xffffffff}, /* case-100 */
 	{0xffff55ff, 0xfafafafa},
-	{0x55555555, 0x5afa5afa},
+	{0x66555555, 0x66555555},
+	{0xaaaaaaaa, 0xaaaaaaaa},
+	{0x5a5a5a5a, 0x5a5a5a5a},
+	{0xffffffff, 0xffffffff}, /* case-105 */
+	{0x5afa5afa, 0x5afa5afa},
+	{0x55555555, 0xfafafafa},
+	{0x66555555, 0xfafafafa},
+	{0x66555555, 0x5a5a5a5a},
+	{0x66555555, 0x6a5a5a5a}, /* case-110 */
+	{0x66555555, 0xaaaaaaaa},
+	{0xffff55ff, 0xfafafafa},
+	{0xffff55ff, 0x5afa5afa},
+	{0xffff55ff, 0xaaaaaaaa},
+	{0xffff55ff, 0xffff55ff}, /* case-115 */
+	{0xaaffffaa, 0x5afa5afa},
+	{0xaaffffaa, 0xaaaaaaaa},
+	{0xffffffff, 0xfafafafa},
+	{0xffff55ff, 0xfafafafa},
+	{0xffffffff, 0xaaaaaaaa}, /* case-120 */
+	{0xffff55ff, 0x5afa5afa},
+	{0xffff55ff, 0x5afa5afa},
+	{0x55ff55ff, 0x55ff55ff}
 };
 
 /* Shared-Antenna TDMA */
-static const struct coex_tdma_para tdma_sant_8821a[] = {///done
+static const struct coex_tdma_para tdma_sant_8821a[] = {
 	{ {0x00, 0x00, 0x00, 0x00, 0x00} }, /* case-0 */
-	{ {0x51, 0x3a, 0x03, 0x10, 0x50} },
-	{ {0x51, 0x2b, 0x03, 0x10, 0x50} },
-	{ {0x51, 0x1d, 0x1d, 0x00, 0x52} },
-	{ {0x93, 0x15, 0x03, 0x14, 0x00} },
-	{ {0x61, 0x15, 0x03, 0x11, 0x10} },
-	{ {0x61, 0x20, 0x03, 0x11, 0x13} },
-	{ {0x13, 0x0c, 0x05, 0x00, 0x00} },
-	{ {0x93, 0x25, 0x03, 0x10, 0x00} },
-	{ {0x51, 0x21, 0x03, 0x10, 0x50} },
-	{ {0x51, 0x30, 0x03, 0x10, 0x50} },
-	{ {0x51, 0x15, 0x03, 0x10, 0x50} },
-	{ {0x51, 0x0a, 0x0a, 0x00, 0x50} },
-	{ {0x51, 0x10, 0x07, 0x10, 0x54} },
-	{ {0x51, 0x1e, 0x03, 0x10, 0x14} },
-	{ {0x13, 0x0a, 0x03, 0x08, 0x00} },
-	{ {0x61, 0x10, 0x03, 0x11, 0x15} },
-	{ {0x51, 0x1a, 0x1a, 0x00, 0x50} },
-	{ {0x93, 0x25, 0x03, 0x10, 0x00} },
-	{ {0x51, 0x1a, 0x1a, 0x00, 0x50} },
+	{ {0x61, 0x45, 0x03, 0x11, 0x11} }, /* case-1 */
+	{ {0x61, 0x3a, 0x03, 0x11, 0x11} },
+	{ {0x61, 0x35, 0x03, 0x11, 0x11} },
+	{ {0x61, 0x20, 0x03, 0x11, 0x11} },
+	{ {0x61, 0x3a, 0x03, 0x11, 0x11} }, /* case-5 */
+	{ {0x61, 0x45, 0x03, 0x11, 0x10} },
 	{ {0x61, 0x35, 0x03, 0x11, 0x10} },
 	{ {0x61, 0x30, 0x03, 0x11, 0x10} },
-	{ {0x61, 0x25, 0x03, 0x11, 0x10} },
-	{ {0x61, 0x10, 0x03, 0x11, 0x10} },
-	{ {0xe3, 0x15, 0x03, 0x31, 0x18} },
-	{ {0xe3, 0x0a, 0x03, 0x31, 0x18} },
-	{ {0xe3, 0x0a, 0x03, 0x31, 0x18} },
-	{ {0xe3, 0x25, 0x03, 0x31, 0x98} },
-	{ {0x69, 0x25, 0x03, 0x31, 0x00} },
-	{ {0xab, 0x1a, 0x1a, 0x01, 0x10} },
-	{ {0x51, 0x30, 0x03, 0x10, 0x10} },
-	{ {0xd3, 0x1a, 0x1a, 0x00, 0x58} },
-	{ {0x61, 0x35, 0x03, 0x11, 0x11} },
-	{ {0xa3, 0x25, 0x03, 0x30, 0x90} },
-	{ {0x53, 0x1a, 0x1a, 0x00, 0x10} },
-	{ {0x63, 0x1a, 0x1a, 0x00, 0x10} },
-	{ {0xd3, 0x12, 0x03, 0x14, 0x50} },
-	{ {0x51, 0x10, 0x03, 0x10, 0x54} },
-	{ {0x61, 0x10, 0x03, 0x11, 0x54} },
-	{ {0x51, 0x1a, 0x1a, 0x00, 0x50} },
-	{ {0x23, 0x18, 0x00, 0x10, 0x24} },
-	{ {0x51, 0x15, 0x03, 0x11, 0x11} },
-	{ {0x51, 0x20, 0x03, 0x11, 0x11} },
-	{ {0x51, 0x30, 0x03, 0x10, 0x11} },
-	{ {0x51, 0x20, 0x03, 0x10, 0x14} },
-	{ {0x51, 0x25, 0x03, 0x10, 0x10} },
-	{ {0x51, 0x35, 0x03, 0x10, 0x10} },
+	{ {0x61, 0x20, 0x03, 0x11, 0x10} },
+	{ {0x61, 0x10, 0x03, 0x11, 0x10} }, /* case-10 */
+	{ {0x61, 0x08, 0x03, 0x11, 0x15} },
+	{ {0x61, 0x08, 0x03, 0x10, 0x14} },
+	{ {0x51, 0x08, 0x03, 0x10, 0x54} },
+	{ {0x51, 0x08, 0x03, 0x10, 0x55} },
+	{ {0x51, 0x08, 0x07, 0x10, 0x54} }, /* case-15 */
+	{ {0x51, 0x45, 0x03, 0x10, 0x50} },
+	{ {0x51, 0x3a, 0x03, 0x11, 0x50} },
+	{ {0x51, 0x30, 0x03, 0x10, 0x50} },
+	{ {0x51, 0x21, 0x03, 0x10, 0x50} },
+	{ {0x51, 0x10, 0x03, 0x10, 0x50} }, /* case-20 */
+	{ {0x51, 0x4a, 0x03, 0x10, 0x50} },
+	{ {0x51, 0x08, 0x03, 0x30, 0x54} },
+	{ {0x55, 0x08, 0x03, 0x10, 0x54} },
+	{ {0x65, 0x10, 0x03, 0x11, 0x10} },
+	{ {0x51, 0x10, 0x03, 0x10, 0x51} }, /* case-25 */
+	{ {0x51, 0x21, 0x03, 0x10, 0x50} },
+	{ {0x61, 0x08, 0x03, 0x11, 0x11} }
 };
 
 /* Non-Shared-Antenna TDMA */
-static const struct coex_tdma_para tdma_nsant_8821a[] = {///done
+static const struct coex_tdma_para tdma_nsant_8821a[] = {
 	{ {0x00, 0x00, 0x00, 0x40, 0x00} }, /* case-100 */
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x2d, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x1c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x10, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0x70, 0x90} },
-	{ {0xe3, 0x2d, 0x03, 0x70, 0x90} },
-	{ {0xe3, 0x1c, 0x03, 0x70, 0x90} },
-	{ {0xa3, 0x10, 0x03, 0x70, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x2d, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x1c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x10, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0x70, 0x90} },
-	{ {0xe3, 0x2d, 0x03, 0x70, 0x90} },
-	{ {0xe3, 0x1c, 0x03, 0x70, 0x90} },
-	{ {0xe3, 0x10, 0x03, 0x70, 0x90} },
-	{ {0xa3, 0x2f, 0x2f, 0x60, 0x90} },
-	{ {0xe3, 0x05, 0x05, 0xe1, 0x90} },
-	{ {0xe3, 0x25, 0x25, 0xe1, 0x90} },
-	{ {0xe3, 0x25, 0x25, 0x60, 0x90} },
-	{ {0xe3, 0x15, 0x03, 0x70, 0x90} },
-	{ {0xe3, 0x30, 0x03, 0x71, 0x10} },
-	{ {0xe3, 0x1e, 0x03, 0xf1, 0x94} },
-	{ {0xe3, 0x25, 0x03, 0x71, 0x11} },
-	{ {0xe3, 0x14, 0x03, 0xf1, 0x90} },
-	{ {0xd3, 0x30, 0x03, 0x70, 0x50} },
-	{ {0xd3, 0x23, 0x03, 0x70, 0x50} },
-	{ {0xe3, 0x1e, 0x03, 0xf1, 0x94} },
-	{ {0xd3, 0x08, 0x03, 0x70, 0x54} },
-	{ {0xd3, 0x08, 0x07, 0x70, 0x54} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xd3, 0x21, 0x03, 0x70, 0x50} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x10, 0x03, 0x71, 0x54} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
-	{ {0xe3, 0x3c, 0x03, 0xf1, 0x90} },
+	{ {0x61, 0x45, 0x03, 0x11, 0x11} },
+	{ {0x61, 0x25, 0x03, 0x11, 0x11} },
+	{ {0x61, 0x35, 0x03, 0x11, 0x11} },
+	{ {0x61, 0x20, 0x03, 0x11, 0x11} },
+	{ {0x61, 0x10, 0x03, 0x11, 0x11} }, /* case-105 */
+	{ {0x61, 0x45, 0x03, 0x11, 0x10} },
+	{ {0x61, 0x30, 0x03, 0x11, 0x10} },
+	{ {0x61, 0x30, 0x03, 0x11, 0x10} },
+	{ {0x61, 0x20, 0x03, 0x11, 0x10} },
+	{ {0x61, 0x10, 0x03, 0x11, 0x10} }, /* case-110 */
+	{ {0x61, 0x10, 0x03, 0x11, 0x11} },
+	{ {0x51, 0x08, 0x03, 0x10, 0x14} }, /* a2dp high rssi */
+	{ {0x51, 0x08, 0x03, 0x10, 0x54} }, /* a2dp not high rssi */
+	{ {0x51, 0x08, 0x03, 0x10, 0x55} },
+	{ {0x51, 0x08, 0x07, 0x10, 0x54} }, /* case-115 */
+	{ {0x51, 0x45, 0x03, 0x10, 0x50} },
+	{ {0x51, 0x3a, 0x03, 0x10, 0x50} },
+	{ {0x51, 0x30, 0x03, 0x10, 0x50} },
+	{ {0x51, 0x21, 0x03, 0x10, 0x50} },
+	{ {0x51, 0x21, 0x03, 0x10, 0x50} }, /* case-120 */
+	{ {0x51, 0x10, 0x03, 0x10, 0x50} }
 };
 
 static const struct coex_5g_afh_map afh_5g_8821a[] = { {0, 0, 0} };
 
 ///TODO: vendor driver coex code is terrible
-/* wl_tx_dec_power, bt_tx_dec_power, wl_rx_gain, bt_rx_lna_constrain */
 static const struct coex_rf_para rf_para_tx_8821a[] = {
 	{0, 0, false, 7},  /* for normal */
 	{0, 20, false, 7}, /* for WL-CPT */
@@ -4386,13 +4256,13 @@ const struct rtw_chip_info rtw8821a_hw_spec = {
 
 	.coex_para_ver = 20190509, /* glcoex_ver_date_8821a_1ant */
 	.bt_desired_ver = 0x62, /* But for 2 ant it's 0x5c */
-	.scbd_support = true,///TODO is it okay?
-	.new_scbd10_def = false,///TODO is it okay?
+	.scbd_support = false,
+	.new_scbd10_def = false,
 	.ble_hid_profile_support = false,
 	.wl_mimo_ps_support = false,
 	.pstdma_type = COEX_PSTDMA_FORCE_LPSOFF,
 	.bt_rssi_type = COEX_BTRSSI_RATIO,
-	.ant_isolation = 15,
+	.ant_isolation = 10,
 	.rssi_tolerance = 2,
 	.wl_rssi_step = wl_rssi_step_8821a,
 	.bt_rssi_step = bt_rssi_step_8821a,
@@ -4407,8 +4277,8 @@ const struct rtw_chip_info rtw8821a_hw_spec = {
 	.wl_rf_para_num = ARRAY_SIZE(rf_para_tx_8821a),
 	.wl_rf_para_tx = rf_para_tx_8821a,
 	.wl_rf_para_rx = rf_para_rx_8821a,
-	.bt_afh_span_bw20 = 0x24,
-	.bt_afh_span_bw40 = 0x36,
+	.bt_afh_span_bw20 = 0x20,
+	.bt_afh_span_bw40 = 0x30,
 	.afh_5g_num = ARRAY_SIZE(afh_5g_8821a),
 	.afh_5g = afh_5g_8821a,
 
@@ -4493,8 +4363,8 @@ const struct rtw_chip_info rtw8812a_hw_spec = {
 	.wl_rf_para_num = ARRAY_SIZE(rf_para_tx_8821a),
 	.wl_rf_para_tx = rf_para_tx_8821a,
 	.wl_rf_para_rx = rf_para_rx_8821a,
-	.bt_afh_span_bw20 = 0x24,
-	.bt_afh_span_bw40 = 0x36,
+	.bt_afh_span_bw20 = 0x20,
+	.bt_afh_span_bw40 = 0x30,
 	.afh_5g_num = ARRAY_SIZE(afh_5g_8821a),
 	.afh_5g = afh_5g_8821a,
 
