@@ -1211,11 +1211,12 @@ static void rtw8821au_tx_aggregation(struct rtw_dev *rtwdev)
 
 static void rtw8821au_rx_aggregation(struct rtw_dev *rtwdev)
 {
+	struct rtw_usb *rtwusb = rtw_get_usb_priv(rtwdev);
+	enum usb_device_speed speed = rtwusb->udev->speed;
 	u8 rxagg_usb_size, rxagg_usb_timeout;
-	bool usb3 = false;///TODO
 	u16 val16;
 
-	if (usb3) {
+	if (speed == USB_SPEED_SUPER) {
 		rxagg_usb_size = 0x7;
 		rxagg_usb_timeout = 0x1a;
 	} else {
@@ -1275,22 +1276,15 @@ static void rtw8821au_init_burst_pkt_len(struct rtw_dev *rtwdev)
 	if (speedvalue & BIT(7)) { /* USB 2/1.1 Mode */
 		temp = rtw_read8(rtwdev, 0xfe17);
 		if (((temp >> 4) & 0x03) == 0) {
-			// pHalData->UsbBulkOutSize = USB_HIGH_SPEED_BULK_SIZE;
 			provalue = rtw_read8(rtwdev, REG_RXDMA_MODE);
 			rtw_write8(rtwdev, REG_RXDMA_MODE, ((provalue | BIT(4) | BIT(3) | BIT(2) | BIT(1)) & (~BIT(5)))); /* set burst pkt len=512B */
 		} else {
-			// pHalData->UsbBulkOutSize = 64;
 			provalue = rtw_read8(rtwdev, REG_RXDMA_MODE);
 			rtw_write8(rtwdev, REG_RXDMA_MODE, ((provalue | BIT(5) | BIT(3) | BIT(2) | BIT(1)) & (~BIT(4)))); /* set burst pkt len=64B */
 		}
-
-		// pHalData->bSupportUSB3 = _FALSE;
 	} else { /* USB3 Mode */
-		// pHalData->UsbBulkOutSize = USB_SUPER_SPEED_BULK_SIZE;
 		provalue = rtw_read8(rtwdev, REG_RXDMA_MODE);
 		rtw_write8(rtwdev, REG_RXDMA_MODE, ((provalue | BIT(3) | BIT(2) | BIT(1)) & (~(BIT(5) | BIT(4))))); /* set burst pkt len=1k */
-
-		// pHalData->bSupportUSB3 = _TRUE;
 
 		/* set Reg 0xf008[3:4] to 2'00 to disable U1/U2 Mode to avoid
 		 * 2.5G spur in USB3.0.
@@ -1474,6 +1468,8 @@ static void rtw8821a_pwrtrack_init(struct rtw_dev *rtwdev)
 
 static void rtw8821a_power_off(struct rtw_dev *rtwdev)
 {
+	struct rtw_usb *rtwusb = rtw_get_usb_priv(rtwdev);
+	enum usb_device_speed speed = rtwusb->udev->speed;
 	u16 ori_fsmc0;
 
 	rtw_hci_stop(rtwdev);
@@ -1481,10 +1477,9 @@ static void rtw8821a_power_off(struct rtw_dev *rtwdev)
 	if (!rtwdev->efuse.btcoex)
 		rtw_write16_clr(rtwdev, REG_GPIO_MUXCFG, BIT_EN_SIC);
 
-	// if (pHalData->bSupportUSB3 == _TRUE) {
-	// 	/* set Reg 0xf008[3:4] to 2'11 to eable U1/U2 Mode in USB3.0. added by page, 20120712 */
-	// 	rtw_write8_set(Adapter, 0xf008, 0x18);
-	// }
+	/* set Reg 0xf008[3:4] to 2'11 to enable U1/U2 Mode in USB3.0. */
+	if (speed == USB_SPEED_SUPER)
+		rtw_write8_set(rtwdev, 0xf008, 0x18);
 
 	rtw_write32(rtwdev, REG_HISR0, 0xffffffff);
 	rtw_write32(rtwdev, REG_HISR1, 0xffffffff);
