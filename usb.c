@@ -581,7 +581,7 @@ static void rtw_usb_rx_handler(struct work_struct *work)
 				next_skb = skb_clone(skb, GFP_KERNEL);
 
 			if (pkt_stat.is_c2h) {
-				skb_put(skb, pkt_stat.pkt_len + pkt_offset);
+				skb_trim(skb, pkt_stat.pkt_len + pkt_offset);
 				rtw_fw_c2h_cmd_rx_irqsafe(rtwdev, pkt_offset, skb);
 			} else {
 				skb_pull(skb, pkt_offset);
