@@ -1920,6 +1920,8 @@ static int rtw8821a_power_on(struct rtw_dev *rtwdev)
 	rtw_write32(rtwdev, REG_BAR_MODE_CTRL, 0x0201ffff);
 	rtw_write8(rtwdev, REG_NAV_CTRL + 2, 0);
 
+	rtw_write8_clr(rtwdev, REG_GPIO_MUXCFG, BIT(5));
+
 	rtw_phy_init(rtwdev);
 
 	rtw8821a_pwrtrack_init(rtwdev);
