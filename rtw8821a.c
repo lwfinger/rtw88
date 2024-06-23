@@ -897,6 +897,10 @@ static int rtw8821a_read_efuse(struct rtw_dev *rtwdev, u8 *log_map)
 	struct rtw8821a_efuse *map;
 	int i;
 
+	///TODO: a better place for this?
+	if (chip->id == RTW_CHIP_TYPE_8812A)
+		rtwdev->hal.cut_version += 1;
+
 	print_hex_dump(KERN_INFO, "", DUMP_PREFIX_OFFSET, 16, 1,
 		       log_map, chip->log_efuse_size, true);
 
