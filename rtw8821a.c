@@ -1044,11 +1044,6 @@ static int rtw8812au_init_power_on(struct rtw_dev *rtwdev)
 	u16 val16;
 	int ret;
 
-	if (test_bit(RTW_FLAG_POWERON, rtwdev->flags)) {
-		rtw_err(rtwdev, "%s: bailing because RTW_FLAG_POWERON\n", __func__);
-		return 0;
-	}
-
 	ret = rtw_pwr_seq_parser(rtwdev, chip->pwr_on_seq);
 	if (ret) {
 		rtw_err(rtwdev, "power on flow failed\n");
@@ -1064,8 +1059,6 @@ static int rtw8812au_init_power_on(struct rtw_dev *rtwdev)
 		if (rtw_read8(rtwdev, REG_SYS_CFG1 + 3) & BIT(0))
 			rtw_write8_set(rtwdev, REG_LDO_SWR_CTRL, BIT(6));
 	}
-
-	set_bit(RTW_FLAG_POWERON, rtwdev->flags);
 
 	return ret;
 }
@@ -1472,6 +1465,13 @@ static void rtw8821a_power_off(struct rtw_dev *rtwdev)
 	enum usb_device_speed speed = rtwusb->udev->speed;
 	u16 ori_fsmc0;
 
+	rtw_dbg(rtwdev, RTW_DBG_UNEXP, "power off start\n");
+
+	if (!test_bit(RTW_FLAG_POWERON, rtwdev->flags)) {
+		rtw_err(rtwdev, "%s: bailing because RTW_FLAG_POWERON\n", __func__);
+		return;
+	}
+
 	rtw_hci_stop(rtwdev);
 
 	if (!rtwdev->efuse.btcoex)
@@ -1488,11 +1488,6 @@ static void rtw8821a_power_off(struct rtw_dev *rtwdev)
 
 	if (rtwdev->efuse.btcoex)
 		rtw_coex_power_off_setting(rtwdev);
-
-	if (!test_bit(RTW_FLAG_POWERON, rtwdev->flags)) {
-		rtw_err(rtwdev, "%s: bailing because RTW_FLAG_POWERON\n", __func__);
-		return;
-	}
 
 	ori_fsmc0 = rtw_read16(rtwdev, REG_APS_FSMCO);
 	rtw_write16(rtwdev, REG_APS_FSMCO, ori_fsmc0 & ~APS_FSMCO_HW_POWERDOWN);
@@ -1519,10 +1514,12 @@ static void rtw8821a_power_off(struct rtw_dev *rtwdev)
 	else
 		rtw_pwr_seq_parser(rtwdev, card_disable_flow_8812a);
 
-	clear_bit(RTW_FLAG_POWERON, rtwdev->flags);
-
 	if (ori_fsmc0 & APS_FSMCO_HW_POWERDOWN)
 		rtw_write16_set(rtwdev, REG_APS_FSMCO, APS_FSMCO_HW_POWERDOWN);
+
+	clear_bit(RTW_FLAG_POWERON, rtwdev->flags);
+
+	rtw_dbg(rtwdev, RTW_DBG_UNEXP, "power off done\n");
 }
 
 ///TODO: chip identification needs to be copied as well
@@ -1785,6 +1782,11 @@ static int rtw8821a_power_on(struct rtw_dev *rtwdev)
 	int ret;
 	u8 val8;
 
+	if (test_bit(RTW_FLAG_POWERON, rtwdev->flags)) {
+		rtw_err(rtwdev, "%s: bailing because RTW_FLAG_POWERON\n", __func__);
+		return 0;
+	}
+
 	/* Override rtw_chip_efuse_info_setup() */
 	if (chip->id == RTW_CHIP_TYPE_8821A)
 		efuse->btcoex = rtw_read32_mask(rtwdev, REG_WL_BT_PWR_CTRL,
@@ -1800,13 +1802,12 @@ static int rtw8821a_power_on(struct rtw_dev *rtwdev)
 		goto err;
 	}
 
-	///TODO: change to rtw_dbg
 	val8 = rtw_read8(rtwdev, REG_CR);
 	if (val8 != 0 && val8 != 0xEA &&
 	    (rtw_read8(rtwdev, REG_SYS_CLKR + 1) & BIT(3)))
-		rtw_info(rtwdev, "MAC has already power on\n");
+		rtw_dbg(rtwdev, RTW_DBG_UNEXP, "MAC has already power on\n");
 	else
-		rtw_info(rtwdev, "MAC has not been powered on yet\n");
+		rtw_dbg(rtwdev, RTW_DBG_UNEXP, "MAC has not been powered on yet\n");
 
 	/* Revise for U2/U3 switch we can not update RF-A/B reset.
 	 * Reset after MAC power on to prevent RF R/W error.
@@ -1966,6 +1967,10 @@ static int rtw8821a_power_on(struct rtw_dev *rtwdev)
 		rtw_coex_power_on_setting(rtwdev);
 		rtw_coex_init_hw_config(rtwdev, wifi_only);
 	}
+
+	set_bit(RTW_FLAG_POWERON, rtwdev->flags);
+
+	rtw_dbg(rtwdev, RTW_DBG_UNEXP, "power on done\n");
 
 	return 0;
 
