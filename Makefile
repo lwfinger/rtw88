@@ -268,6 +268,7 @@ ifeq ($(CONFIG_PCI), y)
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821ae.ko
 endif
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821au.ko
+	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8812au.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8703b.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723x.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723cs.ko
