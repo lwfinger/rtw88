@@ -1613,7 +1613,11 @@ static struct rtw_hci_ops rtw_pci_ops = {
 
 static int rtw_pci_request_irq(struct rtw_dev *rtwdev, struct pci_dev *pdev)
 {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0))
+	unsigned int flags = PCI_IRQ_INTX;
+#else
 	unsigned int flags = PCI_IRQ_LEGACY;
+#endif
 	int ret;
 
 	if (!rtw_disable_msi)
