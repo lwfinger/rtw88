@@ -1467,10 +1467,8 @@ static void rtw8821a_power_off(struct rtw_dev *rtwdev)
 
 	rtw_dbg(rtwdev, RTW_DBG_UNEXP, "power off start\n");
 
-	if (!test_bit(RTW_FLAG_POWERON, rtwdev->flags)) {
-		rtw_err(rtwdev, "%s: bailing because RTW_FLAG_POWERON\n", __func__);
-		return;
-	}
+	if (!test_bit(RTW_FLAG_POWERON, rtwdev->flags))
+		rtw_err(rtwdev, "%s: RTW_FLAG_POWERON not set, powering off anyway\n", __func__);
 
 	rtw_hci_stop(rtwdev);
 
