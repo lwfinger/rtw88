@@ -2219,6 +2219,10 @@ rtw_phy_get_tx_power_index(struct rtw_dev *rtwdev, u8 rf_path, u8 rate,
 	if (rtwdev->chip->en_dis_dpd)
 		offset += rtw_phy_get_dis_dpd_by_rate_diff(rtwdev, rate);
 
+	/* USB may not have enough power. Allow only to decrease. */
+	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_USB)
+		offset = min_t(s8, offset, 0);
+
 	tx_power += offset + pwr_param.pwr_remnant;
 
 	if (tx_power > rtwdev->chip->max_power_index)
