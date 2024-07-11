@@ -17,7 +17,7 @@
 static bool rtw_switch_usb_mode = true;
 module_param_named(switch_usb_mode, rtw_switch_usb_mode, bool, 0644);
 MODULE_PARM_DESC(switch_usb_mode,
-		 "Set to Y to switch to USB 3 mode (default: Y)");
+		 "Set to N to disable switching to USB 3 mode to avoid potential interference in the 2.4 GHz band (default: Y)");
 
 #define RTW_USB_MAX_RXQ_LEN	512
 
@@ -911,15 +911,15 @@ static int rtw_usb_switch_mode_new(struct rtw_dev *rtwdev)
 				     BIT_USB3_USB2_TRANSITION));
 
 	if (!can_switch) {
-		rtw_info(rtwdev,
-			 "Switching to USB 3 mode unsupported by the chip\n");
+		rtw_dbg(rtwdev, RTW_DBG_USB,
+			"Switching to USB 3 mode unsupported by the chip\n");
 		return 0;
 	}
 
 	/* At this point cur_speed is USB_SPEED_HIGH. If we already tried
 	 * to switch don't try again - it's a USB 2 port.
 	 */
-	if ((u32_get_bits(pad_ctrl2, BIT_MASK_USB23_SW_MODE_V1) == BIT_USB_MODE_U3))
+	if (u32_get_bits(pad_ctrl2, BIT_MASK_USB23_SW_MODE_V1) == BIT_USB_MODE_U3)
 		return 0;
 
 	/* Enable IO wrapper timeout */
@@ -948,14 +948,14 @@ static int rtw_usb_switch_mode(struct rtw_dev *rtwdev)
 		return 0;
 
 	if (!rtwdev->efuse.usb_mode_switch) {
-		rtw_info(rtwdev,
-			 "Switching to USB 3 mode disabled by chip's efuse\n");
+		rtw_dbg(rtwdev, RTW_DBG_USB,
+			"Switching to USB 3 mode disabled by chip's efuse\n");
 		return 0;
 	}
 
 	if (!rtw_switch_usb_mode) {
-		rtw_info(rtwdev,
-			 "Switching to USB 3 mode disabled by module parameter\n");
+		rtw_dbg(rtwdev, RTW_DBG_USB,
+			"Switching to USB 3 mode disabled by module parameter\n");
 		return 0;
 	}
 
@@ -1023,7 +1023,7 @@ int rtw_usb_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	ret = rtw_usb_switch_mode(rtwdev);
 	if (ret) {
 		/* Not a fail, but we do need to skip rtw_register_hw. */
-		rtw_info(rtwdev, "switching to USB 3 mode\n");
+		rtw_dbg(rtwdev, RTW_DBG_USB, "switching to USB 3 mode\n");
 		ret = 0;
 		goto err_destroy_rxwq;
 	}
