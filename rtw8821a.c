@@ -1516,11 +1516,13 @@ static void rtw8821a_power_off(struct rtw_dev *rtwdev)
 	struct rtw_usb *rtwusb = rtw_get_usb_priv(rtwdev);
 	enum usb_device_speed speed = rtwusb->udev->speed;
 	u16 ori_fsmc0;
+	u8 reg_cr;
 
-	rtw_dbg(rtwdev, RTW_DBG_UNEXP, "power off start\n");
+	reg_cr = rtw_read8(rtwdev, REG_CR);
 
-	if (!test_bit(RTW_FLAG_POWERON, rtwdev->flags))
-		rtw_err(rtwdev, "%s: RTW_FLAG_POWERON not set, powering off anyway\n", __func__);
+	/* Already powered off */
+	if (reg_cr == 0 || reg_cr == 0xEA)
+		return;
 
 	rtw_hci_stop(rtwdev);
 
@@ -1565,8 +1567,6 @@ static void rtw8821a_power_off(struct rtw_dev *rtwdev)
 		rtw_write16_set(rtwdev, REG_APS_FSMCO, APS_FSMCO_HW_POWERDOWN);
 
 	clear_bit(RTW_FLAG_POWERON, rtwdev->flags);
-
-	rtw_dbg(rtwdev, RTW_DBG_UNEXP, "power off done\n");
 }
 
 ///TODO: chip identification needs to be copied as well
@@ -1826,12 +1826,9 @@ static int rtw8821a_power_on(struct rtw_dev *rtwdev)
 	struct rtw_efuse *efuse = &rtwdev->efuse;
 	struct rtw_hal *hal = &rtwdev->hal;
 	int ret;
-	u8 val8;
 
-	if (test_bit(RTW_FLAG_POWERON, rtwdev->flags)) {
-		rtw_err(rtwdev, "%s: bailing because RTW_FLAG_POWERON\n", __func__);
+	if (test_bit(RTW_FLAG_POWERON, rtwdev->flags))
 		return 0;
-	}
 
 	/* Override rtw_chip_efuse_info_setup() */
 	if (chip->id == RTW_CHIP_TYPE_8821A)
@@ -1847,13 +1844,6 @@ static int rtw8821a_power_on(struct rtw_dev *rtwdev)
 		rtw_err(rtwdev, "failed to setup hci\n");
 		goto err;
 	}
-
-	val8 = rtw_read8(rtwdev, REG_CR);
-	if (val8 != 0 && val8 != 0xEA &&
-	    (rtw_read8(rtwdev, REG_SYS_CLKR + 1) & BIT(3)))
-		rtw_dbg(rtwdev, RTW_DBG_UNEXP, "MAC has already power on\n");
-	else
-		rtw_dbg(rtwdev, RTW_DBG_UNEXP, "MAC has not been powered on yet\n");
 
 	/* Revise for U2/U3 switch we can not update RF-A/B reset.
 	 * Reset after MAC power on to prevent RF R/W error.
@@ -2008,8 +1998,6 @@ static int rtw8821a_power_on(struct rtw_dev *rtwdev)
 	}
 
 	set_bit(RTW_FLAG_POWERON, rtwdev->flags);
-
-	rtw_dbg(rtwdev, RTW_DBG_UNEXP, "power on done\n");
 
 	return 0;
 
