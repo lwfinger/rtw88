@@ -12,15 +12,10 @@ extern const struct rtw_table rtw8821a_bb_pg_tbl;
 extern const struct rtw_table rtw8821a_rf_a_tbl;
 extern const struct rtw_table rtw8821a_txpwr_lmt_tbl;
 
-extern const struct rtw_table rtw8812a_mac_tbl;
-extern const struct rtw_table rtw8812a_agc_tbl;
-extern const struct rtw_table rtw8812a_agc_diff_lb_tbl;
-extern const struct rtw_table rtw8812a_agc_diff_hb_tbl;
-extern const struct rtw_table rtw8812a_bb_tbl;
-extern const struct rtw_table rtw8812a_bb_pg_tbl;
-extern const struct rtw_table rtw8812a_bb_pg_rfe3_tbl;
-extern const struct rtw_table rtw8812a_rf_a_tbl;
-extern const struct rtw_table rtw8812a_rf_b_tbl;
-extern const struct rtw_table rtw8812a_txpwr_lmt_tbl;
+extern const struct rtw_pwr_seq_cmd *card_enable_flow_8821a[];
+extern const struct rtw_pwr_seq_cmd *enter_lps_flow_8821a[];
+extern const struct rtw_pwr_seq_cmd *card_disable_flow_8821a[];
+
+extern const struct rtw_pwr_track_tbl rtw8821a_rtw_pwr_track_tbl;
 
 #endif

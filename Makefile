@@ -128,7 +128,7 @@ rtw_8821ce-objs		:= rtw8821ce.o
 endif
 
 obj-m	+= rtw_8821a.o
-rtw_8821a-objs		:= rtw8821a.o rtw8821a_table.o
+rtw_8821a-objs		:= rtw8821a.o rtw8821a_table.o rtw8812a_table.o
 
 ifeq ($(CONFIG_PCI), y)
 obj-m	   += rtw_8821ae.o
