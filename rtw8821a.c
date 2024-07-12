@@ -4310,7 +4310,9 @@ static void rtw8821a_pwrtrack_set(struct rtw_dev *rtwdev, u8 tx_rate, u8 path)
 static void rtw8821a_phy_pwrtrack(struct rtw_dev *rtwdev)
 {
 	struct rtw_dm_info *dm_info = &rtwdev->dm_info;
+	struct rtw_hal *hal = &rtwdev->hal;
 	struct rtw_swing_table swing_table;
+	s8 remnant_pre[RTW_RF_PATH_MAX];
 	u8 thermal_value, delta, path;
 	bool need_iqk;
 
@@ -4340,7 +4342,9 @@ static void rtw8821a_phy_pwrtrack(struct rtw_dev *rtwdev)
 
 	delta = rtw_phy_pwrtrack_get_delta(rtwdev, RF_PATH_A);
 
-	for (path = RF_PATH_A; path < rtwdev->hal.rf_path_num; path++) {
+	for (path = RF_PATH_A; path < hal->rf_path_num; path++) {
+		remnant_pre[path] = dm_info->txagc_remnant_ofdm[path];
+
 		dm_info->delta_power_index[path] =
 			rtw_phy_pwrtrack_get_pwridx(rtwdev, &swing_table, path,
 						    RF_PATH_A, delta);
@@ -4354,7 +4358,13 @@ static void rtw8821a_phy_pwrtrack(struct rtw_dev *rtwdev)
 		}
 	}
 
-	rtw_phy_set_tx_power_level(rtwdev, rtwdev->hal.current_channel);
+	for (path = RF_PATH_A; path < hal->rf_path_num; path++) {
+		if (remnant_pre[path] != dm_info->txagc_remnant_ofdm[path]) {
+			rtw_phy_set_tx_power_level(rtwdev,
+						   hal->current_channel);
+			break;
+		}
+	}
 
 iqk:
 	if (need_iqk)
