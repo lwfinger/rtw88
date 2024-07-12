@@ -134,11 +134,6 @@ endif
 obj-m	+= rtw_8821a.o
 rtw_8821a-objs		:= rtw8821a.o rtw8821a_table.o rtw8812a_table.o
 
-ifeq ($(CONFIG_PCI), y)
-obj-m	   += rtw_8821ae.o
-rtw_8821ae-objs		:= rtw8821ae.o
-endif
-
 obj-m	   += rtw_8821au.o
 rtw_8821au-objs		:= rtw8821au.o
 
@@ -199,9 +194,6 @@ endif
 	modprobe -r rtw_8723ds
 	modprobe -r rtw_8723du
 	modprobe -r rtw_8812au
-ifeq ($(CONFIG_PCI), y)
-	modprobe -r rtw_8821ae
-endif
 	modprobe -r rtw_8821au
 ifeq ($(CONFIG_PCI), y)
 	modprobe -r rtw_8821ce
@@ -272,7 +264,6 @@ endif
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822cs.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821a.ko
 ifeq ($(CONFIG_PCI), y)
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821ae.ko
 endif
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821au.ko
 	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8812au.ko
