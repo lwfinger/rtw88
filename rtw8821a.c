@@ -788,7 +788,14 @@ static void rtw8812a_read_rfe_type(struct rtw_dev *rtwdev, struct rtw8821a_efuse
 {
 	struct rtw_efuse *efuse = &rtwdev->efuse;
 
-	if (map->rfe_option & BIT(7)) {
+	if (map->rfe_option == 0xff) {
+		if (rtwdev->hci.type == RTW_HCI_TYPE_USB)
+			efuse->rfe_option = 0;
+		else if (rtwdev->hci.type == RTW_HCI_TYPE_PCIE)
+			efuse->rfe_option = 2;
+		else
+			efuse->rfe_option = 4;
+	} else if (map->rfe_option & BIT(7)) {
 		if (efuse->ext_lna_5g) {
 			if (efuse->ext_pa_5g) {
 				if (efuse->ext_lna_2g && efuse->ext_pa_2g)
