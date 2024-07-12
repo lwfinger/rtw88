@@ -35,8 +35,6 @@ int rtw_pwr_seq_parser(struct rtw_dev *rtwdev,
 int rtw_mac_power_on(struct rtw_dev *rtwdev);
 void rtw_mac_power_off(struct rtw_dev *rtwdev);
 int rtw_download_firmware(struct rtw_dev *rtwdev, struct rtw_fw_state *fw);
-int rtw_llt_init_legacy(struct rtw_dev *rtwdev, u32 boundary);
-int rtw_llt_init_legacy_old(struct rtw_dev *rtwdev, u32 boundary);
 int rtw_mac_init(struct rtw_dev *rtwdev);
 void rtw_mac_flush_queues(struct rtw_dev *rtwdev, u32 queues, bool drop);
 int set_trx_fifo_info(struct rtw_dev *rtwdev);

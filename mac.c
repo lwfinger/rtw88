@@ -1228,68 +1228,6 @@ static int __priority_queue_cfg(struct rtw_dev *rtwdev,
 	return 0;
 }
 
-int rtw_llt_init_legacy(struct rtw_dev *rtwdev, u32 boundary)
-{
-	rtw_write32_set(rtwdev, REG_AUTO_LLT, BIT_AUTO_INIT_LLT);
-
-	if (!check_hw_ready(rtwdev, REG_AUTO_LLT, BIT_AUTO_INIT_LLT, 0))
-		return -EBUSY;
-
-	return 0;
-}
-EXPORT_SYMBOL(rtw_llt_init_legacy);
-
-static int llt_write(struct rtw_dev *rtwdev, u32 address, u32 data)
-{
-	u32 value = BIT_LLT_WRITE_ACCESS | (address << 8) | data;
-	int status = 0;
-	int count = 0;
-
-	rtw_write32(rtwdev, REG_LLT_INIT, value);
-
-	do {
-		if (!rtw_read32_mask(rtwdev, REG_LLT_INIT, BIT(31) | BIT(30)))
-			break;
-
-		if (count > 20) {
-			pr_err("Failed to poll write LLT done at address %d!\n",
-			       address);
-			status = -EBUSY;
-			break;
-		}
-	} while (++count);
-
-	return status;
-}
-
-int rtw_llt_init_legacy_old(struct rtw_dev *rtwdev, u32 boundary)
-{
-	u32 last_entry = 255;
-	int status = 0;
-	u32 i;
-
-	for (i = 0; i < boundary - 1; i++) {
-		status = llt_write(rtwdev, i, i + 1);
-		if (status)
-			return status;
-	}
-
-	status = llt_write(rtwdev, boundary - 1, 0xFF);
-	if (status)
-		return status;
-
-	for (i = boundary; i < last_entry; i++) {
-		status = llt_write(rtwdev, i, i + 1);
-		if (status)
-			return status;
-	}
-
-	status = llt_write(rtwdev, last_entry, boundary);
-
-	return status;
-}
-EXPORT_SYMBOL(rtw_llt_init_legacy_old);
-
 static int __priority_queue_cfg_legacy(struct rtw_dev *rtwdev,
 				       const struct rtw_page_table *pg_tbl,
 				       u16 pubq_num)
@@ -1310,7 +1248,12 @@ static int __priority_queue_cfg_legacy(struct rtw_dev *rtwdev,
 	rtw_write8(rtwdev, REG_MGQ_BDNY, fifo->rsvd_boundary);
 	rtw_write8(rtwdev, REG_WMAC_LBK_BF_HD, fifo->rsvd_boundary);
 
-	return chip->ops->llt_init_legacy(rtwdev, fifo->rsvd_boundary);
+	rtw_write32_set(rtwdev, REG_AUTO_LLT, BIT_AUTO_INIT_LLT);
+
+	if (!check_hw_ready(rtwdev, REG_AUTO_LLT, BIT_AUTO_INIT_LLT, 0))
+		return -EBUSY;
+
+	return 0;
 }
 
 static int priority_queue_cfg(struct rtw_dev *rtwdev)

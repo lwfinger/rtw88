@@ -239,6 +239,8 @@ struct rtw8821a_phy_status_rpt {
 #define PBP_256					0x2
 #define PBP_512					0x3
 #define PBP_1024				0x4
+#define REG_LLT_INIT				0x01E0
+#define BIT_LLT_WRITE_ACCESS			BIT(30)
 #define REG_DWBCN1_CTRL				0x228
 #define REG_EARLY_MODE_CONTROL			0x2bc
 #define REG_TXPKT_EMPTY				0x41a

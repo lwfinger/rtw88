@@ -1063,6 +1063,56 @@ static int rtw8812au_init_power_on(struct rtw_dev *rtwdev)
 	return ret;
 }
 
+static int rtw8821a_llt_write(struct rtw_dev *rtwdev, u32 address, u32 data)
+{
+	u32 value = BIT_LLT_WRITE_ACCESS | (address << 8) | data;
+	int status = 0;
+	int count = 0;
+
+	rtw_write32(rtwdev, REG_LLT_INIT, value);
+
+	do {
+		if (!rtw_read32_mask(rtwdev, REG_LLT_INIT, BIT(31) | BIT(30)))
+			break;
+
+		if (count > 20) {
+			rtw_err(rtwdev, "Failed to poll write LLT done at %d!\n",
+				address);
+			status = -EBUSY;
+			break;
+		}
+	} while (++count);
+
+	return status;
+}
+
+static int rtw8821a_llt_init(struct rtw_dev *rtwdev, u32 boundary)
+{
+	u32 last_entry = 255;
+	int status = 0;
+	u32 i;
+
+	for (i = 0; i < boundary - 1; i++) {
+		status = rtw8821a_llt_write(rtwdev, i, i + 1);
+		if (status)
+			return status;
+	}
+
+	status = rtw8821a_llt_write(rtwdev, boundary - 1, 0xFF);
+	if (status)
+		return status;
+
+	for (i = boundary; i < last_entry; i++) {
+		status = rtw8821a_llt_write(rtwdev, i, i + 1);
+		if (status)
+			return status;
+	}
+
+	status = rtw8821a_llt_write(rtwdev, last_entry, boundary);
+
+	return status;
+}
+
 static void rtw8821au_init_queue_reserved_page(struct rtw_dev *rtwdev)
 {
 	const struct rtw_chip_info *chip = rtwdev->chip;
@@ -1836,8 +1886,7 @@ static int rtw8821a_power_on(struct rtw_dev *rtwdev)
 		goto err;
 	}
 
-	///TODO: undo that commit which introduced this function. move it here
-	ret = rtw_llt_init_legacy_old(rtwdev, rtwdev->fifo.rsvd_boundary);
+	ret = rtw8821a_llt_init(rtwdev, rtwdev->fifo.rsvd_boundary);
 	if (ret) {
 		rtw_err(rtwdev, "failed to init llt\n");
 		goto err;
@@ -4509,7 +4558,6 @@ static struct rtw_chip_ops rtw8821a_ops = {
 	.query_rx_desc		= rtw8821a_query_rx_desc,	///
 	.set_channel		= rtw8821a_set_channel,		///
 	.mac_init		= rtw8821a_mac_init,		///
-	.llt_init_legacy	= rtw_llt_init_legacy_old,	///
 	.read_rf		= rtw8821a_phy_read_rf,		///
 	.write_rf		= rtw_phy_write_rf_reg_sipi,	///
 	.set_antenna		= NULL,				///
