@@ -315,11 +315,6 @@ static int rtw_mac_power_switch(struct rtw_dev *rtwdev, bool pwr_on)
 		    chip->id == RTW_CHIP_TYPE_8822B ||
 		    chip->id == RTW_CHIP_TYPE_8821C)
 			rtw_write8_clr(rtwdev, REG_SYS_STATUS1 + 1, BIT(0));
-
-		if (chip->id == RTW_CHIP_TYPE_8821A) {
-			if (rtw_read8(rtwdev, REG_SYS_CFG1 + 3) & BIT(0))
-				rtw_write8_set(rtwdev, REG_LDO_SWR_CTRL, BIT(6));
-		}
 	}
 
 	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_SDIO)
@@ -1134,7 +1129,7 @@ static int txdma_queue_mapping(struct rtw_dev *rtwdev)
 	return 0;
 }
 
-int set_trx_fifo_info(struct rtw_dev *rtwdev)
+int rtw_set_trx_fifo_info(struct rtw_dev *rtwdev)
 {
 	const struct rtw_chip_info *chip = rtwdev->chip;
 	struct rtw_fifo_conf *fifo = &rtwdev->fifo;
@@ -1186,7 +1181,7 @@ int set_trx_fifo_info(struct rtw_dev *rtwdev)
 
 	return 0;
 }
-EXPORT_SYMBOL(set_trx_fifo_info);
+EXPORT_SYMBOL(rtw_set_trx_fifo_info);
 
 static int __priority_queue_cfg(struct rtw_dev *rtwdev,
 				const struct rtw_page_table *pg_tbl,
@@ -1264,7 +1259,7 @@ static int priority_queue_cfg(struct rtw_dev *rtwdev)
 	u16 pubq_num;
 	int ret;
 
-	ret = set_trx_fifo_info(rtwdev);
+	ret = rtw_set_trx_fifo_info(rtwdev);
 	if (ret)
 		return ret;
 
