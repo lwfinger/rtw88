@@ -25,6 +25,10 @@ endif
 ifneq ("","$(wildcard $(MODDESTDIR)/*.ko.xz)")
 COMPRESS_XZ := y
 endif
+ifneq ("","$(wildcard $(MODDESTDIR)/*.ko.zst)")
+COMPRESS_ZSTD := y
+endif
+
 ifeq ("","$(wildcard MOK.der)")
 NO_SKIP_SIGN := y
 endif
@@ -175,7 +179,10 @@ ifeq ($(COMPRESS_GZIP), y)
 	@gzip -f $(MODDESTDIR)/*.ko
 endif
 ifeq ($(COMPRESS_XZ), y)
-	@xz -f $(MODDESTDIR)/*.ko
+	@xz -f -C crc32 $(MODDESTDIR)/*.ko
+endif
+ifeq ($(COMPRESS_ZSTD), y)
+	@zstd -f -q --rm $(MODDESTDIR)/*.ko
 endif
 
 	@depmod $(DEPMOD_ARGS) -a $(KVER)
