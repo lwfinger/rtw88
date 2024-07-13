@@ -232,44 +232,9 @@ ifeq ($(NO_SKIP_SIGN), y)
 else
 	echo "Skipping key creation"
 endif
-ifeq ($(CONFIG_PCI), y)
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_pci.ko
-endif
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_usb.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_sdio.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_core.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723d.ko
-ifeq ($(CONFIG_PCI), y)
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723de.ko
-endif
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723du.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723ds.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822b.ko
-ifeq ($(CONFIG_PCI), y)
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822be.ko
-endif
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822bu.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822bs.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821c.ko
-ifeq ($(CONFIG_PCI), y)
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821ce.ko
-endif
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821cu.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821cs.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822c.ko
-ifeq ($(CONFIG_PCI), y)
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822ce.ko
-endif
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822cu.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822cs.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821a.ko
-ifeq ($(CONFIG_PCI), y)
-endif
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821au.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8812au.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8703b.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723x.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723cs.ko
+	@for mod in $(shell find ./ -name "*.ko"); do \
+		$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der $$mod; \
+	done
 
 sign-install: all sign install
 
