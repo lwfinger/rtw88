@@ -3,8 +3,6 @@ KVER ?= $(if $(KERNELRELEASE),$(KERNELRELEASE),$(shell uname -r))
 KSRC ?= $(if $(KERNEL_SRC),$(KERNEL_SRC),/lib/modules/$(KVER)/build)
 FIRMWAREDIR := /lib/firmware/
 PWD := $(shell pwd)
-CLR_MODULE_FILES := *.mod.c *.mod *.o .*.cmd *.ko *~ .tmp_versions* modules.order Module.symvers
-SYMBOL_FILE := Module.symvers
 # Handle the move of the entire rtw88 tree
 ifneq ("","$(wildcard /lib/modules/$(KVER)/kernel/drivers/net/wireless/realtek)")
 MODDESTDIR := /lib/modules/$(KVER)/kernel/drivers/net/wireless/realtek/rtw88
@@ -218,12 +216,8 @@ endif
 	@echo "Uninstall rtw88 SUCCESS"
 
 clean:
-	@rm -fr *.mod.c *.mod *.cmd *.o .*.cmd *.ko *~ .*.o.d .cache.mk
-	@rm -fr .tmp_versions
-	@rm -fr Modules.symvers
-	@rm -fr Module.symvers
-	@rm -fr Module.markers
-	@rm -fr modules.order
+	$(MAKE) -C $(KSRC) M=$$PWD clean
+	@rm -f MOK.*
 
 sign:
 ifeq ($(NO_SKIP_SIGN), y)
