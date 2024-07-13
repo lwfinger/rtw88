@@ -163,7 +163,7 @@ rtw_usb-objs                := usb.o
 ccflags-y += -D__CHECK_ENDIAN__
 
 all: 
-	$(MAKE) -C $(KSRC) M=$(PWD) modules
+	$(MAKE) -j`nproc` -C $(KSRC) M=$(PWD) modules
 install: all
 	@mkdir -p $(MODDESTDIR)
 	@install -p -D -m 644 *.ko $(MODDESTDIR)	
