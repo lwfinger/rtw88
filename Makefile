@@ -1,7 +1,7 @@
 SHELL := /bin/sh
 KVER ?= $(if $(KERNELRELEASE),$(KERNELRELEASE),$(shell uname -r))
 KSRC ?= $(if $(KERNEL_SRC),$(KERNEL_SRC),/lib/modules/$(KVER)/build)
-FIRMWAREDIR := /lib/firmware/
+FIRMWAREDIR := /lib/firmware/rtw88
 PWD := $(shell pwd)
 # Handle the move of the entire rtw88 tree
 ifneq ("","$(wildcard /lib/modules/$(KVER)/kernel/drivers/net/wireless/realtek)")
@@ -169,12 +169,12 @@ ccflags-y += -D__CHECK_ENDIAN__
 
 all: 
 	$(MAKE) -j`nproc` -C $(KSRC) M=$(PWD) modules
+	
 install: all
-	@mkdir -p $(MODDESTDIR)
-	@install -p -D -m 644 *.ko $(MODDESTDIR)	
-	@#copy firmware images to target folder
-	@mkdir -p $(FIRMWAREDIR)/rtw88/
-	@cp -f *.bin $(FIRMWAREDIR)/rtw88/
+	@install -D -m 644 -t $(MODDESTDIR) *.ko
+	@# copy firmware images to target folder
+	@install -D -m 644 -t $(FIRMWAREDIR) firmware/*.bin
+
 ifeq ($(COMPRESS_GZIP), y)
 	@gzip -f $(MODDESTDIR)/*.ko
 endif
@@ -186,10 +186,7 @@ ifeq ($(COMPRESS_ZSTD), y)
 endif
 
 	@depmod $(DEPMOD_ARGS) -a $(KVER)
-
-	@echo "Install rtw88 SUCCESS"
-
-
+	@echo "The driver rtw88 and its firmware installed successfully!"
 
 uninstall:
 	modprobe -r rtw_8723cs
