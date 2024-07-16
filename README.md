@@ -8,13 +8,12 @@
 ---
 
 ### Compatibility
+
 Compatible with **Linux kernel versions 5.4 and newer** as long as your distro hasn't modified any kernel APIs.
 
-⚠️ **Ubuntu users, expect API changes!** We **will not** modify the source for you. You are on your own!
-
-#### Supported Cards
+#### Supported Chipsets
 - **PCIe**: RTW8822BE, RTW8822CE, RTW8821CE, RTW8723DE
-- **USB**: RTW8822BU, RTW8822CU, RTW8821CU, RTW8723DU
+- **USB**: RTW8822BU, RTW8822CU, RTW8821CU, RTW8723DU, RTW8812AU, RTW8821AU
 - **SDIO**: RTW8822BS, RTW8822CS, RTW8821CS, RTW8723DS
 
 **Are you looking for support for these drivers?** 🔎 ⚠️
@@ -86,7 +85,7 @@ cd rtw88-dkms-git
 makepkg -sri
 ```
 
-#### Raspberry PiOS
+#### Raspberry Pi OS
 ```bash
 sudo apt update && sudo apt upgrade
 ```
