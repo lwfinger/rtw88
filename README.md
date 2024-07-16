@@ -56,13 +56,17 @@ Below are prerequisites for common Linux distributions __before__ you do a [basi
 
 #### Ubuntu
 ```bash
-sudo apt-get update
-sudo apt-get install make gcc linux-headers-$(uname -r) build-essential git
+sudo apt update && sudo apt upgrade
+```
+```bash
+sudo apt install make gcc linux-headers-$(uname -r) build-essential git
 ```
 
 #### Fedora
 ```bash
 sudo dnf install kernel-headers kernel-devel
+```
+```bash
 sudo dnf group install "C Development Tools and Libraries"
 ```
 
@@ -74,9 +78,22 @@ sudo zypper install make gcc kernel-devel kernel-default-devel git libopenssl-de
 #### Arch
 ```bash
 git clone https://aur.archlinux.org/rtw88-dkms-git.git
+```
+```bash
 cd rtw88-dkms-git
+```
+```bash
 makepkg -sri
 ```
+
+#### Raspberry PiOS
+```bash
+sudo apt update && sudo apt upgrade
+```
+```bash
+sudo apt install -y raspberrypi-kernel-headers build-essential bc git
+```
+
 ---
 ### Basic Installation for All Distros 🛠
 
