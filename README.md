@@ -13,7 +13,7 @@ Compatible with **Linux kernel versions 5.4 and newer** as long as your distro h
 
 #### Supported Chipsets
 - **PCIe**: RTW8822BE, RTW8822CE, RTW8821CE, RTW8723DE
-- **USB**: RTW8822BU, RTW8822CU, RTW8821CU, RTW8723DU, RTW8812AU, RTW8821AU
+- **USB**:RTW8812AU, RTW8821AU, RTW8811AU, RTW8822BU, RTW8812BU, RTW8822CU, RTW8821CU, RTW8811CU, RTW8723DU
 - **SDIO**: RTW8822BS, RTW8822CS, RTW8821CS, RTW8723DS
 
 **Are you looking for support for these drivers?** 🔎 ⚠️
