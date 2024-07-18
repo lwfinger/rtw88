@@ -9,11 +9,11 @@
 
 ### Compatibility
 
-Compatible with **Linux kernel versions 5.4 and newer** as long as your distro hasn't modified any kernel APIs.
+Compatible with **Linux kernel versions 5.4 and newer** as long as your distro hasn't modified any kernel APIs. RHEL and all distros based on RHEL will have modified kernel APIs and are unlikely to be compatible with this driver.
 
 #### Supported Chipsets
+- **USB** : RTW8812AU, RTW8821AU, RTW8811AU, RTW8822BU, RTW8812BU, RTW8822CU, RTW8821CU, RTW8811CU, RTW8723DU
 - **PCIe**: RTW8822BE, RTW8822CE, RTW8821CE, RTW8723DE
-- **USB**:RTW8812AU, RTW8821AU, RTW8811AU, RTW8822BU, RTW8812BU, RTW8822CU, RTW8821CU, RTW8811CU, RTW8723DU
 - **SDIO**: RTW8822BS, RTW8822CS, RTW8821CS, RTW8723DS
 
 **Are you looking for support for these drivers?** 🔎 ⚠️
