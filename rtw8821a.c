@@ -1679,30 +1679,6 @@ static void rtw8821a_query_phy_status(struct rtw_dev *rtwdev, u8 *phy_status,
 				pkt_stat->rssi += 3;
 		}
 	} else { /* OFDM rate */
-		if (pkt_stat->rate >= DESC_RATEMCS0) {
-			switch (phy_sts->r_rfmod) {
-			case 1:
-				if (phy_sts->sub_chnl == 0)
-					pkt_stat->bw = 1;
-				else
-					pkt_stat->bw = 0;
-				break;
-			case 2:
-				if (phy_sts->sub_chnl == 0)
-					pkt_stat->bw = 2;
-				else if (phy_sts->sub_chnl == 9 ||
-					 phy_sts->sub_chnl == 10)
-					pkt_stat->bw = 1;
-				else
-					pkt_stat->bw = 0;
-				break;
-			default:
-			case 0:
-				pkt_stat->bw = 0;
-				break;
-			}
-		}
-
 		for (i = RF_PATH_A; i < rtwdev->hal.rf_path_num; i++) {
 			val = phy_sts->gain_trsw[i];
 			pkt_stat->rx_power[i] = (val & 0x7F) - 110;
@@ -1745,6 +1721,7 @@ static void rtw8821a_query_rx_desc(struct rtw_dev *rtwdev, u8 *rx_desc,
 	pkt_stat->cam_id = GET_RX_DESC_MACID(rx_desc);
 	pkt_stat->ppdu_cnt = 0;
 	pkt_stat->tsf_low = GET_RX_DESC_TSFL(rx_desc);
+	pkt_stat->bw = GET_RX_DESC_BW(rx_desc);
 
 	/* drv_info_sz is in unit of 8-bytes */
 	pkt_stat->drv_info_sz *= 8;
