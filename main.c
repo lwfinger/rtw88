@@ -216,8 +216,10 @@ static void rtw_watch_dog_work(struct work_struct *work)
 	struct rtw_dev *rtwdev = container_of(work, struct rtw_dev,
 					      watch_dog_work.work);
 	struct rtw_traffic_stats *stats = &rtwdev->stats;
+	const struct rtw_chip_info *chip = rtwdev->chip;
 	struct rtw_watch_dog_iter_data data = {};
 	bool busy_traffic = test_bit(RTW_FLAG_BUSY_TRAFFIC, rtwdev->flags);
+	u32 tx_unicast_shift, rx_unicast_shift;
 	bool ps_active;
 
 	mutex_lock(&rtwdev->mutex);
@@ -242,12 +244,20 @@ static void rtw_watch_dog_work(struct work_struct *work)
 	else
 		ps_active = false;
 
-	ewma_tp_add(&stats->tx_ewma_tp,
-		    (u32)(stats->tx_unicast >> RTW_TP_SHIFT));
-	ewma_tp_add(&stats->rx_ewma_tp,
-		    (u32)(stats->rx_unicast >> RTW_TP_SHIFT));
+	tx_unicast_shift = stats->tx_unicast >> RTW_TP_SHIFT;
+	rx_unicast_shift = stats->rx_unicast >> RTW_TP_SHIFT;
+
+	ewma_tp_add(&stats->tx_ewma_tp, tx_unicast_shift);
+	ewma_tp_add(&stats->rx_ewma_tp, rx_unicast_shift);
 	stats->tx_throughput = ewma_tp_read(&stats->tx_ewma_tp);
 	stats->rx_throughput = ewma_tp_read(&stats->rx_ewma_tp);
+
+	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_USB && chip->ops->rx_aggregation) {
+		if (tx_unicast_shift < 1 && rx_unicast_shift < 1)
+			chip->ops->rx_aggregation(rtwdev, false);
+		else
+			chip->ops->rx_aggregation(rtwdev, true);
+	}
 
 	/* reset tx/rx statictics */
 	stats->tx_unicast = 0;
