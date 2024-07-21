@@ -1,10 +1,8 @@
 SHELL := /bin/sh
 KVER ?= $(if $(KERNELRELEASE),$(KERNELRELEASE),$(shell uname -r))
 KSRC ?= $(if $(KERNEL_SRC),$(KERNEL_SRC),/lib/modules/$(KVER)/build)
-FIRMWAREDIR := /lib/firmware/
+FIRMWAREDIR := /lib/firmware/rtw88
 PWD := $(shell pwd)
-CLR_MODULE_FILES := *.mod.c *.mod *.o .*.cmd *.ko *~ .tmp_versions* modules.order Module.symvers
-SYMBOL_FILE := Module.symvers
 # Handle the move of the entire rtw88 tree
 ifneq ("","$(wildcard /lib/modules/$(KVER)/kernel/drivers/net/wireless/realtek)")
 MODDESTDIR := /lib/modules/$(KVER)/kernel/drivers/net/wireless/realtek/rtw88
@@ -170,13 +168,13 @@ rtw_usb-objs                := usb.o
 ccflags-y += -D__CHECK_ENDIAN__
 
 all: 
-	$(MAKE) -C $(KSRC) M=$(PWD) modules
+	$(MAKE) -j`nproc` -C $(KSRC) M=$(PWD) modules
+	
 install: all
-	@mkdir -p $(MODDESTDIR)
-	@install -p -D -m 644 *.ko $(MODDESTDIR)	
-	@#copy firmware images to target folder
-	@mkdir -p $(FIRMWAREDIR)/rtw88/
-	@cp -f *.bin $(FIRMWAREDIR)/rtw88/
+	@install -D -m 644 -t $(MODDESTDIR) *.ko
+	@# copy firmware images to target folder
+	@install -D -m 644 -t $(FIRMWAREDIR) firmware/*.bin
+
 ifeq ($(COMPRESS_GZIP), y)
 	@gzip -f $(MODDESTDIR)/*.ko
 endif
@@ -188,10 +186,7 @@ ifeq ($(COMPRESS_ZSTD), y)
 endif
 
 	@depmod $(DEPMOD_ARGS) -a $(KVER)
-
-	@echo "Install rtw88 SUCCESS"
-
-
+	@echo "The driver rtw88 and its firmware installed successfully!"
 
 uninstall:
 	modprobe -r rtw_8723cs
@@ -225,12 +220,8 @@ endif
 	@echo "Uninstall rtw88 SUCCESS"
 
 clean:
-	@rm -fr *.mod.c *.mod *.cmd *.o .*.cmd *.ko *~ .*.o.d .cache.mk
-	@rm -fr .tmp_versions
-	@rm -fr Modules.symvers
-	@rm -fr Module.symvers
-	@rm -fr Module.markers
-	@rm -fr modules.order
+	$(MAKE) -C $(KSRC) M=$$PWD clean
+	@rm -f MOK.*
 
 sign:
 ifeq ($(NO_SKIP_SIGN), y)
@@ -239,44 +230,9 @@ ifeq ($(NO_SKIP_SIGN), y)
 else
 	echo "Skipping key creation"
 endif
-ifeq ($(CONFIG_PCI), y)
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_pci.ko
-endif
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_usb.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_sdio.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_core.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723d.ko
-ifeq ($(CONFIG_PCI), y)
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723de.ko
-endif
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723du.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723ds.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822b.ko
-ifeq ($(CONFIG_PCI), y)
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822be.ko
-endif
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822bu.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822bs.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821c.ko
-ifeq ($(CONFIG_PCI), y)
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821ce.ko
-endif
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821cu.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821cs.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822c.ko
-ifeq ($(CONFIG_PCI), y)
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822ce.ko
-endif
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822cu.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8822cs.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821a.ko
-ifeq ($(CONFIG_PCI), y)
-endif
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8821au.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8812au.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8703b.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723x.ko
-	@$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der rtw_8723cs.ko
+	@for mod in $(shell find ./ -name "*.ko"); do \
+		$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der $$mod; \
+	done
 
 sign-install: all sign install
 
