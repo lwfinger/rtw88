@@ -99,7 +99,6 @@ static void __rtw8723x_debug_txpwr_limit(struct rtw_dev *rtwdev,
 					 struct rtw_txpwr_idx *table,
 					 int tx_path_count)
 {
-	int i;
 	if (!rtw_dbg_is_enabled(rtwdev, RTW_DBG_EFUSE))
 		return;
 
@@ -108,7 +107,7 @@ static void __rtw8723x_debug_txpwr_limit(struct rtw_dev *rtwdev,
 	/* CCK base */
 	rtw_dbg(rtwdev, RTW_DBG_EFUSE, "CCK base\n");
 	rtw_dbg(rtwdev, RTW_DBG_EFUSE, "RF    G0  G1  G2  G3  G4  G5\n");
-	for (i = 0; i < tx_path_count; i++)
+	for (int i = 0; i < tx_path_count; i++)
 		rtw_dbg(rtwdev, RTW_DBG_EFUSE,
 			"[%c]: %3u %3u %3u %3u %3u %3u\n",
 			'A' + i,
@@ -121,7 +120,7 @@ static void __rtw8723x_debug_txpwr_limit(struct rtw_dev *rtwdev,
 	/* CCK diff */
 	rtw_dbg(rtwdev, RTW_DBG_EFUSE, "CCK diff\n");
 	rtw_dbg(rtwdev, RTW_DBG_EFUSE, "RF   1S 2S 3S 4S\n");
-	for (i = 0; i < tx_path_count; i++)
+	for (int i = 0; i < tx_path_count; i++)
 		rtw_dbg(rtwdev, RTW_DBG_EFUSE,
 			"[%c]: %2d %2d %2d %2d\n",
 			'A' + i, 0 /* no diff for 1S */,
@@ -131,7 +130,7 @@ static void __rtw8723x_debug_txpwr_limit(struct rtw_dev *rtwdev,
 	/* BW40-1S base */
 	rtw_dbg(rtwdev, RTW_DBG_EFUSE, "BW40-1S base\n");
 	rtw_dbg(rtwdev, RTW_DBG_EFUSE, "RF    G0  G1  G2  G3  G4\n");
-	for (i = 0; i < tx_path_count; i++)
+	for (int i = 0; i < tx_path_count; i++)
 		rtw_dbg(rtwdev, RTW_DBG_EFUSE,
 			"[%c]: %3u %3u %3u %3u %3u\n",
 			'A' + i,
@@ -143,7 +142,7 @@ static void __rtw8723x_debug_txpwr_limit(struct rtw_dev *rtwdev,
 	/* OFDM diff */
 	rtw_dbg(rtwdev, RTW_DBG_EFUSE, "OFDM diff\n");
 	rtw_dbg(rtwdev, RTW_DBG_EFUSE, "RF   1S 2S 3S 4S\n");
-	for (i = 0; i < tx_path_count; i++)
+	for (int i = 0; i < tx_path_count; i++)
 		rtw_dbg(rtwdev, RTW_DBG_EFUSE,
 			"[%c]: %2d %2d %2d %2d\n",
 			'A' + i,
@@ -154,7 +153,7 @@ static void __rtw8723x_debug_txpwr_limit(struct rtw_dev *rtwdev,
 	/* BW20 diff */
 	rtw_dbg(rtwdev, RTW_DBG_EFUSE, "BW20 diff\n");
 	rtw_dbg(rtwdev, RTW_DBG_EFUSE, "RF   1S 2S 3S 4S\n");
-	for (i = 0; i < tx_path_count; i++)
+	for (int i = 0; i < tx_path_count; i++)
 		rtw_dbg(rtwdev, RTW_DBG_EFUSE,
 			"[%c]: %2d %2d %2d %2d\n",
 			'A' + i,
@@ -165,7 +164,7 @@ static void __rtw8723x_debug_txpwr_limit(struct rtw_dev *rtwdev,
 	/* BW40 diff */
 	rtw_dbg(rtwdev, RTW_DBG_EFUSE, "BW40 diff\n");
 	rtw_dbg(rtwdev, RTW_DBG_EFUSE, "RF   1S 2S 3S 4S\n");
-	for (i = 0; i < tx_path_count; i++)
+	for (int i = 0; i < tx_path_count; i++)
 		rtw_dbg(rtwdev, RTW_DBG_EFUSE,
 			"[%c]: %2d %2d %2d %2d\n",
 			'A' + i, 0 /* no diff for 1S */,

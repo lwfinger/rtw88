@@ -219,7 +219,6 @@ static void rtw_watch_dog_work(struct work_struct *work)
 	struct rtw_watch_dog_iter_data data = {};
 	bool busy_traffic = test_bit(RTW_FLAG_BUSY_TRAFFIC, rtwdev->flags);
 	bool ps_active;
-	int received_beacons;
 
 	mutex_lock(&rtwdev->mutex);
 
@@ -259,7 +258,7 @@ static void rtw_watch_dog_work(struct work_struct *work)
 	if (test_bit(RTW_FLAG_SCANNING, rtwdev->flags))
 		goto unlock;
 
-	received_beacons = rtwdev->dm_info.cur_pkt_count.num_bcn_pkt;
+	int received_beacons = rtwdev->dm_info.cur_pkt_count.num_bcn_pkt;
 
 	/* make sure BB/RF is working for dynamic mech */
 	rtw_leave_lps(rtwdev);

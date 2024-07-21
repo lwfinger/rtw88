@@ -511,8 +511,7 @@ rtw8723x_iqk_restore_lte_path_gnt(struct rtw_dev *rtwdev,
 /* set all ADDA registers to the given value */
 static inline void rtw8723x_iqk_path_adda_on(struct rtw_dev *rtwdev, u32 value)
 {
-	int i;
-	for (i = 0; i < RTW8723X_IQK_ADDA_REG_NUM; i++)
+	for (int i = 0; i < RTW8723X_IQK_ADDA_REG_NUM; i++)
 		rtw_write32(rtwdev, rtw8723x_common.iqk_adda_regs[i], value);
 }
 
