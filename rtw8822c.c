@@ -2001,6 +2001,25 @@ static void rtw8822c_phy_set_param(struct rtw_dev *rtwdev)
 #define MAC_CLK_SPEED	80 /* 80M */
 #define EFUSE_PCB_INFO_OFFSET	0xCA
 
+static void rtw8822cu_init_burst_pkt_len(struct rtw_dev *rtwdev)
+{
+	u8 rxdma, burst_size;
+
+	rxdma = BIT_DMA_BURST_CNT | BIT_DMA_MODE;
+
+	if (rtw_read8(rtwdev, REG_SYS_CFG2 + 3) == 0x20)
+		burst_size = BIT_DMA_BURST_SIZE_1024;
+	else if ((rtw_read8(rtwdev, REG_USB_USBSTAT) & 0x3) == 0x1)
+		burst_size = BIT_DMA_BURST_SIZE_512;
+	else
+		burst_size = BIT_DMA_BURST_SIZE_64;
+
+	u8p_replace_bits(&rxdma, burst_size, BIT_DMA_BURST_SIZE);
+
+	rtw_write8(rtwdev, REG_RXDMA_MODE, rxdma);
+	rtw_write16_set(rtwdev, REG_TXDMA_OFFSET_CHK, BIT_DROP_DATA_EN);
+}
+
 static int rtw8822c_mac_init(struct rtw_dev *rtwdev)
 {
 	u8 value8;
@@ -2126,6 +2145,9 @@ static int rtw8822c_mac_init(struct rtw_dev *rtwdev)
 
 	/* Interrupt migration configuration */
 	rtw_write32(rtwdev, REG_INT_MIG, WLAN_MAC_INT_MIG_CFG);
+
+	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_USB)
+		rtw8822cu_init_burst_pkt_len(rtwdev);
 
 	return 0;
 }
