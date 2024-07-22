@@ -168,6 +168,7 @@ all:
 install: all
 	@install -D -m 644 -t $(MODDESTDIR) *.ko
 	@install -D -m 644 -t $(FIRMWAREDIR) firmware/*.bin
+	@install -D -m 644 -t /etc/modprobe.d blacklist-rtw88.conf
 
 ifeq ($(COMPRESS_GZIP), y)
 	@gzip -f $(MODDESTDIR)/*.ko
