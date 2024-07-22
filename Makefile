@@ -2,7 +2,6 @@ SHELL := /bin/sh
 KVER ?= $(if $(KERNELRELEASE),$(KERNELRELEASE),$(shell uname -r))
 KSRC ?= $(if $(KERNEL_SRC),$(KERNEL_SRC),/lib/modules/$(KVER)/build)
 FIRMWAREDIR := /lib/firmware/rtw88
-PWD := $(shell pwd)
 # Handle the move of the entire rtw88 tree
 ifneq ("","$(wildcard /lib/modules/$(KVER)/kernel/drivers/net/wireless/realtek)")
 MODDESTDIR := /lib/modules/$(KVER)/kernel/drivers/net/wireless/realtek/rtw88
@@ -42,137 +41,132 @@ EXTRA_CFLAGS += -DCONFIG_RTW88_DEBUG=1
 EXTRA_CFLAGS += -DCONFIG_RTW88_DEBUGFS=1
 #EXTRA_CFLAGS += -DCONFIG_RTW88_REGD_USER_REG_HINTS
 
-obj-m	+= rtw_core.o
-rtw_core-objs += main.o \
-	   mac80211.o \
-	   util.o \
-	   debug.o \
-	   tx.o \
-	   rx.o \
-	   mac.o \
-	   phy.o \
-	   coex.o \
-	   efuse.o \
-	   fw.o \
-	   ps.o \
-	   sec.o \
-	   bf.o \
-	   regd.o \
-	   sar.o
+obj-m		+= rtw_core.o
+rtw_core-objs	+= main.o \
+		   mac80211.o \
+		   util.o \
+		   debug.o \
+		   tx.o \
+		   rx.o \
+		   mac.o \
+		   phy.o \
+		   coex.o \
+		   efuse.o \
+		   fw.o \
+		   ps.o \
+		   sec.o \
+		   bf.o \
+		   regd.o \
+		   sar.o
 
 ifeq ($(CONFIG_PM), y)
-rtw_core-objs += wow.o
+rtw_core-objs	+= wow.o
 endif
 
-obj-m       += rtw_8822b.o
-rtw_8822b-objs                := rtw8822b.o rtw8822b_table.o
-
-ifeq ($(CONFIG_PCI), y)
-obj-m      += rtw_8822be.o
-rtw_8822be-objs               := rtw8822be.o
-endif
-
-obj-m      += rtw_8822bu.o
-rtw_8822bu-objs		:= rtw8822bu.o
+obj-m		+= rtw_8703b.o
+rtw_8703b-objs	:= rtw8703b.o rtw8703b_tables.o
 
 ifneq ($(CONFIG_MMC), )
-obj-m	   += rtw_8822bs.o
-rtw_8822bs-objs		:= rtw8822bs.o
+obj-m		+= rtw_8723cs.o
+rtw_8723cs-objs	:= rtw8723cs.o
 endif
 
-obj-m       += rtw_8822c.o
-rtw_8822c-objs                := rtw8822c.o rtw8822c_table.o
+obj-m		+= rtw_8723d.o
+rtw_8723d-objs	:= rtw8723d.o rtw8723d_table.o
 
 ifeq ($(CONFIG_PCI), y)
-obj-m      += rtw_8822ce.o
-rtw_8822ce-objs               := rtw8822ce.o
-endif
-
-obj-m      += rtw_8822cu.o
-rtw_8822cu-objs		:= rtw8822cu.o
-
-obj-m	   += rtw_8723x.o
-rtw_8723x-objs		:= rtw8723x.o
-
-obj-m	   += rtw_8703b.o
-rtw_8703b-objs		:= rtw8703b.o rtw8703b_tables.o
-
-obj-m	   += rtw_8723x.o
-rtw_8723x-objs		:= rtw8723x.o
-
-ifneq ($(CONFIG_MMC), )
-obj-m	   += rtw_8822cs.o
-rtw_8822cs-objs		:= rtw8822cs.o
-
-obj-m	    += rtw_8723cs.o
-rtw_8723cs-objs		:= rtw8723cs.o
-endif
-
-obj-m       += rtw_8723d.o
-rtw_8723d-objs          := rtw8723d.o rtw8723d_table.o
-
-ifeq ($(CONFIG_PCI), y)
-obj-m      += rtw_8723de.o
-rtw_8723de-objs               := rtw8723de.o
-endif
-
-obj-m      += rtw_8723du.o
-rtw_8723du-objs		:= rtw8723du.o
-
-ifneq ($(CONFIG_MMC), )
-obj-m      += rtw_8723ds.o
-rtw_8723ds-objs		:= rtw8723ds.o
-endif
-
-obj-m	+= rtw_8821c.o
-rtw_8821c-objs		:= rtw8821c.o rtw8821c_table.o
-
-ifeq ($(CONFIG_PCI), y)
-obj-m	+= rtw_8821ce.o
-rtw_8821ce-objs		:= rtw8821ce.o
-endif
-
-obj-m	+= rtw_8821a.o
-rtw_8821a-objs		:= rtw8821a.o rtw8821a_table.o rtw8812a_table.o
-
-obj-m	   += rtw_8821au.o
-rtw_8821au-objs		:= rtw8821au.o
-
-obj-m	   += rtw_8812au.o
-rtw_8812au-objs		:= rtw8812au.o
-
-ifneq ($(CONFIG_MMC), )
-obj-m	   += rtw_8821cs.o
-rtw_8821cs-objs		:= rtw8821cs.o
-endif
-
-obj-m	+= rtw_8821cu.o
-rtw_8821cu-objs		:= rtw8821cu.o
-
-ifeq ($(CONFIG_PCI), y)
-obj-m			+= rtw_pci.o
-rtw_pci-objs		:= pci.o
+obj-m		+= rtw_8723de.o
+rtw_8723de-objs	:= rtw8723de.o
 endif
 
 ifneq ($(CONFIG_MMC), )
-obj-m			+= rtw_sdio.o
-rtw_sdio-objs		:= sdio.o
+obj-m		+= rtw_8723ds.o
+rtw_8723ds-objs	:= rtw8723ds.o
 endif
 
-obj-m			+= rtw_usb.o
-rtw_usb-objs		:= usb.o
+obj-m		+= rtw_8723du.o
+rtw_8723du-objs	:= rtw8723du.o
 
-obj-m         += rtw_usb.o
-rtw_usb-objs                := usb.o
+obj-m		+= rtw_8723x.o
+rtw_8723x-objs	:= rtw8723x.o
+
+obj-m		+= rtw_8812au.o
+rtw_8812au-objs	:= rtw8812au.o
+
+obj-m		+= rtw_8821a.o
+rtw_8821a-objs	:= rtw8821a.o rtw8821a_table.o rtw8812a_table.o
+
+obj-m		+= rtw_8821au.o
+rtw_8821au-objs	:= rtw8821au.o
+
+obj-m		+= rtw_8821c.o
+rtw_8821c-objs	:= rtw8821c.o rtw8821c_table.o
+
+ifeq ($(CONFIG_PCI), y)
+obj-m		+= rtw_8821ce.o
+rtw_8821ce-objs	:= rtw8821ce.o
+endif
+
+ifneq ($(CONFIG_MMC), )
+obj-m		+= rtw_8821cs.o
+rtw_8821cs-objs	:= rtw8821cs.o
+endif
+
+obj-m		+= rtw_8821cu.o
+rtw_8821cu-objs	:= rtw8821cu.o
+
+obj-m		+= rtw_8822b.o
+rtw_8822b-objs	:= rtw8822b.o rtw8822b_table.o
+
+ifeq ($(CONFIG_PCI), y)
+obj-m		+= rtw_8822be.o
+rtw_8822be-objs	:= rtw8822be.o
+endif
+
+ifneq ($(CONFIG_MMC), )
+obj-m		+= rtw_8822bs.o
+rtw_8822bs-objs	:= rtw8822bs.o
+endif
+
+obj-m		+= rtw_8822bu.o
+rtw_8822bu-objs	:= rtw8822bu.o
+
+obj-m		+= rtw_8822c.o
+rtw_8822c-objs	:= rtw8822c.o rtw8822c_table.o
+
+ifeq ($(CONFIG_PCI), y)
+obj-m		+= rtw_8822ce.o
+rtw_8822ce-objs	:= rtw8822ce.o
+endif
+
+ifneq ($(CONFIG_MMC), )
+obj-m		+= rtw_8822cs.o
+rtw_8822cs-objs	:= rtw8822cs.o
+endif
+
+obj-m		+= rtw_8822cu.o
+rtw_8822cu-objs	:= rtw8822cu.o
+
+ifeq ($(CONFIG_PCI), y)
+obj-m		+= rtw_pci.o
+rtw_pci-objs	:= pci.o
+endif
+
+ifneq ($(CONFIG_MMC), )
+obj-m		+= rtw_sdio.o
+rtw_sdio-objs	:= sdio.o
+endif
+
+obj-m		+= rtw_usb.o
+rtw_usb-objs	:= usb.o
 
 ccflags-y += -D__CHECK_ENDIAN__
 
 all: 
-	$(MAKE) -j`nproc` -C $(KSRC) M=$(PWD) modules
+	$(MAKE) -j`nproc` -C $(KSRC) M=$$PWD modules
 	
 install: all
 	@install -D -m 644 -t $(MODDESTDIR) *.ko
-	@# copy firmware images to target folder
 	@install -D -m 644 -t $(FIRMWAREDIR) firmware/*.bin
 
 ifeq ($(COMPRESS_GZIP), y)
@@ -230,7 +224,7 @@ ifeq ($(NO_SKIP_SIGN), y)
 else
 	echo "Skipping key creation"
 endif
-	@for mod in $(shell find ./ -name "*.ko"); do \
+	@for mod in $(wildcard *.ko); do \
 		$(KSRC)/scripts/sign-file sha256 MOK.priv MOK.der $$mod; \
 	done
 
