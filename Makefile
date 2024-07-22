@@ -33,7 +33,7 @@ ifeq ("","$(wildcard MOK.der)")
 NO_SKIP_SIGN := y
 endif
 
-EXTRA_CFLAGS += -O2
+EXTRA_CFLAGS += -O2 -std=gnu11 -Wno-declaration-after-statement
 ifeq ($(CONFIG_PCI), y)
 EXTRA_CFLAGS += -DCONFIG_RTW88_8822BE=1
 EXTRA_CFLAGS += -DCONFIG_RTW88_8821CE=1
