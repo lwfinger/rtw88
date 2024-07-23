@@ -1,5 +1,5 @@
-# rtw88 📡🐧
-### A Repo for the Latest Realtek WiFi 5 Codes on Linux
+# rtw88 downstream 🐧
+### This is a downstream repo for the Linux in-kernel rtw88 series of drivers for Realtek WiFi 5 chips.
 
 🌟 **Up-to-Date Drivers**: The code in this repo stays in sync with the `wireless-next` repository, with additional changes to accommodate kernel API changes over time. The current repo matches the kernel as of March 5, 2024.
 
