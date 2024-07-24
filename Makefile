@@ -181,38 +181,17 @@ ifeq ($(COMPRESS_ZSTD), y)
 endif
 
 	@depmod $(DEPMOD_ARGS) -a $(KVER)
-	@echo "The driver rtw88 and its firmware installed successfully!"
+	@echo "The driver rtw88 and its firmware were installed successfully!"
 
 uninstall:
-	modprobe -r rtw_8723cs
-ifeq ($(CONFIG_PCI), y)
-	modprobe -r rtw_8723de
-endif
-	modprobe -r rtw_8723ds
-	modprobe -r rtw_8723du
-	modprobe -r rtw_8812au
-	modprobe -r rtw_8821au
-ifeq ($(CONFIG_PCI), y)
-	modprobe -r rtw_8821ce
-endif
-	modprobe -r rtw_8821cs
-	modprobe -r rtw_8821cu
-ifeq ($(CONFIG_PCI), y)
-	modprobe -r rtw_8822be
-endif
-	modprobe -r rtw_8822bs
-	modprobe -r rtw_8822bu
-ifeq ($(CONFIG_PCI), y)
-	modprobe -r rtw_8822ce
-endif
-	modprobe -r rtw_8822cs
-	modprobe -r rtw_8822cu
-	
-	rm -f $(MODDESTDIR)/rtw_*.ko*
-	
-	depmod $(DEPMOD_ARGS)
-	
-	@echo "Uninstall rtw88 SUCCESS"
+	@-rmmod -s rtw_8723{cs,de,ds,du} rtw_8812au rtw_8821{au,ce,cs,cu} rtw_8822{b{e,s,u},c{e,s,u}}
+	@-rmmod -s rtw_8703b rtw_8723d rtw_8821{a,c} rtw_8822{b,c}
+	@-rmmod -s rtw_{8723x,pci,sdio,usb}
+	@-rmmod -s rtw_core
+	@rm -vf $(MODDESTDIR)/rtw_*.ko*
+	@rm -vf /etc/modprobe.d/blacklist-rtw88.conf
+	@depmod $(DEPMOD_ARGS)
+	@echo "The driver rtw88 was removed successfully."
 
 clean:
 	$(MAKE) -C $(KSRC) M=$$PWD clean
