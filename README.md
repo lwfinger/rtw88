@@ -235,3 +235,13 @@ Yes, this repository provides a way to sign the kernel modules to be compatible 
 
 ### Q5: My card isn't listed. Can I request a feature?
 For feature requests like supporting a new card, you should reach out to Realtek engineers via E-mail at [linux-wireless@vger.kernel.org](mailto:linux-wireless@vger.kernel.org).
+
+---
+
+### Q6: How to remove this driver if it doesn't work as expected?
+Run this command in the rtw88 source directory and then the rtw88 driver will be unloaded and removed.
+
+`sudo make -s uninstall`
+
+---
+
