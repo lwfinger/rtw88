@@ -189,28 +189,26 @@ endif
 	@echo "The driver rtw88 and its firmware installed successfully!"
 
 uninstall:
+ifneq ($(CONFIG_MMC), )
 	modprobe -r rtw_8723cs
+	modprobe -r rtw_8723ds
+	modprobe -r rtw_8821cs
+	modprobe -r rtw_8822bs
+	modprobe -r rtw_8822cs
+endif
+
 ifeq ($(CONFIG_PCI), y)
 	modprobe -r rtw_8723de
+	modprobe -r rtw_8821ce
+	modprobe -r rtw_8822be
+	modprobe -r rtw_8822ce
 endif
-	modprobe -r rtw_8723ds
+
 	modprobe -r rtw_8723du
 	modprobe -r rtw_8812au
 	modprobe -r rtw_8821au
-ifeq ($(CONFIG_PCI), y)
-	modprobe -r rtw_8821ce
-endif
-	modprobe -r rtw_8821cs
 	modprobe -r rtw_8821cu
-ifeq ($(CONFIG_PCI), y)
-	modprobe -r rtw_8822be
-endif
-	modprobe -r rtw_8822bs
 	modprobe -r rtw_8822bu
-ifeq ($(CONFIG_PCI), y)
-	modprobe -r rtw_8822ce
-endif
-	modprobe -r rtw_8822cs
 	modprobe -r rtw_8822cu
 	
 	rm -f $(MODDESTDIR)/rtw_*.ko*
