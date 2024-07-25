@@ -194,11 +194,17 @@ The available options for rtw_core are disable_lps_deep, support_bf,  and debug_
 When your kernel updates, run:
 ```bash
 cd ~/rtw88
+```
+```
 git pull
+```
+```
 make
+```
+```
 sudo make install
 ```
-💡 **Remember, every new kernel requires this step - no exceptions**. If the update means that you have no network, skip the 'git pull' and build the possible oldeer version, but do that step once you have network, and rebuild if any updates were pulled.
+💡 **Remember, every new kernel requires this step - no exceptions**. If the kernel update means that you have no network, skip the 'git pull' and build the driver as it is, but run `git pull` once you have connectivity, and rebuild if any updates were pulled.
 
 ## FAQ
 
