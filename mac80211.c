@@ -64,7 +64,11 @@ static int rtw_ops_start(struct ieee80211_hw *hw)
 	return ret;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0))
 static void rtw_ops_stop(struct ieee80211_hw *hw)
+#else
+static void rtw_ops_stop(struct ieee80211_hw *hw, bool suspend)
+#endif
 {
 	struct rtw_dev *rtwdev = hw->priv;
 
