@@ -11,35 +11,15 @@
 
 Compatible with **Linux kernel versions 5.4 and newer** as long as your distro hasn't modified any kernel APIs. RHEL and all distros based on RHEL will have modified kernel APIs and are unlikely to be compatible with this driver.
 
+
 #### Supported Chipsets
 - **USB** : RTW8812AU, RTW8821AU, RTW8811AU, RTW8822BU, RTW8812BU, RTW8822CU, RTW8821CU, RTW8811CU, RTW8723DU
 - **PCIe**: RTW8822BE, RTW8822CE, RTW8821CE, RTW8723DE
 - **SDIO**: RTW8822BS, RTW8822CS, RTW8821CS, RTW8723DS
 
-**Are you looking for support for these drivers?** 🔎 ⚠️
-```bash
-# We do not support the following:
-RTL8188EE
-RTL8192CE
-RTL8192CU
-RTL8192DE
-RTL8192EE
-RTL8192SE
-RTL8723AE
-RTL8723BE
-RTL8821AE
-```
-Check your current kernel or visit the [Backports Project](https://backports.wiki.kernel.org/index.php/Main_Page).
-
-## Troubleshooting & Support
-
-These drivers **won't build for kernels older than 5.4**. Submit GitHub issues **only** for build errors.
-
-For operational problems, reach out to Realtek engineers via E-mail at [linux-wireless@vger.kernel.org](mailto:linux-wireless@vger.kernel.org).
 
 ## Issues 🚨
-Report any build problems and [see the FAQ](#faq) at bottom of this README.
-
+Report problems in Issues after you have checked the [FAQ](#faq) at bottom of this README.
 
 ⚠️ If you see a line such as:
 `make[1]: *** /lib/modules/5.17.5-300.fc36.x86_64/build: No such file or directory.` **Stop.**
@@ -142,15 +122,7 @@ sudo mokutil --reset
 Below is important information for using this driver.
 
 ### 1. Blacklisting 🚫
-If your system has ANY conflicting drivers installed, you must blacklist them as well. For kernels
-5.6 and newer, this will include drivers such as rtw88_xxxx. Here is a useful [link](https://askubuntu.com/questions/110341/how-to-blacklist-kernel-modules) on how to blacklist a module.
-
-Once you have reached this point, then reboot. Use the command `lsmod | grep rtw` and check if there are any
-conflicting drivers. The correct ones are:
-- `rtw_8723de rtw_8723du rtw_8723d  rtw_8822be  rtw_8822bu rtw8822bs rtw_8822b  rtw_8822ce  rtw_8822cu rtw_8822cs
-   rtw_8821ce rtw_8821cu rtw_8821cs rtw_8822c rtw_8723ds rtw_core rtw_pci`
-
-If you have other modules installed, see if you blacklisted them correctly.
+A file called `blacklist-rtw88.conf` will be installed into `/etc/modprobe.d` when you run `sudo make install`. It will blacklist all in-kernel rtw88 drivers, however, it will not blacklist out-of-kernel vendor drivers. You will need to uninstall any out-of-kernel vendor drivers that you have installed that may conflict. `blacklist-rtw88.conf` will be removed when you run `sudo make uninstall`.
 
 ### 2. Recovery Problems After Sleep/Hibernation 🛌
 Some BIOSs have trouble changing power state from D3hot to D0. If you have this problem, then:
