@@ -181,7 +181,7 @@ ifeq ($(COMPRESS_ZSTD), y)
 endif
 
 	@depmod $(DEPMOD_ARGS) -a $(KVER)
-	@echo "The driver rtw88 and its firmware were installed successfully!"
+	@echo "The rtw88 drivers and firmware files were installed successfully."
 
 uninstall:
 	@-rmmod -s rtw_8723{cs,de,ds,du} rtw_8812au rtw_8821{au,ce,cs,cu} rtw_8822{b{e,s,u},c{e,s,u}}
@@ -191,7 +191,7 @@ uninstall:
 	@rm -vf $(MODDESTDIR)/rtw_*.ko*
 	@rm -vf /etc/modprobe.d/blacklist-rtw88.conf
 	@depmod $(DEPMOD_ARGS)
-	@echo "The driver rtw88 was removed successfully."
+	@echo "The rtw88 drivers were removed successfully."
 
 clean:
 	$(MAKE) -C $(KSRC) M=$$PWD clean
