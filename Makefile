@@ -2,6 +2,11 @@ SHELL := /bin/sh
 KVER ?= $(if $(KERNELRELEASE),$(KERNELRELEASE),$(shell uname -r))
 KSRC ?= $(if $(KERNEL_SRC),$(KERNEL_SRC),/lib/modules/$(KVER)/build)
 FIRMWAREDIR := /lib/firmware/rtw88
+MODLIST := rtw_8723cs rtw_8723de rtw_8723ds rtw_8723du \
+	   rtw_8812au rtw_8821au rtw_8821ce rtw_8821cs rtw_8821cu \
+	   rtw_8822be rtw_8822bs rtw_8822bu rtw_8822ce rtw_8822cs rtw_8822cu \
+	   rtw_8703b rtw_8723d rtw_8821a rtw_8821c rtw_8822b rtw_8822c \
+	   rtw_8723x rtw_pci rtw_sdio rtw_usb rtw_core
 # Handle the move of the entire rtw88 tree
 ifneq ("","$(wildcard /lib/modules/$(KVER)/kernel/drivers/net/wireless/realtek)")
 MODDESTDIR := /lib/modules/$(KVER)/kernel/drivers/net/wireless/realtek/rtw88
@@ -184,10 +189,9 @@ endif
 	@echo "The rtw88 drivers and firmware files were installed successfully."
 
 uninstall:
-	@rmmod -s rtw_8723{cs,de,ds,du} rtw_8812au rtw_8821{au,ce,cs,cu} rtw_8822{b{e,s,u},c{e,s,u}} || true
-	@rmmod -s rtw_8703b rtw_8723d rtw_8821{a,c} rtw_8822{b,c} || true
-	@rmmod -s rtw_{8723x,pci,sdio,usb} || true
-	@rmmod -s rtw_core || true
+	@for mod in $(MODLIST); do \
+		rmmod -s $$mod || true; \
+	done
 	@rm -vf $(MODDESTDIR)/rtw_*.ko*
 	@rm -vf /etc/modprobe.d/blacklist-rtw88.conf
 	@depmod $(DEPMOD_ARGS)
