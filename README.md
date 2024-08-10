@@ -219,7 +219,6 @@ For feature requests like supporting a new card, you should reach out to Realtek
 ### Q6: How to remove this driver if it doesn't work as expected?
 Run this command in the rtw88 source directory and then the rtw88 driver will be unloaded and removed.
 
-`sudo make -s uninstall`
+`sudo make uninstall`
 
----
 

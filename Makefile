@@ -184,10 +184,10 @@ endif
 	@echo "The rtw88 drivers and firmware files were installed successfully."
 
 uninstall:
-	@-rmmod -s rtw_8723{cs,de,ds,du} rtw_8812au rtw_8821{au,ce,cs,cu} rtw_8822{b{e,s,u},c{e,s,u}}
-	@-rmmod -s rtw_8703b rtw_8723d rtw_8821{a,c} rtw_8822{b,c}
-	@-rmmod -s rtw_{8723x,pci,sdio,usb}
-	@-rmmod -s rtw_core
+	@rmmod -s rtw_8723{cs,de,ds,du} rtw_8812au rtw_8821{au,ce,cs,cu} rtw_8822{b{e,s,u},c{e,s,u}} || true
+	@rmmod -s rtw_8703b rtw_8723d rtw_8821{a,c} rtw_8822{b,c} || true
+	@rmmod -s rtw_{8723x,pci,sdio,usb} || true
+	@rmmod -s rtw_core || true
 	@rm -vf $(MODDESTDIR)/rtw_*.ko*
 	@rm -vf /etc/modprobe.d/blacklist-rtw88.conf
 	@depmod $(DEPMOD_ARGS)
