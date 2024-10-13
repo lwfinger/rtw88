@@ -551,31 +551,6 @@ static void rtw8821au_tx_aggregation(struct rtw_dev *rtwdev)
 			   chip->usb_tx_agg_desc_num << 1);
 }
 
-static void rtw8821au_rx_aggregation(struct rtw_dev *rtwdev, bool enable)
-{
-	struct rtw_usb *rtwusb = rtw_get_usb_priv(rtwdev);
-	u8 rxagg_usb_size, rxagg_usb_timeout;
-	u16 val16;
-
-	if (rtwusb->udev->speed == USB_SPEED_SUPER) {
-		rxagg_usb_size = 0x7;
-		rxagg_usb_timeout = 0x1a;
-	} else {
-		rxagg_usb_size = 0x5;
-		rxagg_usb_timeout = 0x20;
-	}
-
-	if (!enable) {
-		rxagg_usb_size = 0x0;
-		rxagg_usb_timeout = 0x1;
-	}
-
-	val16 = (rxagg_usb_timeout << 8) | rxagg_usb_size;
-	rtw_write16(rtwdev, REG_RXDMA_AGG_PG_TH, val16);
-
-	rtw_write8_set(rtwdev, REG_TXDMA_PQ_MAP, BIT_RXDMA_AGG_EN);
-}
-
 static void rtw8821a_init_beacon_parameters(struct rtw_dev *rtwdev)
 {
 	u16 val16;
@@ -3811,7 +3786,6 @@ static struct rtw_chip_ops rtw8821a_ops = {
 	.set_gid_table		= NULL,
 	.cfg_csi_rate		= NULL,
 	.fill_txdesc_checksum	= rtw8821a_fill_txdesc_checksum,
-	.rx_aggregation		= rtw8821au_rx_aggregation,
 	.coex_set_init		= rtw8821a_coex_cfg_init,
 	.coex_set_ant_switch	= rtw8821a_coex_cfg_ant_switch,
 	.coex_set_gnt_fix	= rtw8821a_coex_cfg_gnt_fix,

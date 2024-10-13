@@ -1007,7 +1007,6 @@ struct rtw_chip_ops {
 	void (*fill_txdesc_checksum)(struct rtw_dev *rtwdev,
 				     struct rtw_tx_pkt_info *pkt_info,
 				     u8 *txdesc);
-	void (*rx_aggregation)(struct rtw_dev *rtwdev, bool enable);
 
 	/* for coex */
 	void (*coex_set_init)(struct rtw_dev *rtwdev);
