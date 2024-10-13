@@ -556,7 +556,7 @@ static void rtw_usb_rx_handler(struct work_struct *work)
 	struct ieee80211_rx_status rx_status;
 	u32 pkt_offset, next_pkt, urb_len;
 	struct rtw_rx_pkt_stat pkt_stat;
-	struct sk_buff *next_skb = NULL;
+	struct sk_buff *next_skb;
 	struct sk_buff *skb;
 	u8 *rx_desc;
 	int limit;
@@ -585,6 +585,8 @@ static void rtw_usb_rx_handler(struct work_struct *work)
 
 			if (urb_len >= next_pkt + pkt_desc_sz)
 				next_skb = skb_clone(skb, GFP_KERNEL);
+			else
+				next_skb = NULL;
 
 			if (pkt_stat.is_c2h) {
 				skb_trim(skb, pkt_stat.pkt_len + pkt_offset);
@@ -602,11 +604,10 @@ static void rtw_usb_rx_handler(struct work_struct *work)
 
 			skb = next_skb;
 			if (skb)
-				skb_pull(next_skb, next_pkt);
+				skb_pull(skb, next_pkt);
 
 			urb_len -= next_pkt;
-			next_skb = NULL;
-		} while (skb && urb_len >= pkt_desc_sz);
+		} while (skb);
 	}
 }
 
