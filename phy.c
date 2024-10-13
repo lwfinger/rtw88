@@ -1053,8 +1053,8 @@ void rtw_phy_setup_phy_cond(struct rtw_dev *rtwdev, u32 pkg)
 {
 	struct rtw_hal *hal = &rtwdev->hal;
 	struct rtw_efuse *efuse = &rtwdev->efuse;
-	struct rtw_phy_cond cond = {0};
-	struct rtw_phy_cond2 cond2 = {0};
+	struct rtw_phy_cond cond = {};
+	struct rtw_phy_cond2 cond2 = {};
 
 	cond.cut = hal->cut_version ? hal->cut_version : 15;
 	cond.pkg = pkg ? pkg : 15;
@@ -1098,7 +1098,8 @@ void rtw_phy_setup_phy_cond(struct rtw_dev *rtwdev, u32 pkg)
 		*((u32 *)&hal->phy_cond), *((u32 *)&hal->phy_cond2));
 }
 
-static bool check_positive(struct rtw_dev *rtwdev, struct rtw_phy_cond cond, struct rtw_phy_cond2 cond2)
+static bool check_positive(struct rtw_dev *rtwdev, struct rtw_phy_cond cond,
+			   struct rtw_phy_cond2 cond2)
 {
 	struct rtw_hal *hal = &rtwdev->hal;
 	struct rtw_phy_cond drv_cond = hal->phy_cond;
@@ -1143,8 +1144,8 @@ void rtw_parse_tbl_phy_cond(struct rtw_dev *rtwdev, const struct rtw_table *tbl)
 {
 	const union phy_table_tile *p = tbl->data;
 	const union phy_table_tile *end = p + tbl->size / 2;
-	struct rtw_phy_cond pos_cond = {0};
-	struct rtw_phy_cond2 pos_cond2 = {0};
+	struct rtw_phy_cond pos_cond = {};
+	struct rtw_phy_cond2 pos_cond2 = {};
 	bool is_matched = true, is_skipped = false;
 
 	BUILD_BUG_ON(sizeof(union phy_table_tile) != sizeof(struct phy_cfg_pair));

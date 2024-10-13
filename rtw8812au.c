@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
-/* Copyright(c) 2018-2024  Realtek Corporation
+/* Copyright(c) 2024  Realtek Corporation
  */
 
 #include <linux/module.h>
 #include <linux/usb.h>
 #include "main.h"
-#include "rtw8821a.h"
+#include "rtw8812a.h"
 #include "usb.h"
 
 static const struct usb_device_id rtw_8812au_id_table[] = {

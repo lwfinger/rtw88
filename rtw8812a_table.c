@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
-/* Copyright(c) 2018-2019  Realtek Corporation
+/* Copyright(c) 2024  Realtek Corporation
  */
 
 #include "main.h"
@@ -2596,18 +2596,18 @@ static const struct rtw_pwr_seq_cmd trans_cardemu_to_carddis_8812a[] = {
 	 RTW_PWR_CMD_END, 0, 0},
 };
 
-const struct rtw_pwr_seq_cmd *card_enable_flow_8812a[] = {
+const struct rtw_pwr_seq_cmd * const card_enable_flow_8812a[] = {
 	trans_carddis_to_cardemu_8812a,
 	trans_cardemu_to_act_8812a,
 	NULL
 };
 
-const struct rtw_pwr_seq_cmd *enter_lps_flow_8812a[] = {
+const struct rtw_pwr_seq_cmd * const enter_lps_flow_8812a[] = {
 	trans_act_to_lps_8812a,
 	NULL
 };
 
-const struct rtw_pwr_seq_cmd *card_disable_flow_8812a[] = {
+const struct rtw_pwr_seq_cmd * const card_disable_flow_8812a[] = {
 	trans_act_to_cardemu_8812a,
 	trans_cardemu_to_carddis_8812a,
 	NULL

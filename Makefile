@@ -5,8 +5,8 @@ FIRMWAREDIR := /lib/firmware/rtw88
 MODLIST := rtw_8723cs rtw_8723de rtw_8723ds rtw_8723du \
 	   rtw_8812au rtw_8821au rtw_8821ce rtw_8821cs rtw_8821cu \
 	   rtw_8822be rtw_8822bs rtw_8822bu rtw_8822ce rtw_8822cs rtw_8822cu \
-	   rtw_8703b rtw_8723d rtw_8821a rtw_8821c rtw_8822b rtw_8822c \
-	   rtw_8723x rtw_pci rtw_sdio rtw_usb rtw_core
+	   rtw_8703b rtw_8723d rtw_8821a rtw_8812a rtw_8821c rtw_8822b rtw_8822c \
+	   rtw_8723x rtw_88xxa rtw_pci rtw_sdio rtw_usb rtw_core
 # Handle the move of the entire rtw88 tree
 ifneq ("","$(wildcard /lib/modules/$(KVER)/kernel/drivers/net/wireless/realtek)")
 MODDESTDIR := /lib/modules/$(KVER)/kernel/drivers/net/wireless/realtek/rtw88
@@ -99,7 +99,13 @@ obj-m		+= rtw_8812au.o
 rtw_8812au-objs	:= rtw8812au.o
 
 obj-m		+= rtw_8821a.o
-rtw_8821a-objs	:= rtw8821a.o rtw8821a_table.o rtw8812a_table.o
+rtw_8821a-objs	:= rtw8821a.o rtw8821a_table.o
+
+obj-m		+= rtw_8812a.o
+rtw_8812a-objs	:= rtw8812a.o rtw8812a_table.o
+
+obj-m		+= rtw_88xxa.o
+rtw_88xxa-objs	:= rtw88xxa.o
 
 obj-m		+= rtw_8821au.o
 rtw_8821au-objs	:= rtw8821au.o

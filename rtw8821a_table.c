@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
-/* Copyright(c) 2018-2019  Realtek Corporation
+/* Copyright(c) 2024  Realtek Corporation
  */
 
 #include "main.h"
@@ -1976,7 +1976,7 @@ static const struct rtw_pwr_seq_cmd trans_cardemu_to_act_8821a[] = {
 	 RTW_PWR_CUT_ALL_MSK,
 	 RTW_PWR_INTF_PCI_MSK,
 	 RTW_PWR_ADDR_MAC,
-	 RTW_PWR_CMD_WRITE, BIT(0) , BIT(0)},
+	 RTW_PWR_CMD_WRITE, BIT(0), BIT(0)},
 	{0x0006,
 	 RTW_PWR_CUT_ALL_MSK,
 	 RTW_PWR_INTF_ALL_MSK,
@@ -1986,7 +1986,7 @@ static const struct rtw_pwr_seq_cmd trans_cardemu_to_act_8821a[] = {
 	 RTW_PWR_CUT_ALL_MSK,
 	 RTW_PWR_INTF_PCI_MSK,
 	 RTW_PWR_ADDR_MAC,
-	 RTW_PWR_CMD_WRITE, BIT(0) , 0},
+	 RTW_PWR_CMD_WRITE, BIT(0), 0},
 	{0x0006,
 	 RTW_PWR_CUT_ALL_MSK,
 	 RTW_PWR_INTF_ALL_MSK,
@@ -2206,7 +2206,7 @@ static const struct rtw_pwr_seq_cmd trans_cardemu_to_carddis_8821a[] = {
 	 RTW_PWR_INTF_PCI_MSK,
 	 RTW_PWR_ADDR_MAC,
 	 RTW_PWR_CMD_WRITE, BIT(2), BIT(2)},
-        {0x004A,
+	{0x004A,
 	 RTW_PWR_CUT_ALL_MSK,
 	 RTW_PWR_INTF_USB_MSK,
 	 RTW_PWR_ADDR_MAC,
@@ -2233,18 +2233,18 @@ static const struct rtw_pwr_seq_cmd trans_cardemu_to_carddis_8821a[] = {
 	 RTW_PWR_CMD_END, 0, 0},
 };
 
-const struct rtw_pwr_seq_cmd *card_enable_flow_8821a[] = {
+const struct rtw_pwr_seq_cmd * const card_enable_flow_8821a[] = {
 	trans_carddis_to_cardemu_8821a,
 	trans_cardemu_to_act_8821a,
 	NULL
 };
 
-const struct rtw_pwr_seq_cmd *enter_lps_flow_8821a[] = {
+const struct rtw_pwr_seq_cmd * const enter_lps_flow_8821a[] = {
 	trans_act_to_lps_8821a,
 	NULL
 };
 
-const struct rtw_pwr_seq_cmd *card_disable_flow_8821a[] = {
+const struct rtw_pwr_seq_cmd * const card_disable_flow_8821a[] = {
 	trans_act_to_cardemu_8821a,
 	trans_cardemu_to_carddis_8821a,
 	NULL

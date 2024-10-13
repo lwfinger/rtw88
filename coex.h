@@ -420,4 +420,14 @@ static inline bool rtw_coex_disabled(struct rtw_dev *rtwdev)
 	return coex_stat->bt_disabled;
 }
 
+static inline void rtw_coex_active_query_bt_info(struct rtw_dev *rtwdev)
+{
+	/* The RTL8821AU firmware doesn't send C2H_BT_INFO by itself
+	 * when bluetooth headphones are disconnected, so we have to
+	 * ask for it regularly.
+	 */
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A && rtwdev->efuse.btcoex)
+		rtw_coex_query_bt_info(rtwdev);
+}
+
 #endif

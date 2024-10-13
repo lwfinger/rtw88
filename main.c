@@ -208,6 +208,21 @@ static void rtw_vif_watch_dog_iter(void *data, struct ieee80211_vif *vif)
 	rtwvif->stats.rx_cnt = 0;
 }
 
+static void rtw_sw_beacon_loss_check(struct rtw_dev *rtwdev,
+				     struct rtw_vif *rtwvif, int received_beacons)
+{
+	int watchdog_delay = 2000000 / 1024; /* TU */
+	int beacon_int, expected_beacons;
+
+	if (rtw_fw_feature_check(&rtwdev->fw, FW_FEATURE_BCN_FILTER) || !rtwvif)
+		return;
+
+	beacon_int = rtwvif_to_vif(rtwvif)->bss_conf.beacon_int;
+	expected_beacons = DIV_ROUND_UP(watchdog_delay, beacon_int);
+
+	rtwdev->beacon_loss = received_beacons < expected_beacons / 2;
+}
+
 /* process TX/RX statistics periodically for hardware,
  * the information helps hardware to enhance performance
  */
@@ -218,6 +233,7 @@ static void rtw_watch_dog_work(struct work_struct *work)
 	struct rtw_traffic_stats *stats = &rtwdev->stats;
 	struct rtw_watch_dog_iter_data data = {};
 	bool busy_traffic = test_bit(RTW_FLAG_BUSY_TRAFFIC, rtwdev->flags);
+	int received_beacons = rtwdev->dm_info.cur_pkt_count.num_bcn_pkt;
 	u32 tx_unicast_mbps, rx_unicast_mbps;
 	bool ps_active;
 
@@ -260,15 +276,11 @@ static void rtw_watch_dog_work(struct work_struct *work)
 	if (test_bit(RTW_FLAG_SCANNING, rtwdev->flags))
 		goto unlock;
 
-	int received_beacons = rtwdev->dm_info.cur_pkt_count.num_bcn_pkt;
-
 	/* make sure BB/RF is working for dynamic mech */
 	rtw_leave_lps(rtwdev);
 	rtw_coex_wl_status_check(rtwdev);
 	rtw_coex_query_bt_hid_list(rtwdev);
-
-	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A && rtwdev->efuse.btcoex)
-		rtw_coex_query_bt_info(rtwdev);
+	rtw_coex_active_query_bt_info(rtwdev);
 
 	rtw_phy_dynamic_mechanism(rtwdev);
 
@@ -281,14 +293,7 @@ static void rtw_watch_dog_work(struct work_struct *work)
 	 */
 	rtw_iterate_vifs(rtwdev, rtw_vif_watch_dog_iter, &data);
 
-	if (!rtw_fw_feature_check(&rtwdev->fw, FW_FEATURE_BCN_FILTER) &&
-	    data.rtwvif) {
-		int beacon_int = rtwvif_to_vif(data.rtwvif)->bss_conf.beacon_int;
-		int watchdog_delay = 2000000 / 1024; /* TU */
-		int expected_beacons = DIV_ROUND_UP(watchdog_delay, beacon_int);
-
-		rtwdev->beacon_loss = received_beacons < expected_beacons / 2;
-	}
+	rtw_sw_beacon_loss_check(rtwdev, data.rtwvif, received_beacons);
 
 	/* fw supports only one station associated to enter lps, if there are
 	 * more than two stations associated to the AP, then we can not enter
@@ -2043,7 +2048,7 @@ static int rtw_dump_hw_feature(struct rtw_dev *rtwdev)
 	int i;
 
 	if (!rtwdev->chip->hw_feature_report)
-		goto print_hw_cap;
+		return 0;
 
 	id = rtw_read8(rtwdev, REG_C2HEVT);
 	if (id != C2H_HW_FEATURE_REPORT) {
@@ -2069,7 +2074,6 @@ static int rtw_dump_hw_feature(struct rtw_dev *rtwdev)
 	    efuse->hw_cap.nss > rtwdev->hal.rf_path_num)
 		efuse->hw_cap.nss = rtwdev->hal.rf_path_num;
 
-print_hw_cap:
 	rtw_dbg(rtwdev, RTW_DBG_EFUSE,
 		"hw cap: hci=0x%02x, bw=0x%02x, ptcl=0x%02x, ant_num=%d, nss=%d\n",
 		efuse->hw_cap.hci, efuse->hw_cap.bw, efuse->hw_cap.ptcl,

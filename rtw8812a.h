@@ -2,9 +2,9 @@
 /* Copyright(c) 2024  Realtek Corporation
  */
 
-#ifndef __RTW8821A_H__
-#define __RTW8821A_H__
+#ifndef __RTW8812A_H__
+#define __RTW8812A_H__
 
-extern const struct rtw_chip_info rtw8821a_hw_spec;
+extern const struct rtw_chip_info rtw8812a_hw_spec;
 
 #endif
