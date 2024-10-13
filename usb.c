@@ -125,11 +125,6 @@ static void rtw_usb_write(struct rtw_dev *rtwdev, u32 addr, u32 val, int len)
 	int idx, ret;
 	static int count;
 
-#if 0
-	if (addr < 0x1000 || addr > 0x1fff)
-		pr_err("rtw88_8821au write%d 0x%03x = %#x\n", len * 8, addr, val);
-#endif
-
 	spin_lock_irqsave(&rtwusb->usb_lock, flags);
 
 	idx = rtwusb->usb_data_index;
