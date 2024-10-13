@@ -237,25 +237,6 @@ static void rtw8822b_phy_set_param(struct rtw_dev *rtwdev)
 #define WLAN_NAV_CFG		(WLAN_RDG_NAV | (WLAN_TXOP_NAV << 16))
 #define WLAN_RX_TSF_CFG		(WLAN_CCK_RX_TSF | (WLAN_OFDM_RX_TSF) << 8)
 
-static void rtw8822bu_init_burst_pkt_len(struct rtw_dev *rtwdev)
-{
-	u8 rxdma, burst_size;
-
-	rxdma = BIT_DMA_BURST_CNT | BIT_DMA_MODE;
-
-	if (rtw_read8(rtwdev, REG_SYS_CFG2 + 3) == 0x20)
-		burst_size = BIT_DMA_BURST_SIZE_1024;
-	else if ((rtw_read8(rtwdev, REG_USB_USBSTAT) & 0x3) == 0x1)
-		burst_size = BIT_DMA_BURST_SIZE_512;
-	else
-		burst_size = BIT_DMA_BURST_SIZE_64;
-
-	u8p_replace_bits(&rxdma, burst_size, BIT_DMA_BURST_SIZE);
-
-	rtw_write8(rtwdev, REG_RXDMA_MODE, rxdma);
-	rtw_write16_set(rtwdev, REG_TXDMA_OFFSET_CHK, BIT_DROP_DATA_EN);
-}
-
 static int rtw8822b_mac_init(struct rtw_dev *rtwdev)
 {
 	u32 value32;
@@ -302,9 +283,6 @@ static int rtw8822b_mac_init(struct rtw_dev *rtwdev)
 	rtw_write8(rtwdev, REG_WMAC_OPTION_FUNCTION + 4, WLAN_MAC_OPT_NORM_FUNC1);
 	rtw_write8_set(rtwdev, REG_SND_PTCL_CTRL,
 		       BIT_DIS_CHK_VHTSIGB_CRC);
-
-	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_USB)
-		rtw8822bu_init_burst_pkt_len(rtwdev);
 
 	return 0;
 }

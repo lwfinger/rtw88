@@ -709,8 +709,6 @@
 
 #define REG_IGN_GNTBT4	0x4160
 
-#define REG_USB_USBSTAT	0xFE11
-
 #define RF_MODE		0x00
 #define RF_MODOPT	0x01
 #define RF_WLINT	0x01
