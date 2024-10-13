@@ -1024,7 +1024,7 @@ static u8 rtw_get_rsvd_page_probe_req_location(struct rtw_dev *rtwdev,
 		if (rsvd_pkt->type != RSVD_PROBE_REQ)
 			continue;
 		if ((!ssid && !rsvd_pkt->ssid) ||
-			cfg80211_ssid_eq(rsvd_pkt->ssid, ssid))
+		    cfg80211_ssid_eq(rsvd_pkt->ssid, ssid))
 			location = rsvd_pkt->page;
 	}
 
