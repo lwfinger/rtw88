@@ -1686,17 +1686,29 @@ static int rtw_pci_napi_poll(struct napi_struct *napi, int budget)
 	return work_done;
 }
 
-static void rtw_pci_napi_init(struct rtw_dev *rtwdev)
+static int rtw_pci_napi_init(struct rtw_dev *rtwdev)
 {
 	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
 
-	init_dummy_netdev(&rtwpci->netdev);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
-	netif_napi_add(&rtwpci->netdev, &rtwpci->napi, rtw_pci_napi_poll);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0)
+	rtwpci->netdev = alloc_netdev_dummy(0);
+	if (!rtwpci->netdev)
+		return -ENOMEM;
+
+	netif_napi_add(
+		rtwpci->netdev
 #else
-	netif_napi_add(&rtwpci->netdev, &rtwpci->napi, rtw_pci_napi_poll,
-		       NAPI_POLL_WEIGHT);
+	init_dummy_netdev(&rtwpci->netdev);
+	netif_napi_add(
+		&rtwpci->netdev
 #endif
+		, &rtwpci->napi
+		, rtw_pci_napi_poll
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0)
+		, NAPI_POLL_WEIGHT
+#endif
+	);
+	return 0;
 }
 
 static void rtw_pci_napi_deinit(struct rtw_dev *rtwdev)
@@ -1705,6 +1717,9 @@ static void rtw_pci_napi_deinit(struct rtw_dev *rtwdev)
 
 	rtw_pci_napi_stop(rtwdev);
 	netif_napi_del(&rtwpci->napi);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0)
+	free_netdev(rtwpci->netdev);
+#endif
 }
 
 int rtw_pci_probe(struct pci_dev *pdev,
@@ -1754,7 +1769,11 @@ int rtw_pci_probe(struct pci_dev *pdev,
 		goto err_pci_declaim;
 	}
 
-	rtw_pci_napi_init(rtwdev);
+	ret = rtw_pci_napi_init(rtwdev);
+	if (ret) {
+		rtw_err(rtwdev, "failed to setup NAPI\n");
+		goto err_pci_declaim;
+	}
 
 	ret = rtw_chip_info_setup(rtwdev);
 	if (ret) {

@@ -215,7 +215,11 @@ struct rtw_pci {
 	bool running;
 
 	/* napi structure */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0)
+	struct net_device *netdev;
+#else
 	struct net_device netdev;
+#endif
 	struct napi_struct napi;
 
 	u16 rx_tag;
