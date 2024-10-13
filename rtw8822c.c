@@ -4874,13 +4874,13 @@ static const struct rtw_pwr_seq_cmd trans_cardemu_to_carddis_8822c[] = {
 	 RTW_PWR_CMD_END, 0, 0},
 };
 
-static const struct rtw_pwr_seq_cmd *card_enable_flow_8822c[] = {
+static const struct rtw_pwr_seq_cmd * const card_enable_flow_8822c[] = {
 	trans_carddis_to_cardemu_8822c,
 	trans_cardemu_to_act_8822c,
 	NULL
 };
 
-static const struct rtw_pwr_seq_cmd *card_disable_flow_8822c[] = {
+static const struct rtw_pwr_seq_cmd * const card_disable_flow_8822c[] = {
 	trans_act_to_cardemu_8822c,
 	trans_cardemu_to_carddis_8822c,
 	NULL
@@ -4962,7 +4962,7 @@ static const struct rtw_rqpn rqpn_table_8822c[] = {
 	 RTW_DMA_MAPPING_EXTRA, RTW_DMA_MAPPING_HIGH},
 };
 
-static struct rtw_prioq_addrs prioq_addrs_8822c = {
+static const struct rtw_prioq_addrs prioq_addrs_8822c = {
 	.prio[RTW_DMA_MAPPING_EXTRA] = {
 		.rsvd = REG_FIFOPAGE_INFO_4, .avail = REG_FIFOPAGE_INFO_4 + 2,
 	},
@@ -4978,7 +4978,7 @@ static struct rtw_prioq_addrs prioq_addrs_8822c = {
 	.wsize = true,
 };
 
-static struct rtw_chip_ops rtw8822c_ops = {
+static const struct rtw_chip_ops rtw8822c_ops = {
 	.power_on		= rtw_power_on,
 	.power_off		= rtw_power_off,
 	.phy_set_param		= rtw8822c_phy_set_param,
@@ -5303,7 +5303,7 @@ static const struct rtw_rfe_def rtw8822c_rfe_defs[] = {
 	[6] = RTW_DEF_RFE(8822c, 0, 0, 0),
 };
 
-static struct rtw_hw_reg_offset rtw8822c_edcca_th[] = {
+static const struct rtw_hw_reg_offset rtw8822c_edcca_th[] = {
 	[EDCCA_TH_L2H_IDX] = {
 		{.addr = 0x84c, .mask = MASKBYTE2}, .offset = 0x80
 	},

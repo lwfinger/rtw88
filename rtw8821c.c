@@ -1255,7 +1255,7 @@ static void rtw8821c_fill_txdesc_checksum(struct rtw_dev *rtwdev,
 	fill_txdesc_checksum_common(txdesc, 16);
 }
 
-static struct rtw_pwr_seq_cmd trans_carddis_to_cardemu_8821c[] = {
+static const struct rtw_pwr_seq_cmd trans_carddis_to_cardemu_8821c[] = {
 	{0x0086,
 	 RTW_PWR_CUT_ALL_MSK,
 	 RTW_PWR_INTF_SDIO_MSK,
@@ -1293,7 +1293,7 @@ static struct rtw_pwr_seq_cmd trans_carddis_to_cardemu_8821c[] = {
 	 RTW_PWR_CMD_END, 0, 0},
 };
 
-static struct rtw_pwr_seq_cmd trans_cardemu_to_act_8821c[] = {
+static const struct rtw_pwr_seq_cmd trans_cardemu_to_act_8821c[] = {
 	{0x0020,
 	 RTW_PWR_CUT_ALL_MSK,
 	 RTW_PWR_INTF_USB_MSK | RTW_PWR_INTF_SDIO_MSK,
@@ -1397,7 +1397,7 @@ static struct rtw_pwr_seq_cmd trans_cardemu_to_act_8821c[] = {
 	 RTW_PWR_CMD_END, 0, 0},
 };
 
-static struct rtw_pwr_seq_cmd trans_act_to_cardemu_8821c[] = {
+static const struct rtw_pwr_seq_cmd trans_act_to_cardemu_8821c[] = {
 	{0x0093,
 	 RTW_PWR_CUT_ALL_MSK,
 	 RTW_PWR_INTF_ALL_MSK,
@@ -1455,7 +1455,7 @@ static struct rtw_pwr_seq_cmd trans_act_to_cardemu_8821c[] = {
 	 RTW_PWR_CMD_END, 0, 0},
 };
 
-static struct rtw_pwr_seq_cmd trans_cardemu_to_carddis_8821c[] = {
+static const struct rtw_pwr_seq_cmd trans_cardemu_to_carddis_8821c[] = {
 	{0x0007,
 	 RTW_PWR_CUT_ALL_MSK,
 	 RTW_PWR_INTF_USB_MSK | RTW_PWR_INTF_SDIO_MSK,
@@ -1568,13 +1568,13 @@ static struct rtw_pwr_seq_cmd trans_cardemu_to_carddis_8821c[] = {
 	 RTW_PWR_CMD_END, 0, 0},
 };
 
-static const struct rtw_pwr_seq_cmd *card_enable_flow_8821c[] = {
+static const struct rtw_pwr_seq_cmd * const card_enable_flow_8821c[] = {
 	trans_carddis_to_cardemu_8821c,
 	trans_cardemu_to_act_8821c,
 	NULL
 };
 
-static const struct rtw_pwr_seq_cmd *card_disable_flow_8821c[] = {
+static const struct rtw_pwr_seq_cmd * const card_disable_flow_8821c[] = {
 	trans_act_to_cardemu_8821c,
 	trans_cardemu_to_carddis_8821c,
 	NULL
@@ -1623,7 +1623,7 @@ static const struct rtw_intf_phy_para_table phy_para_table_8821c = {
 	.n_gen2_para	= ARRAY_SIZE(pcie_gen2_param_8821c),
 };
 
-static struct rtw_hw_reg rtw8821c_dig[] = {
+static const struct rtw_hw_reg rtw8821c_dig[] = {
 	[0] = { .addr = 0xc50, .mask = 0x7f },
 };
 
@@ -1633,7 +1633,7 @@ static const struct rtw_ltecoex_addr rtw8821c_ltecoex_addr = {
 	.rdata = LTECOEX_READ_DATA,
 };
 
-static struct rtw_page_table page_table_8821c[] = {
+static const struct rtw_page_table page_table_8821c[] = {
 	/* not sure what [0] stands for */
 	{16, 16, 16, 14, 1},
 	{16, 16, 16, 14, 1},
@@ -1642,7 +1642,7 @@ static struct rtw_page_table page_table_8821c[] = {
 	{16, 16, 16, 14, 1},
 };
 
-static struct rtw_rqpn rqpn_table_8821c[] = {
+static const struct rtw_rqpn rqpn_table_8821c[] = {
 	/* not sure what [0] stands for */
 	{RTW_DMA_MAPPING_NORMAL, RTW_DMA_MAPPING_NORMAL,
 	 RTW_DMA_MAPPING_LOW, RTW_DMA_MAPPING_LOW,
@@ -1661,7 +1661,7 @@ static struct rtw_rqpn rqpn_table_8821c[] = {
 	 RTW_DMA_MAPPING_EXTRA, RTW_DMA_MAPPING_HIGH},
 };
 
-static struct rtw_prioq_addrs prioq_addrs_8821c = {
+static const struct rtw_prioq_addrs prioq_addrs_8821c = {
 	.prio[RTW_DMA_MAPPING_EXTRA] = {
 		.rsvd = REG_FIFOPAGE_INFO_4, .avail = REG_FIFOPAGE_INFO_4 + 2,
 	},
@@ -1677,7 +1677,7 @@ static struct rtw_prioq_addrs prioq_addrs_8821c = {
 	.wsize = true,
 };
 
-static struct rtw_chip_ops rtw8821c_ops = {
+static const struct rtw_chip_ops rtw8821c_ops = {
 	.power_on		= rtw_power_on,
 	.power_off		= rtw_power_off,
 	.phy_set_param		= rtw8821c_phy_set_param,

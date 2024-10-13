@@ -482,14 +482,14 @@ static const struct rtw_pwr_seq_cmd trans_act_to_lps_8703b[] = {
 	{TRANS_SEQ_END},
 };
 
-static const struct rtw_pwr_seq_cmd *card_enable_flow_8703b[] = {
+static const struct rtw_pwr_seq_cmd * const card_enable_flow_8703b[] = {
 	trans_pre_enable_8703b,
 	trans_carddis_to_cardemu_8703b,
 	trans_cardemu_to_act_8703b,
 	NULL
 };
 
-static const struct rtw_pwr_seq_cmd *card_disable_flow_8703b[] = {
+static const struct rtw_pwr_seq_cmd * const card_disable_flow_8703b[] = {
 	trans_act_to_lps_8703b,
 	trans_act_to_reset_mcu_8703b,
 	trans_act_to_cardemu_8703b,
@@ -1957,7 +1957,7 @@ static const struct coex_tdma_para tdma_sant_8703b[] = {
 	{ {0x61, 0x08, 0x03, 0x11, 0x11} },
 };
 
-static struct rtw_chip_ops rtw8703b_ops = {
+static const struct rtw_chip_ops rtw8703b_ops = {
 	.power_on		= rtw_power_on,
 	.power_off		= rtw_power_off,
 	.mac_init		= rtw8723x_mac_init,
