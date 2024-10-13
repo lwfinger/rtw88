@@ -477,7 +477,6 @@ static int rtw_ops_start_ap(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
 	const struct rtw_chip_info *chip = rtwdev->chip;
 
 	mutex_lock(&rtwdev->mutex);
-	set_bit(0, rtwdev->mac_id_map);
 	rtw_write32_set(rtwdev, REG_TCR, BIT_TCR_UPDATE_HGQMD);
 	rtwdev->ap_active = true;
 	rtw_store_op_chan(rtwdev, true);
@@ -503,7 +502,6 @@ static void rtw_ops_stop_ap(struct ieee80211_hw *hw,
 	rtwdev->ap_active = false;
 	if (!rtw_core_check_sta_active(rtwdev))
 		rtw_clear_op_chan(rtwdev);
-	clear_bit(0, rtwdev->mac_id_map);
 	mutex_unlock(&rtwdev->mutex);
 }
 
