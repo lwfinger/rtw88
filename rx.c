@@ -200,11 +200,6 @@ static void rtw_rx_fill_rx_status(struct rtw_dev *rtwdev,
 		rtw_warn(rtwdev, "hw NULL in %s\n", __func__);
 		return;
 	}
-	if (!hw->conf.chandef.chan) {
-		rtw_warn(rtwdev, "hw->conf.chandef.chan NULL in %s\n", __func__);
-		return;
-	}
-
 	rx_status->freq = hw->conf.chandef.chan->center_freq;
 	rx_status->band = hw->conf.chandef.chan->band;
 	if (rtw_fw_feature_check(&rtwdev->fw, FW_FEATURE_SCAN_OFFLOAD) &&
