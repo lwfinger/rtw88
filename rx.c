@@ -155,6 +155,9 @@ void rtw_update_rx_freq_from_ie(struct rtw_dev *rtwdev, struct sk_buff *skb,
 	size_t hdr_len, ielen;
 	int channel_number;
 	u8 *variable;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0))
+	const struct element *tmp;
+#endif
 
 	if (!test_bit(RTW_FLAG_SCANNING, rtwdev->flags))
 		goto fill_rx_status;
@@ -184,6 +187,19 @@ void rtw_update_rx_freq_from_ie(struct rtw_dev *rtwdev, struct sk_buff *skb,
 							 NL80211_BAND_2GHZ, 0);
 #else
 	channel_number = -1;
+
+	tmp = cfg80211_find_elem(WLAN_EID_DS_PARAMS, variable, ielen);
+
+	if (tmp && tmp->datalen == 1) {
+		channel_number = tmp->data[0];
+	} else {
+		tmp = cfg80211_find_elem(WLAN_EID_HT_OPERATION, variable, ielen);
+
+		if (tmp && tmp->datalen >= sizeof(struct ieee80211_ht_operation)) {
+			struct ieee80211_ht_operation *htop = (void *)tmp->data;
+			channel_number = htop->primary_chan;
+		}
+	}
 #endif
 
 	if (channel_number != -1)
