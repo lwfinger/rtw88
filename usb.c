@@ -621,8 +621,10 @@ static void rtw_usb_rx_resubmit(struct rtw_usb *rtwusb, struct rx_usb_ctrl_block
 	int error;
 
 	rxcb->rx_skb = alloc_skb(RTW_USB_MAX_RECVBUF_SZ, GFP_ATOMIC);
-	if (!rxcb->rx_skb)
+	if (!rxcb->rx_skb) {
+		rtw_err(rtwdev, "failed to allocate rx_skb\n");
 		return;
+	}
 
 	usb_fill_bulk_urb(rxcb->rx_urb, rtwusb->udev,
 			  usb_rcvbulkpipe(rtwusb->udev, rtwusb->pipe_in),
