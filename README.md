@@ -190,7 +190,7 @@ issue on this repository is **NOT** the place to report it.
 
 We have no idea about the internal workings of any of the chips, and the Realtek engineers who do will not read these issues. To reach them, send E-mail to [linux-wireless@vger.kernel.org](mailto:linux-wireless@vger.kernel.org). 
 
-Be sure to include a detailed description of any messages in the kernel logs and any steps that you have taken to analyze or fix the problem. If your description is not complete, you are unlikely to get the help you need. NOTE: E-mail sent to that mailing list MUST be plain test. HTML mail will be rejected.
+Be sure to include a detailed description of any messages in the kernel logs and any steps that you have taken to analyze or fix the problem. If your description is not complete, you are unlikely to get the help you need. NOTE: E-mail sent to that mailing list MUST be plain text. HTML mail will be rejected.
 
 Start with this page for guidance: https://wireless.wiki.kernel.org/en/users/support
 
