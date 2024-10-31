@@ -804,7 +804,7 @@ static void rtw_usb_dynamic_rx_agg_v2(struct rtw_dev *rtwdev, bool enable)
 	u16 val16;
 
 	if (rtwusb->udev->speed == USB_SPEED_SUPER) {
-		size = 0x7;
+		size = 0x6;
 		timeout = 0x1a;
 	} else {
 		size = 0x5;
