@@ -216,6 +216,19 @@ void rtw_tx_report_purge_timer(void *cntx)
 	spin_unlock_irqrestore(&tx_report->q_lock, flags);
 }
 
+bool rtw_tx_report_needed(struct rtw_dev *rtwdev, struct sk_buff *skb)
+{
+	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+
+	if (test_bit(RTW_FLAG_SCANNING, rtwdev->flags) &&
+	    ieee80211_is_any_nullfunc(hdr->frame_control))
+		return false;
+
+	return !!(info->flags & IEEE80211_TX_CTL_REQ_TX_STATUS);
+}
+EXPORT_SYMBOL(rtw_tx_report_needed);
+
 void rtw_tx_report_enqueue(struct rtw_dev *rtwdev, struct sk_buff *skb, u8 sn)
 {
 	struct rtw_tx_report *tx_report = &rtwdev->tx_report;
@@ -463,7 +476,7 @@ void rtw_tx_pkt_info_update(struct rtw_dev *rtwdev,
 	bmc = is_broadcast_ether_addr(hdr->addr1) ||
 	      is_multicast_ether_addr(hdr->addr1);
 
-	if (info->flags & IEEE80211_TX_CTL_REQ_TX_STATUS)
+	if (rtw_tx_report_needed(rtwdev, skb))
 		rtw_tx_report_enable(rtwdev, pkt_info);
 
 	pkt_info->bmc = bmc;

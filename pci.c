@@ -993,7 +993,7 @@ static void rtw_pci_tx_isr(struct rtw_dev *rtwdev, struct rtw_pci *rtwpci,
 		info = IEEE80211_SKB_CB(skb);
 
 		/* enqueue to wait for tx report */
-		if (info->flags & IEEE80211_TX_CTL_REQ_TX_STATUS) {
+		if (rtw_tx_report_needed(rtwdev, skb)) {
 			rtw_tx_report_enqueue(rtwdev, skb, tx_data->sn);
 			continue;
 		}
