@@ -19,7 +19,7 @@ static const struct usb_device_id rtw_8812au_id_table[] = {
 	  .driver_info = (kernel_ulong_t)&(rtw8812a_hw_spec) },
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x0409, 0x0408, 0xff, 0xff, 0xff),
 	  .driver_info = (kernel_ulong_t)&(rtw8812a_hw_spec) }, /* NEC */
-	{ USB_DEVICE_AND_INTERFACE_INFO(0x0411, 0x0408, 0xff, 0xff, 0xff),
+	{ USB_DEVICE_AND_INTERFACE_INFO(0x0411, 0x025D, 0xff, 0xff, 0xff),
 	  .driver_info = (kernel_ulong_t)&(rtw8812a_hw_spec) }, /* Buffalo */
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x04bb, 0x0952, 0xff, 0xff, 0xff),
 	  .driver_info = (kernel_ulong_t)&(rtw8812a_hw_spec) }, /* I-O DATA */
