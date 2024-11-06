@@ -38,6 +38,7 @@
 #define RTW_USB_RXAGG_TIMEOUT		10
 
 #define RTW_USB_RXCB_NUM		4
+#define RTW_USB_RX_SKB_NUM		8
 
 #define RTW_USB_EP_MAX			4
 
@@ -75,13 +76,18 @@ struct rtw_usb {
 	int qsel_to_ep[TX_DESC_QSEL_MAX];
 
 	struct workqueue_struct *txwq, *rxwq;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 9, 0)
+	struct tasklet_struct rx_tasklet; // Can't use BH workqueue
+#endif
 
 	struct sk_buff_head tx_queue[RTW_USB_EP_MAX];
 	struct work_struct tx_work;
 
 	struct rx_usb_ctrl_block rx_cb[RTW_USB_RXCB_NUM];
 	struct sk_buff_head rx_queue;
+	struct sk_buff_head rx_free_queue;
 	struct work_struct rx_work;
+	struct work_struct rx_urb_work;
 };
 
 static inline struct rtw_usb_tx_data *rtw_usb_get_tx_data(struct sk_buff *skb)
