@@ -953,7 +953,9 @@ static int rtw_usb_init_rx(struct rtw_dev *rtwdev)
 	skb_queue_head_init(&rtwusb->rx_queue);
 	skb_queue_head_init(&rtwusb->rx_free_queue);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
 	INIT_WORK(&rtwusb->rx_work, rtw_usb_rx_handler);
+#endif
 	INIT_WORK(&rtwusb->rx_urb_work, rtw_usb_rx_resubmit_work);
 
 	for (i = 0; i < RTW_USB_RX_SKB_NUM; i++) {
