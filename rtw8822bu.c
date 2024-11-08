@@ -45,6 +45,8 @@ static const struct usb_device_id rtw_8822bu_id_table[] = {
 	  .driver_info = (kernel_ulong_t)&(rtw8822b_hw_spec) }, /* Dlink - DWA-181 */
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x2001, 0x331F, 0xff, 0xff, 0xff),
 	  .driver_info = (kernel_ulong_t)&(rtw8822b_hw_spec) }, /* Dlink - DWA-183 - D */
+	{ USB_DEVICE_AND_INTERFACE_INFO(0x2001, 0x3322, 0xff, 0xff, 0xff),
+	  .driver_info = (kernel_ulong_t)&(rtw8822b_hw_spec) }, /* Dlink - DWA-T185 rev. A1 */
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x20F4, 0x805A, 0xff, 0xff, 0xff),
 	  .driver_info = (kernel_ulong_t)&(rtw8822b_hw_spec) }, /* TRENDnet TEW-805UBH */
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x20F4, 0x808A, 0xff, 0xff, 0xff),
@@ -63,6 +65,8 @@ static const struct usb_device_id rtw_8822bu_id_table[] = {
 	  .driver_info = (kernel_ulong_t)&(rtw8822b_hw_spec) }, /* TP-Link Archer T3U Plus v1 */
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x2C4E, 0x0107, 0xff, 0xff, 0xff),
 	  .driver_info = (kernel_ulong_t)&(rtw8822b_hw_spec) }, /* Mercusys MA30H */
+	{ USB_DEVICE_AND_INTERFACE_INFO(0x2C4E, 0x010a, 0xff, 0xff, 0xff),
+	  .driver_info = (kernel_ulong_t)&(rtw8822b_hw_spec) }, /* Mercusys MA30N */
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x7392, 0xB822, 0xff, 0xff, 0xff),
 	  .driver_info = (kernel_ulong_t)&(rtw8822b_hw_spec) }, /* Edimax EW-7822ULC */
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x7392, 0xC822, 0xff, 0xff, 0xff),
