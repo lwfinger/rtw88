@@ -77,6 +77,8 @@ static const struct usb_device_id rtw_8812au_id_table[] = {
 	  .driver_info = (kernel_ulong_t)&(rtw8812a_hw_spec) }, /* Tenda */
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x7392, 0xa822, 0xff, 0xff, 0xff),
 	  .driver_info = (kernel_ulong_t)&(rtw8812a_hw_spec) }, /* Edimax */
+	{ USB_DEVICE_AND_INTERFACE_INFO(0x7392, 0xb822, 0xff, 0xff, 0xff),
+	  .driver_info = (kernel_ulong_t)&(rtw8812a_hw_spec) }, /* Edimax */
 	{},
 };
 MODULE_DEVICE_TABLE(usb, rtw_8812au_id_table);
