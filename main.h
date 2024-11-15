@@ -1342,6 +1342,7 @@ struct rtw_chip_info {
 	bool hw_feature_report;
 	u8 c2h_ra_report_size;
 	bool old_datarate_fb_limit;
+	bool tx_report_sn;
 
 	u8 default_1ss_tx_path;
 
