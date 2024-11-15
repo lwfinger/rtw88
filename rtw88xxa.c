@@ -1174,12 +1174,6 @@ int rtw88xxa_power_on(struct rtw_dev *rtwdev)
 
 	rtw_write8_set(rtwdev, REG_CR, BIT_MACTXEN | BIT_MACRXEN);
 
-	///TODO: blinking controlled by mac80211
-	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A)
-		rtw_write8(rtwdev, REG_LED_CFG + 2, BIT(1) | BIT(5));
-	else
-		rtw_write8(rtwdev, REG_LED_CFG, BIT(1) | BIT(5));
-
 	rtw88xxa_phy_bb_config(rtwdev);
 	rtw88xxa_phy_rf_config(rtwdev);
 
