@@ -27,6 +27,9 @@
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
 #include <linux/etherdevice.h>
 #endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 14, 0)
+#include <linux/leds.h>
+#endif
 
 #if !defined(RHEL_RELEASE_CODE)
 #define RHEL_RELEASE_CODE 0
