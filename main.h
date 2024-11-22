@@ -2240,7 +2240,7 @@ struct rtw_dev {
 	struct completion fw_scan_density;
 	bool ap_active;
 
-#ifdef CONFIG_MAC80211_LEDS
+#ifdef CONFIG_LEDS_CLASS
 	bool led_registered;
 	char led_name[32];
 	struct led_classdev led_cdev;
