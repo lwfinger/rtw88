@@ -291,7 +291,8 @@ static int rtw_mac_power_switch(struct rtw_dev *rtwdev, bool pwr_on)
 	if (rtw_read8(rtwdev, REG_CR) == 0xea)
 		cur_pwr = false;
 	else if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_USB &&
-		 (rtw_read8(rtwdev, REG_SYS_STATUS1 + 1) & BIT(0)))
+		   chip->id != RTW_CHIP_TYPE_8814A &&
+		   (rtw_read8(rtwdev, REG_SYS_STATUS1 + 1) & BIT(0)))
 		cur_pwr = false;
 	else
 		cur_pwr = true;
