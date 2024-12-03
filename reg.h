@@ -8,6 +8,7 @@
 #define REG_SYS_FUNC_EN		0x0002
 #define BIT_FEN_EN_25_1		BIT(13)
 #define BIT_FEN_ELDR		BIT(12)
+#define BIT_FEN_PCIEA		BIT(6)
 #define BIT_FEN_CPUEN		BIT(2)
 #define BIT_FEN_USBA		BIT(2)
 #define BIT_FEN_BB_GLB_RST	BIT(1)
@@ -38,6 +39,9 @@
 #define BIT_RF_SDM_RSTB		BIT(2)
 #define BIT_RF_RSTB		BIT(1)
 #define BIT_RF_EN		BIT(0)
+
+#define REG_RF_CTRL1		0x20
+#define REG_RF_CTRL2		0x21
 
 #define REG_AFE_CTRL1		0x0024
 #define BIT_MAC_CLK_SEL		(BIT(20) | BIT(21))
@@ -110,6 +114,7 @@
 #define BIT_SDIO_PAD_E5		BIT(18)
 
 #define REG_RF_B_CTRL		0x76
+#define REG_RF_CTRL3		0x76
 
 #define REG_AFE_CTRL_4		0x0078
 #define BIT_CK320M_AFE_EN	BIT(4)
@@ -602,6 +607,13 @@
 #define REG_CCA2ND		0x0838
 #define REG_L1PKTH		0x0848
 #define REG_CLKTRK		0x0860
+#define REG_CSI_MASK_SETTING1	0x0874
+#define REG_NBI_SETTING		0x087c
+#define BIT_NBI_ENABLE		BIT(13)
+#define REG_CSI_FIX_MASK0	0x0880
+#define REG_CSI_FIX_MASK1	0x0884
+#define REG_CSI_FIX_MASK6	0x0898
+#define REG_CSI_FIX_MASK7	0x089c
 #define REG_ADCCLK		0x08AC
 #define REG_HSSI_READ		0x08B0
 #define REG_FPGA0_XCD_RF_PARA	0x08B4
@@ -610,7 +622,7 @@
 #define REG_ANTSEL_SW		0x0900
 #define REG_DAC_RSTB		0x090c
 #define REG_SINGLE_TONE_CONT_TX	0x0914
-
+#define REG_AGC_TABLE		0x0958
 #define REG_RFE_CTRL_E		0x0974
 #define REG_2ND_CCA_CTRL	0x0976
 #define REG_IQK_COM00		0x0978
@@ -622,8 +634,10 @@
 #define REG_RXSB		0x0a00
 #define REG_CCK_RX		0x0a04
 #define REG_CCK_PD_TH		0x0a0a
-
-#define REG_CCK0_FAREPORT	0xa2c
+#define REG_CCK0_TX_FILTER1	0x0a20
+#define REG_CCK0_TX_FILTER2	0x0a24
+#define REG_CCK0_DEBUG_PORT	0x0a28
+#define REG_CCK0_FAREPORT	0x0a2c
 #define BIT_CCK0_2RX		BIT(18)
 #define BIT_CCK0_MRC		BIT(22)
 #define REG_FA_CCK		0x0a5c
@@ -646,6 +660,7 @@
 
 #define REG_3WIRE_SWA		0x0c00
 #define REG_RX_IQC_AB_A		0x0c10
+#define REG_RX_IQC_CD_A		0x0c14
 #define REG_TXSCALE_A		0x0c1c
 #define BB_SWING_MASK		GENMASK(31, 21)
 #define REG_TX_AGC_A_CCK_11_CCK_1		0xc20
@@ -673,7 +688,7 @@
 #define REG_LSSI_WRITE_A	0x0c90
 #define REG_PREDISTA		0x0c90
 #define REG_TXAGCIDX		0x0c94
-
+#define REG_TX_AGC_A		0x0c94
 #define REG_RFE_PINMUX_A	0x0cb0
 #define REG_RFE_INV_A		0x0cb4
 #define REG_RFE_CTRL8		0x0cb4
@@ -682,6 +697,7 @@
 #define DPDT_CTRL_PIN		0x77
 #define RFE_INV_MASK		0x3ff00000
 #define REG_RFECTL_A		0x0cb8
+#define REG_RFE_INV0		0x0cbc
 #define REG_RFE_INV8		0x0cbd
 #define BIT_MASK_RFE_INV89	GENMASK(1, 0)
 #define REG_RFE_INV16		0x0cbe
@@ -702,6 +718,7 @@
 
 #define REG_3WIRE_SWB		0x0e00
 #define REG_RX_IQC_AB_B		0x0e10
+#define REG_RX_IQC_CD_B		0x0e14
 #define REG_TXSCALE_B		0x0e1c
 #define REG_TX_AGC_B_CCK_11_CCK_1		0xe20
 #define REG_TX_AGC_B_OFDM18_OFDM6		0xe24
@@ -728,6 +745,7 @@
 #define REG_LSSI_WRITE_B	0x0e90
 #define REG_PREDISTB		0x0e90
 #define REG_INIDLYB		0x0e94
+#define REG_TX_AGC_B		0x0e94
 #define REG_RFE_PINMUX_B	0x0eb0
 #define REG_RFE_INV_B		0x0eb4
 #define REG_RFECTL_B		0x0eb8
@@ -744,6 +762,8 @@
 #define REG_CRC_OFDM		0x0f14
 #define REG_FA_OFDM		0x0f48
 #define REG_CCA_CCK		0x0fcc
+
+#define REG_SYS_CFG3_8814A	0x1000
 
 #define REG_ANAPARSW_MAC_0	0x1010
 #define BIT_CF_L_V2		GENMASK(29, 28)
@@ -862,9 +882,24 @@
 #define LTECOEX_WRITE_DATA REG_WL2LTECOEX_INDIRECT_ACCESS_WRITE_DATA_V1
 #define LTECOEX_READ_DATA REG_WL2LTECOEX_INDIRECT_ACCESS_READ_DATA_V1
 
+#define REG_RX_IQC_AB_C		0x1810
+#define REG_RX_IQC_CD_C		0x1814
+#define REG_TXSCALE_C		0x181c
+#define REG_CK_MONHC		0x185c
+#define REG_AFE_PWR1_C		0x1860
 #define REG_IGN_GNT_BT1	0x1860
+#define REG_TX_AGC_C		0x1894
+#define REG_RFE_PINMUX_C	0x18b4
 
 #define REG_RFESEL_CTRL	0x1990
+
+#define REG_RX_IQC_AB_D		0x1a10
+#define REG_RX_IQC_CD_D		0x1a14
+#define REG_TXSCALE_D		0x1a1c
+#define REG_CK_MONHD		0x1a5c
+#define REG_AFE_PWR1_D		0x1a60
+#define REG_TX_AGC_D		0x1a94
+#define REG_RFE_PINMUX_D	0x1ab4
 
 #define REG_NOMASK_TXBT	0x1ca7
 #define REG_ANAPAR	0x1c30
