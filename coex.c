@@ -370,6 +370,9 @@ void rtw_coex_write_scbd(struct rtw_dev *rtwdev, u16 bitpos, bool set)
 	struct rtw_coex_stat *coex_stat = &coex->stat;
 	u16 val = 0x2;
 
+	if (!rtwdev->efuse.btcoex)
+		return;
+
 	if (!chip->scbd_support)
 		return;
 
@@ -450,6 +453,9 @@ void rtw_coex_query_bt_info(struct rtw_dev *rtwdev)
 {
 	struct rtw_coex *coex = &rtwdev->coex;
 	struct rtw_coex_stat *coex_stat = &coex->stat;
+
+	if (!rtwdev->efuse.btcoex)
+		return;
 
 	if (coex_stat->bt_disabled)
 		return;
@@ -2696,6 +2702,9 @@ static void __rtw_coex_init_hw_config(struct rtw_dev *rtwdev, bool wifi_only)
 	struct rtw_coex *coex = &rtwdev->coex;
 	struct rtw_coex_stat *coex_stat = &coex->stat;
 
+	if (!rtwdev->efuse.btcoex)
+		return;
+
 	rtw_dbg(rtwdev, RTW_DBG_COEX, "[BTCoex], %s()\n", __func__);
 
 	rtw_coex_init_coex_var(rtwdev);
@@ -2751,6 +2760,9 @@ void rtw_coex_power_on_setting(struct rtw_dev *rtwdev)
 	struct rtw_coex *coex = &rtwdev->coex;
 	u8 table_case = 1;
 
+	if (!rtwdev->efuse.btcoex)
+		return;
+
 	rtw_dbg(rtwdev, RTW_DBG_COEX, "[BTCoex], %s()\n", __func__);
 
 	coex->stop_dm = true;
@@ -2775,6 +2787,9 @@ EXPORT_SYMBOL(rtw_coex_power_on_setting);
 
 void rtw_coex_power_off_setting(struct rtw_dev *rtwdev)
 {
+	if (!rtwdev->efuse.btcoex)
+		return;
+
 	rtw_write16(rtwdev, REG_WIFI_BT_INFO, BIT_BT_INT_EN);
 }
 EXPORT_SYMBOL(rtw_coex_power_off_setting);
@@ -2789,6 +2804,9 @@ void rtw_coex_ips_notify(struct rtw_dev *rtwdev, u8 type)
 {
 	struct rtw_coex *coex = &rtwdev->coex;
 	struct rtw_coex_stat *coex_stat = &coex->stat;
+
+	if (!rtwdev->efuse.btcoex)
+		return;
 
 	if (coex->manual_control || coex->stop_dm)
 		return;
@@ -2818,6 +2836,9 @@ void rtw_coex_lps_notify(struct rtw_dev *rtwdev, u8 type)
 {
 	struct rtw_coex *coex = &rtwdev->coex;
 	struct rtw_coex_stat *coex_stat = &coex->stat;
+
+	if (!rtwdev->efuse.btcoex)
+		return;
 
 	if (coex->manual_control || coex->stop_dm)
 		return;
@@ -2857,6 +2878,9 @@ void rtw_coex_scan_notify(struct rtw_dev *rtwdev, u8 type)
 	struct rtw_coex *coex = &rtwdev->coex;
 	struct rtw_coex_stat *coex_stat = &coex->stat;
 
+	if (!rtwdev->efuse.btcoex)
+		return;
+
 	if (coex->manual_control || coex->stop_dm)
 		return;
 
@@ -2894,6 +2918,9 @@ void rtw_coex_switchband_notify(struct rtw_dev *rtwdev, u8 type)
 {
 	struct rtw_coex *coex = &rtwdev->coex;
 
+	if (!rtwdev->efuse.btcoex)
+		return;
+
 	if (coex->manual_control || coex->stop_dm)
 		return;
 
@@ -2920,6 +2947,9 @@ void rtw_coex_connect_notify(struct rtw_dev *rtwdev, u8 type)
 {
 	struct rtw_coex *coex = &rtwdev->coex;
 	struct rtw_coex_stat *coex_stat = &coex->stat;
+
+	if (!rtwdev->efuse.btcoex)
+		return;
 
 	if (coex->manual_control || coex->stop_dm)
 		return;
@@ -2975,6 +3005,9 @@ void rtw_coex_media_status_notify(struct rtw_dev *rtwdev, u8 type)
 	struct rtw_coex *coex = &rtwdev->coex;
 	struct rtw_coex_stat *coex_stat = &coex->stat;
 
+	if (!rtwdev->efuse.btcoex)
+		return;
+
 	if (coex->manual_control || coex->stop_dm)
 		return;
 
@@ -3017,6 +3050,9 @@ void rtw_coex_bt_info_notify(struct rtw_dev *rtwdev, u8 *buf, u8 length)
 	u32 bt_relink_time;
 	u8 i, rsp_source = 0, type;
 	bool inq_page = false;
+
+	if (!rtwdev->efuse.btcoex)
+		return;
 
 	rsp_source = buf[0] & 0xf;
 	if (rsp_source >= COEX_BTINFO_SRC_MAX)
@@ -3287,6 +3323,9 @@ void rtw_coex_bt_hid_info_notify(struct rtw_dev *rtwdev, u8 *buf, u8 length)
 	u8 sub_id = buf[2], gamehid_cnt = 0, handle, i;
 	bool cur_game_hid_exist, complete;
 
+	if (!rtwdev->efuse.btcoex)
+		return;
+
 	if (!chip->wl_mimo_ps_support &&
 	    (sub_id == COEX_BT_HIDINFO_LIST || sub_id == COEX_BT_HIDINFO_A))
 		return;
@@ -3375,6 +3414,9 @@ void rtw_coex_query_bt_hid_list(struct rtw_dev *rtwdev)
 	u8 i, handle;
 	bool complete;
 
+	if (!rtwdev->efuse.btcoex)
+		return;
+
 	if (!chip->wl_mimo_ps_support || coex_stat->wl_under_ips ||
 	    (coex_stat->wl_under_lps && !coex_stat->wl_force_lps_ctrl))
 		return;
@@ -3408,6 +3450,9 @@ void rtw_coex_wl_fwdbginfo_notify(struct rtw_dev *rtwdev, u8 *buf, u8 length)
 	u8 val;
 	int i;
 
+	if (!rtwdev->efuse.btcoex)
+		return;
+
 	rtw_dbg(rtwdev, RTW_DBG_COEX,
 		"[BTCoex], WiFi Fw Dbg info = %8ph (len = %d)\n",
 		buf, length);
@@ -3434,12 +3479,18 @@ void rtw_coex_wl_fwdbginfo_notify(struct rtw_dev *rtwdev, u8 *buf, u8 length)
 
 void rtw_coex_wl_status_change_notify(struct rtw_dev *rtwdev, u32 type)
 {
+	if (!rtwdev->efuse.btcoex)
+		return;
+
 	rtw_coex_run_coex(rtwdev, COEX_RSN_WLSTATUS);
 }
 
 void rtw_coex_wl_status_check(struct rtw_dev *rtwdev)
 {
 	struct rtw_coex_stat *coex_stat = &rtwdev->coex.stat;
+
+	if (!rtwdev->efuse.btcoex)
+		return;
 
 	if ((coex_stat->wl_under_lps && !coex_stat->wl_force_lps_ctrl) ||
 	    coex_stat->wl_under_ips)
@@ -3454,6 +3505,9 @@ void rtw_coex_bt_relink_work(struct work_struct *work)
 					      coex.bt_relink_work.work);
 	struct rtw_coex_stat *coex_stat = &rtwdev->coex.stat;
 
+	if (!rtwdev->efuse.btcoex)
+		return;
+
 	mutex_lock(&rtwdev->mutex);
 	coex_stat->bt_setup_link = false;
 	rtw_coex_run_coex(rtwdev, COEX_RSN_WLSTATUS);
@@ -3466,6 +3520,9 @@ void rtw_coex_bt_reenable_work(struct work_struct *work)
 					      coex.bt_reenable_work.work);
 	struct rtw_coex_stat *coex_stat = &rtwdev->coex.stat;
 
+	if (!rtwdev->efuse.btcoex)
+		return;
+
 	mutex_lock(&rtwdev->mutex);
 	coex_stat->bt_reenable = false;
 	mutex_unlock(&rtwdev->mutex);
@@ -3477,6 +3534,9 @@ void rtw_coex_defreeze_work(struct work_struct *work)
 					      coex.defreeze_work.work);
 	struct rtw_coex *coex = &rtwdev->coex;
 	struct rtw_coex_stat *coex_stat = &rtwdev->coex.stat;
+
+	if (!rtwdev->efuse.btcoex)
+		return;
 
 	mutex_lock(&rtwdev->mutex);
 	coex->freeze = false;
@@ -3491,6 +3551,9 @@ void rtw_coex_wl_remain_work(struct work_struct *work)
 					      coex.wl_remain_work.work);
 	struct rtw_coex_stat *coex_stat = &rtwdev->coex.stat;
 
+	if (!rtwdev->efuse.btcoex)
+		return;
+
 	mutex_lock(&rtwdev->mutex);
 	coex_stat->wl_gl_busy = test_bit(RTW_FLAG_BUSY_TRAFFIC, rtwdev->flags);
 	rtw_coex_run_coex(rtwdev, COEX_RSN_WLSTATUS);
@@ -3503,6 +3566,9 @@ void rtw_coex_bt_remain_work(struct work_struct *work)
 					      coex.bt_remain_work.work);
 	struct rtw_coex_stat *coex_stat = &rtwdev->coex.stat;
 
+	if (!rtwdev->efuse.btcoex)
+		return;
+
 	mutex_lock(&rtwdev->mutex);
 	coex_stat->bt_inq_remain = coex_stat->bt_inq_page;
 	rtw_coex_run_coex(rtwdev, COEX_RSN_BTSTATUS);
@@ -3514,6 +3580,9 @@ void rtw_coex_wl_connecting_work(struct work_struct *work)
 	struct rtw_dev *rtwdev = container_of(work, struct rtw_dev,
 					      coex.wl_connecting_work.work);
 	struct rtw_coex_stat *coex_stat = &rtwdev->coex.stat;
+
+	if (!rtwdev->efuse.btcoex)
+		return;
 
 	mutex_lock(&rtwdev->mutex);
 	coex_stat->wl_connecting = false;
@@ -3528,6 +3597,9 @@ void rtw_coex_bt_multi_link_remain_work(struct work_struct *work)
 		coex.bt_multi_link_remain_work.work);
 	struct rtw_coex_stat *coex_stat = &rtwdev->coex.stat;
 
+	if (!rtwdev->efuse.btcoex)
+		return;
+
 	mutex_lock(&rtwdev->mutex);
 	coex_stat->bt_multi_link_remain = false;
 	mutex_unlock(&rtwdev->mutex);
@@ -3538,6 +3610,9 @@ void rtw_coex_wl_ccklock_work(struct work_struct *work)
 	struct rtw_dev *rtwdev = container_of(work, struct rtw_dev,
 					      coex.wl_ccklock_work.work);
 	struct rtw_coex_stat *coex_stat = &rtwdev->coex.stat;
+
+	if (!rtwdev->efuse.btcoex)
+		return;
 
 	mutex_lock(&rtwdev->mutex);
 	coex_stat->wl_cck_lock = false;
@@ -3933,6 +4008,9 @@ void rtw_coex_display_coex_info(struct rtw_dev *rtwdev, struct seq_file *m)
 	u32 wl_reg_6c0, wl_reg_6c4, wl_reg_6c8, wl_reg_778, wl_reg_6cc;
 	u32 lte_coex = 0, bt_coex = 0;
 	int i;
+
+	if (!rtwdev->efuse.btcoex)
+		return;
 
 	score_board_BW = rtw_coex_read_scbd(rtwdev);
 	score_board_WB = coex_stat->score_board;
