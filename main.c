@@ -2426,7 +2426,7 @@ static void rtw_led_deinit(struct rtw_dev *rtwdev)
 
 int rtw_register_hw(struct rtw_dev *rtwdev, struct ieee80211_hw *hw)
 {
-	bool sta_mode_only = rtwdev->hci.type == RTW_HCI_TYPE_SDIO;
+	bool sta_mode_only = false; /*rtwdev->hci.type == RTW_HCI_TYPE_SDIO;*/
 	struct rtw_hal *hal = &rtwdev->hal;
 	int max_tx_headroom = 0;
 	int ret;
