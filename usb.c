@@ -554,8 +554,9 @@ static void rtw_usb_rx_handler(struct work_struct *work)
 {
 	struct rtw_usb *rtwusb = container_of(work, struct rtw_usb, rx_work);
 #else
-static void rtw_usb_rx_handler(struct rtw_usb *rtwusb)
+static void rtw_usb_rx_handler(unsigned long shut_up_gcc)
 {
+	struct rtw_usb *rtwusb = (struct rtw_usb *)shut_up_gcc;
 #endif
 	struct rtw_dev *rtwdev = rtwusb->rtwdev;
 	const struct rtw_chip_info *chip = rtwdev->chip;
@@ -939,8 +940,7 @@ static int rtw_usb_init_rx(struct rtw_dev *rtwdev)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
 	rtwusb->rxwq = alloc_workqueue("rtw88_usb: rx wq", WQ_BH, 0);
 #else
-	tasklet_init(&rtwusb->rx_tasklet,
-		     (void(*)(unsigned long))rtw_usb_rx_handler,
+	tasklet_init(&rtwusb->rx_tasklet, rtw_usb_rx_handler,
 		     (unsigned long)rtwusb);
 
 	rtwusb->rxwq = create_singlethread_workqueue("rtw88_usb: rx wq");
