@@ -988,8 +988,16 @@ static int rtw_ops_set_sar_specs(struct ieee80211_hw *hw,
 
 static void rtw_ops_sta_rc_update(struct ieee80211_hw *hw,
 				  struct ieee80211_vif *vif,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 13, 0)
 				  struct ieee80211_sta *sta, u32 changed)
+#else
+				  struct ieee80211_link_sta *link_sta,
+				  u32 changed)
+#endif
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 13, 0)
+	struct ieee80211_sta *sta = link_sta->sta;
+#endif
 	struct rtw_dev *rtwdev = hw->priv;
 	struct rtw_sta_info *si = (struct rtw_sta_info *)sta->drv_priv;
 
@@ -1037,7 +1045,11 @@ const struct ieee80211_ops rtw_ops = {
 	.reconfig_complete	= rtw_reconfig_complete,
 	.hw_scan		= rtw_ops_hw_scan,
 	.cancel_hw_scan		= rtw_ops_cancel_hw_scan,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 13, 0)
 	.sta_rc_update		= rtw_ops_sta_rc_update,
+#else
+	.link_sta_rc_update	= rtw_ops_sta_rc_update,
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
 	.set_sar_specs          = rtw_ops_set_sar_specs,
 #endif
