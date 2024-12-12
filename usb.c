@@ -1193,6 +1193,9 @@ static void rtw_usb_phy_cfg(struct rtw_dev *rtwdev,
 	const struct rtw_intf_phy_para *para = NULL;
 	u16 cut, offset;
 
+	if (!rtwdev->chip->intf_table)
+		return;
+
 	if (speed == USB_SPEED_SUPER)
 		para = rtwdev->chip->intf_table->usb3_para;
 	else if (speed == USB_SPEED_HIGH)
