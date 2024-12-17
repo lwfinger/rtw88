@@ -708,20 +708,14 @@ static int rtw_debugfs_get_tx_pwr_tbl(struct seq_file *m, void *v)
 		   "path", "rate", "pwr", "base", "byr", "lmt", "sar", "rem");
 
 	mutex_lock(&hal->tx_power_mutex);
-	for (path = RF_PATH_A; path <= RF_PATH_B; path++) {
+	for (path = RF_PATH_A; path <= RF_PATH_D; path++) {
 		/* there is no CCK rates used in 5G */
 		if (hal->current_band_type == RTW_BAND_5G)
 			rate = DESC_RATE6M;
 		else
 			rate = DESC_RATE1M;
 
-		/* now, not support vht 3ss and vht 4ss*/
-		for (; rate <= DESC_RATEVHT2SS_MCS9; rate++) {
-			/* now, not support ht 3ss and ht 4ss*/
-			if (rate > DESC_RATEMCS15 &&
-			    rate < DESC_RATEVHT1SS_MCS0)
-				continue;
-
+		for (; rate <= DESC_RATEVHT4SS_MCS9; rate++) {
 			rtw_get_tx_power_params(rtwdev, path, rate, bw,
 						ch, regd, &pwr_param);
 
