@@ -1232,7 +1232,6 @@ void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si,
 	u8 wireless_set;
 	u8 bw_mode;
 	u8 rate_id;
-	u8 rf_type = RF_1T1R;
 	u8 stbc_en = 0;
 	u8 ldpc_en = 0;
 	u8 tx_num = 1;
@@ -1387,20 +1386,17 @@ void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si,
 	}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
-	if (sta->deflink.vht_cap.vht_supported && ra_mask & 0xffc00000) {
+	if (sta->deflink.vht_cap.vht_supported && ra_mask & 0xffc00000)
 #else
-	if (sta->vht_cap.vht_supported && ra_mask & 0xffc00000) {
+	if (sta->vht_cap.vht_supported && ra_mask & 0xffc00000)
 #endif
 		tx_num = 2;
-		rf_type = RF_2T2R;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
-	} else if (sta->deflink.ht_cap.ht_supported && ra_mask & 0xfff00000) {
+	else if (sta->deflink.ht_cap.ht_supported && ra_mask & 0xfff00000)
 #else
-	} else if (sta->ht_cap.ht_supported && ra_mask & 0xfff00000) {
+	else if (sta->ht_cap.ht_supported && ra_mask & 0xfff00000)
 #endif
 		tx_num = 2;
-		rf_type = RF_2T2R;
-	}
 
 	rate_id = get_rate_id(wireless_set, bw_mode, tx_num);
 
@@ -1411,7 +1407,6 @@ void rtw_update_sta_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si,
 	si->bw_mode = bw_mode;
 	si->stbc_en = stbc_en;
 	si->ldpc_en = ldpc_en;
-	si->rf_type = rf_type;
 	si->sgi_enable = is_support_sgi;
 	si->vht_enable = is_vht_enable;
 	si->ra_mask = ra_mask;
