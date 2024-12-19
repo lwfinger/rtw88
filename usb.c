@@ -868,17 +868,15 @@ static void rtw_usb_dynamic_rx_agg_v2(struct rtw_dev *rtwdev, bool enable)
 	u8 size, timeout;
 	u16 val16;
 
-	if (rtwusb->udev->speed == USB_SPEED_SUPER) {
+	if (!enable) {
+		size = 0x0;
+		timeout = 0x1;
+	} else if (rtwusb->udev->speed == USB_SPEED_SUPER) {
 		size = 0x6;
 		timeout = 0x1a;
 	} else {
 		size = 0x5;
 		timeout = 0x20;
-	}
-
-	if (!enable) {
-		size = 0x0;
-		timeout = 0x1;
 	}
 
 	val16 = u16_encode_bits(size, BIT_RXDMA_AGG_PG_TH) |
