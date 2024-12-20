@@ -1014,6 +1014,7 @@ struct rtw_chip_ops {
 			   u32 antenna_rx);
 	void (*cfg_ldo25)(struct rtw_dev *rtwdev, bool enable);
 	void (*efuse_grant)(struct rtw_dev *rtwdev, bool enable);
+	void (*set_ampdu_factor)(struct rtw_dev *rtwdev, u8 factor);
 	void (*false_alarm_statistics)(struct rtw_dev *rtwdev);
 	void (*phy_calibration)(struct rtw_dev *rtwdev);
 	void (*dpk_track)(struct rtw_dev *rtwdev);
@@ -2418,6 +2419,8 @@ void rtw_update_channel(struct rtw_dev *rtwdev, u8 center_channel,
 void rtw_core_port_switch(struct rtw_dev *rtwdev, struct ieee80211_vif *vif);
 bool rtw_core_check_sta_active(struct rtw_dev *rtwdev);
 void rtw_core_enable_beacon(struct rtw_dev *rtwdev, bool enable);
+void rtw_set_ampdu_factor(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
+			  struct ieee80211_bss_conf *bss_conf);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 8, 0)
 static inline bool rtw_ssid_equal(struct cfg80211_ssid *a,
                                  struct cfg80211_ssid *b)

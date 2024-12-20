@@ -2809,6 +2809,11 @@ static void rtw8822c_cfg_ldo25(struct rtw_dev *rtwdev, bool enable)
 	rtw_write8(rtwdev, REG_ANAPARLDO_POW_MAC, ldo_pwr);
 }
 
+static void rtw8822c_set_ampdu_factor(struct rtw_dev *rtwdev, u8 factor)
+{
+	rtw_write32(rtwdev, REG_AMPDU_MAX_LENGTH, (8192 << factor) - 1);
+}
+
 static void rtw8822c_false_alarm_statistics(struct rtw_dev *rtwdev)
 {
 	struct rtw_dm_info *dm_info = &rtwdev->dm_info;
@@ -4972,6 +4977,7 @@ static const struct rtw_chip_ops rtw8822c_ops = {
 	.set_tx_power_index	= rtw8822c_set_tx_power_index,
 	.set_antenna		= rtw8822c_set_antenna,
 	.cfg_ldo25		= rtw8822c_cfg_ldo25,
+	.set_ampdu_factor	= rtw8822c_set_ampdu_factor,
 	.false_alarm_statistics	= rtw8822c_false_alarm_statistics,
 	.dpk_track		= rtw8822c_dpk_track,
 	.phy_calibration	= rtw8822c_phy_calibration,
