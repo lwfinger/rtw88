@@ -3,9 +3,9 @@ KVER ?= $(if $(KERNELRELEASE),$(KERNELRELEASE),$(shell uname -r))
 KSRC ?= $(if $(KERNEL_SRC),$(KERNEL_SRC),/lib/modules/$(KVER)/build)
 FIRMWAREDIR := /lib/firmware/rtw88
 MODLIST := rtw_8723cs rtw_8723de rtw_8723ds rtw_8723du \
-	   rtw_8812au rtw_8821au rtw_8821ce rtw_8821cs rtw_8821cu \
+	   rtw_8812au rtw_8814au rtw_8821au rtw_8821ce rtw_8821cs rtw_8821cu \
 	   rtw_8822be rtw_8822bs rtw_8822bu rtw_8822ce rtw_8822cs rtw_8822cu \
-	   rtw_8703b rtw_8723d rtw_8821a rtw_8812a rtw_8821c rtw_8822b rtw_8822c \
+	   rtw_8703b rtw_8723d rtw_8821a rtw_8812a rtw_8814a rtw_8821c rtw_8822b rtw_8822c \
 	   rtw_8723x rtw_88xxa rtw_pci rtw_sdio rtw_usb rtw_core
 # Handle the move of the entire rtw88 tree
 ifneq ("","$(wildcard /lib/modules/$(KVER)/kernel/drivers/net/wireless/realtek)")
