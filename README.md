@@ -1,14 +1,15 @@
 # rtw88 downstream 🐧
-### This is a downstream repo for the Linux in-kernel rtw88 series of drivers for Realtek WiFi 5 chips.
+### This is a downstream repo with a primary purpose of supporting development, testing and maintenance for the Realtek rtw88 series of WiFi 5 drivers in the Linux kernel.
 
-🌟 **Up-to-Date Drivers**: The code in this repo stays in sync with the `wireless-next` repository, with additional changes to accommodate kernel API changes over time.
+The most recent addition to this repo is the driver for the rtw8814au chipset. Testing is needed so if you have an adapter based on the rtw8814au chipset, please test and report.
+
+🌟 The code in this repo stays in sync with the `wireless-next` repository, with additional changes to accommodate kernel API changes over time.
 
 📌 **Note**: The `wireless-next` repo contains the code set for the ***next*** kernel version. If kernel 6.X is out, kernel mainline repo is on 6.X+1-rcY, and `wireless-next` targets kernel 6.X+2 material.
 
 ---
 
-### Compatibility
-
+## Compatibility
 Compatible with **Linux kernel versions 5.4 and newer** as long as your distro hasn't modified any kernel APIs. RHEL and all distros based on RHEL will have modified kernel APIs and are unlikely to be compatible with this driver.
 
 
@@ -18,6 +19,7 @@ Compatible with **Linux kernel versions 5.4 and newer** as long as your distro h
 - **PCIe**: RTW8822BE, RTW8822CE, RTW8821CE, RTW8723DE
 - **SDIO**: RTW8822BS, RTW8822CS, RTW8821CS, RTW8723DS
 
+---
 
 ## Issues 🚨
 Report problems in Issues after you have checked the [FAQ](#faq) at bottom of this README.
@@ -119,6 +121,8 @@ sudo mokutil --reset
 - In the MOK managerment screen, select reset MOK list.
 - Reboot then retry from the step `make sign-install`.
 
+---
+
 ## Important Information
 Below is important information for using this driver.
 
@@ -160,10 +164,7 @@ options <device_name> <<driver_option_name>>=<value>
 The available options for rtw_pci are disable_msi and disable_aspm.
 The available options for rtw_core are disable_lps_deep, support_bf,  and debug_mask.
 
----
-
-## Kernel Updates 🔄
-
+### 5. Kernel Updates 🔄
 When your kernel updates, run:
 ```bash
 cd ~/rtw88
@@ -177,7 +178,9 @@ make
 ```
 sudo make install
 ```
-💡 **Remember, every new kernel requires this step - no exceptions**. If the kernel update means that you have no network, skip the 'git pull' and build the driver as it is, but run `git pull` once you have connectivity, and rebuild if any updates were pulled.
+💡 **Remember, every newly installed kernel requires this step - no exceptions**. If the kernel update means that you have no network, skip the 'git pull' and build the driver as it is, but run `git pull` once you have connectivity, and rebuild if any updates were pulled.
+
+---
 
 ## FAQ
 
