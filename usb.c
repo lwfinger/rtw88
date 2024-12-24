@@ -267,6 +267,7 @@ static void rtw_usb_write_port_tx_complete(struct urb *urb)
 	struct rtw_usb_txcb *txcb = urb->context;
 	struct rtw_dev *rtwdev = txcb->rtwdev;
 	struct ieee80211_hw *hw = rtwdev->hw;
+	struct ieee80211_hdr *hdr;
 
 	while (true) {
 		struct sk_buff *skb = skb_dequeue(&txcb->tx_ack_queue);
@@ -281,8 +282,12 @@ static void rtw_usb_write_port_tx_complete(struct urb *urb)
 
 		skb_pull(skb, rtwdev->chip->tx_pkt_desc_sz);
 
+		hdr = (struct ieee80211_hdr *)skb->data;
+
 		/* enqueue to wait for tx report */
-		if (info->flags & IEEE80211_TX_CTL_REQ_TX_STATUS) {
+		if ((info->flags & IEEE80211_TX_CTL_REQ_TX_STATUS) &&
+		    !(rtwdev->chip->id == RTW_CHIP_TYPE_8814A &&
+		      ieee80211_is_mgmt(hdr->frame_control))) {
 			rtw_tx_report_enqueue(rtwdev, skb, tx_data->sn);
 			continue;
 		}
