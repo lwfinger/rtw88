@@ -152,7 +152,7 @@ sudo modprobe rtw_8723de    # This loads the module
 # Only a single modprobe call is required to load.
 ```
 
-### 4. Option Configuration 📝
+### 4. Driver Parameter Configuration (options) 📝
 ```bash
 sudo nano /etc/modprobe.d/<dev_name>.conf
 ```
@@ -161,6 +161,13 @@ There, enter the line below:
 ```bash
 options <device_name> <<driver_option_name>>=<value>
 ```
+
+The available parameter (option) for USB devices is
+
+switch_usb_mode=<Y/N>
+
+Set to N to disable switching to USB 3 mode to avoid potential interference in the 2.4 GHz band (default: Y) (bool). This parameter (options) applies to the USB 3 capable devices: RTL8814AU, RTL8822CU, RTL8812CU, RTL8822BU, RTL8812BU, and RTL8812AU. It's okay to leave the parameter on even when plugging the device into a USB 2 port because it will try to switch to USB 3 mode only once.
+
 The available options for rtw_pci are disable_msi and disable_aspm.
 The available options for rtw_core are disable_lps_deep, support_bf,  and debug_mask.
 
