@@ -153,23 +153,42 @@ sudo modprobe rtw_8723de    # This loads the module
 ```
 
 ### 4. Driver Parameter Configuration (options) 📝
+
+Example for chipset RTL8814AU and driver name rtw_8814au:
+
+Note: the driver names in the rtw88 in the Linux Mainline kernel are slightly different: rtw88_8814au
+
 ```bash
-sudo nano /etc/modprobe.d/<dev_name>.conf
+sudo nano /etc/modprobe.d/rtw_8814au.conf
 ```
 
-There, enter the line below:
+Note: Change rtw_8814au in the above to the name of the driver you wish to modify.
+
+In the empty file, paste the following:
+
 ```bash
-options <device_name> <<driver_option_name>>=<value>
+options rtw_8814au switch_usb_mode=N
+
 ```
 
-The available parameter (option) for USB devices is
+See below for an explanation of the above parameter and for information about other parameters.
+
+The available parameter (option) for USB 3 devices is:
 
 switch_usb_mode=<Y/N>
 
-Set to N to disable switching to USB 3 mode to avoid potential interference in the 2.4 GHz band (default: Y) (bool). This parameter (options) applies to the USB 3 capable devices: RTL8814AU, RTL8822CU, RTL8812CU, RTL8822BU, RTL8812BU, and RTL8812AU. It's okay to leave the parameter on even when plugging the device into a USB 2 port because it will try to switch to USB 3 mode only once.
+Set to N to disable switching to USB 3 mode to avoid potential interference in the 2.4 GHz band (default: Y) (bool). This parameter (option) applies to the USB 3 capable devices: RTL8814AU (rtw_8814au), RTL8822CU (rtw_8822cu), RTL8812CU (rtw_8822cu), RTL8822BU (rtw_8822bu), RTL8812BU (rtw_8822bu), and RTL8812AU (rtw_8812au). It's okay to leave the parameter on even when plugging the device into a USB 2 port because it will try to switch to USB 3 mode only once.
 
-The available options for rtw_pci are disable_msi and disable_aspm.
-The available options for rtw_core are disable_lps_deep, support_bf,  and debug_mask.
+The available options for rtw_pci are:
+
+disable_msi
+disable_aspm
+
+The available options for rtw_core are:
+
+disable_lps_deep
+support_bf
+debug_mask
 
 ### 5. Kernel Updates 🔄
 When your kernel updates, run:
