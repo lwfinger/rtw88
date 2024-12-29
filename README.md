@@ -195,15 +195,26 @@ When your kernel updates, run:
 ```bash
 cd ~/rtw88
 ```
+Change the above to the location where you downloaded the driver if necessary.
+
 ```
 git pull
 ```
 ```
 make
 ```
+
+Secureboot disabled:
+
 ```
 sudo make install
 ```
+
+Secureboot enabled:
+
+See section `Installation with SecureBoot for All Distros`.
+
+
 💡 **Remember, every newly installed kernel requires this step - no exceptions**. If the kernel update means that you have no network, skip the 'git pull' and build the driver as it is, but run `git pull` once you have connectivity, and rebuild if any updates were pulled.
 
 ---
@@ -231,22 +242,17 @@ Ubuntu often modifies kernel APIs, which can cause build issues. You'll need to 
 
 ---
 
-### Q3: How do I update the driver after a kernel update?
-You will need to pull the latest code from this repository and recompile the driver. [Follow the steps in the Maintenance section](#kernel-updates-).
-
----
-
-### Q4: Is Secure Boot supported?
+### Q3: Is Secure Boot supported?
 Yes, this repository provides a way to sign the kernel modules to be compatible with Secure Boot. [Check out the Installation with SecureBoot section](#installation-with-secureboot-).
 
 ---
 
-### Q5: My card isn't listed. Can I request a feature?
+### Q4: My card isn't listed. Can I request a feature?
 For feature requests like supporting a new card, you should reach out to Realtek engineers via E-mail at [linux-wireless@vger.kernel.org](mailto:linux-wireless@vger.kernel.org).
 
 ---
 
-### Q6: How to remove this driver if it doesn't work as expected?
+### Q5: How to remove this driver if it doesn't work as expected?
 Run this command in the rtw88 source directory and then the rtw88 driver will be unloaded and removed.
 
 `sudo make uninstall`
