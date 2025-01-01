@@ -1752,6 +1752,16 @@ static void rtw8814a_coex_cfg_init(struct rtw_dev *rtwdev)
 {
 }
 
+static void rtw8814a_coex_cfg_ant_switch(struct rtw_dev *rtwdev, u8 ctrl_type,
+					 u8 pos_type)
+{
+	/* Override rtw_coex_coex_ctrl_owner(). RF path C does not
+	 * function when BIT_LTE_MUX_CTRL_PATH is set.
+	 */
+	rtw_write8_clr(rtwdev, REG_SYS_SDIO_CTRL + 3,
+		       BIT_LTE_MUX_CTRL_PATH >> 24);
+}
+
 static void rtw8814a_coex_cfg_gnt_fix(struct rtw_dev *rtwdev)
 {
 }
@@ -1762,6 +1772,11 @@ static void rtw8814a_coex_cfg_gnt_debug(struct rtw_dev *rtwdev)
 
 static void rtw8814a_coex_cfg_rfe_type(struct rtw_dev *rtwdev)
 {
+	struct rtw_coex *coex = &rtwdev->coex;
+	struct rtw_coex_rfe *coex_rfe = &coex->rfe;
+
+	/* Only needed to make rtw8814a_coex_cfg_ant_switch() run. */
+	coex_rfe->ant_switch_exist = true;
 }
 
 static void rtw8814a_coex_cfg_wl_tx_power(struct rtw_dev *rtwdev, u8 wl_pwr)
@@ -2077,7 +2092,7 @@ static const struct rtw_chip_ops rtw8814a_ops = {
 	.fill_txdesc_checksum	= rtw8814a_fill_txdesc_checksum,
 
 	.coex_set_init		= rtw8814a_coex_cfg_init,
-	.coex_set_ant_switch	= NULL,
+	.coex_set_ant_switch	= rtw8814a_coex_cfg_ant_switch,
 	.coex_set_gnt_fix	= rtw8814a_coex_cfg_gnt_fix,
 	.coex_set_gnt_debug	= rtw8814a_coex_cfg_gnt_debug,
 	.coex_set_rfe_type	= rtw8814a_coex_cfg_rfe_type,
