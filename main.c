@@ -2364,10 +2364,10 @@ static void rtw_led_init(struct rtw_dev *rtwdev)
 	if (!rtwdev->chip->ops->led_set)
 		return;
 
-	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_USB)
-		led->brightness_set_blocking = rtw_led_set_blocking;
-	else
+	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_PCIE)
 		led->brightness_set = rtwdev->chip->ops->led_set;
+	else
+		led->brightness_set_blocking = rtw_led_set_blocking;
 
 	snprintf(rtwdev->led_name, sizeof(rtwdev->led_name),
 		 "rtw88-%s", dev_name(rtwdev->dev));
