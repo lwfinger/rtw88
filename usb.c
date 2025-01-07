@@ -303,6 +303,7 @@ static void rtw_usb_write_port_tx_complete(struct urb *urb)
 	}
 
 	kfree(txcb);
+	usb_free_urb(urb);
 }
 
 static int qsel_to_ep(struct rtw_usb *rtwusb, unsigned int qsel)
@@ -334,8 +335,6 @@ static int rtw_usb_write_port(struct rtw_dev *rtwdev, u8 qsel, struct sk_buff *s
 	usb_fill_bulk_urb(urb, usbd, pipe, skb->data, skb->len, cb, context);
 	urb->transfer_flags |= URB_ZERO_PACKET;
 	ret = usb_submit_urb(urb, GFP_ATOMIC);
-
-	usb_free_urb(urb);
 
 	return ret;
 }
@@ -447,6 +446,7 @@ static void rtw_usb_write_port_complete(struct urb *urb)
 	struct sk_buff *skb = urb->context;
 
 	dev_kfree_skb_any(skb);
+	usb_free_urb(urb);
 }
 
 static int rtw_usb_write_data(struct rtw_dev *rtwdev,
