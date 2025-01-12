@@ -221,38 +221,16 @@ See section `Installation with SecureBoot for All Distros`.
 
 ## FAQ
 
-Below is a set Frequently Asked Questions when using this repository.
+Below are some Frequently Asked Questions:
 
 ---
 
-### Q1: My driver builds and loads correctly, but fails to work properly. Can you help me?
-When you have problems where the driver builds and loads correctly, but it fails to work, a GitHub
-issue on this repository is **NOT** the place to report it. 
-
-We have no idea about the internal workings of any of the chips, and the Realtek engineers who do will not read these issues. To reach them, send E-mail to [linux-wireless@vger.kernel.org](mailto:linux-wireless@vger.kernel.org). 
-
-Be sure to include a detailed description of any messages in the kernel logs and any steps that you have taken to analyze or fix the problem. If your description is not complete, you are unlikely to get the help you need. NOTE: E-mail sent to that mailing list MUST be plain text. HTML mail will be rejected.
-
-Start with this page for guidance: https://wireless.wiki.kernel.org/en/users/support
-
----
-
-### Q2: I'm using Ubuntu, and the build failed. What do I do?
-Ubuntu often modifies kernel APIs, which can cause build issues. You'll need to manually adjust the source code or look for solutions specific to your distribution. We cannot support these types of issues.
-
----
-
-### Q3: Is Secure Boot supported?
+### Q1: Is Secure Boot supported?
 Yes, this repository provides a way to sign the kernel modules to be compatible with Secure Boot. [Check out the Installation with SecureBoot section](#installation-with-secureboot-).
 
 ---
 
-### Q4: My card isn't listed. Can I request a feature?
-For feature requests like supporting a new card, you should reach out to Realtek engineers via E-mail at [linux-wireless@vger.kernel.org](mailto:linux-wireless@vger.kernel.org).
-
----
-
-### Q5: How to remove this driver if it doesn't work as expected?
+### Q2: How to remove this driver if it doesn't work as expected?
 Run this command in the rtw88 source directory and then the rtw88 driver will be unloaded and removed.
 
 `sudo make uninstall`
