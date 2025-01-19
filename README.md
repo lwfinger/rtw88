@@ -49,7 +49,7 @@ sudo apt install make gcc linux-headers-$(uname -r) build-essential git
 sudo dnf install kernel-headers kernel-devel
 ```
 ```bash
-sudo dnf group install "C Development Tools and Libraries"
+sudo dnf group install c-development
 ```
 
 #### openSUSE
