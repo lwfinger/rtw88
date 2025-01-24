@@ -1,7 +1,7 @@
 SHELL := /bin/sh
 KVER ?= $(if $(KERNELRELEASE),$(KERNELRELEASE),$(shell uname -r))
 KSRC ?= $(if $(KERNEL_SRC),$(KERNEL_SRC),/lib/modules/$(KVER)/build)
-FIRMWAREDIR := /lib/firmware/rtw88
+FWDIR := /lib/firmware/rtw88
 MODLIST := rtw_8723cs rtw_8723de rtw_8723ds rtw_8723du \
 	   rtw_8812au rtw_8814au rtw_8821au rtw_8821ce rtw_8821cs rtw_8821cu \
 	   rtw_8822be rtw_8822bs rtw_8822bu rtw_8822ce rtw_8822cs rtw_8822cu \
@@ -184,7 +184,6 @@ all:
 	
 install: all
 	@install -D -m 644 -t $(MODDESTDIR) *.ko
-	@install -D -m 644 -t $(FIRMWAREDIR) firmware/*.bin
 	@install -D -m 644 -t /etc/modprobe.d blacklist-rtw88.conf
 
 ifeq ($(COMPRESS_GZIP), y)
@@ -199,6 +198,24 @@ endif
 
 	@depmod $(DEPMOD_ARGS) -a $(KVER)
 	@echo "The rtw88 drivers and firmware files were installed successfully."
+
+install_fw:
+ifeq ($(wildcard $(FWDIR)), )
+	@install -Dvm 644 -t $(FWDIR) firmware/*.bin
+else
+	@cp -r firmware tmp
+ifneq ($(wildcard $(FWDIR)/*.zst), )
+	@zstd -fq --rm tmp/*.bin
+endif
+ifneq ($(wildcard $(FWDIR)/*.xz), )
+	@xz -f -C crc32 tmp/*.bin
+endif
+ifneq ($(wildcard $(FWDIR)/*.gz), )
+	@gzip -f tmp/*.bin
+endif
+	@install -Dvm 644 -t $(FWDIR) tmp/*
+	@rm -rf tmp
+endif
 
 uninstall:
 	@for mod in $(MODLIST); do \

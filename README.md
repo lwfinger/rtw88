@@ -1,7 +1,7 @@
 # rtw88 downstream 🐧
 ### This is a downstream repo with a primary purpose of supporting development, testing and maintenance for the Realtek rtw88 series of WiFi 5 drivers in the Linux kernel.
 
-The most recent addition to this repo is the driver for the rtw8814au chipset. Testing is needed so if you have an adapter based on the rtw8814au chipset, please test and report.
+The most recent addition to this repo is the driver for the RTL8814AU chipset. Testing is needed so if you have an adapter based on the RTL8814AU chipset, please test and report.
 
 🌟 The code in this repo stays in sync with the `wireless-next` repository, with additional changes to accommodate kernel API changes over time.
 
@@ -14,10 +14,10 @@ Compatible with **Linux kernel versions 5.4 and newer** as long as your distro h
 
 
 #### Supported Chipsets
-- **USB** : RTW8814AU, RTW8812AU, RTW8821AU, RTW8811AU, RTW8822BU, RTW8812BU
-- **USB** : RTW8822CU, RTW8812CU, RTW8821CU, RTW8811CU, RTW8723DU
-- **PCIe**: RTW8822BE, RTW8822CE, RTW8821CE, RTW8723DE
-- **SDIO**: RTW8822BS, RTW8822CS, RTW8821CS, RTW8723DS
+- **PCIe**: RTL8723DE, RTL8821CE, RTL8822BE, RTL8822CE
+- **SDIO**: RTL8723CS, RTL8723DS, RTL8821CS, RTL8822BS, RTL8822CS
+- **USB** : RTL8723DU, RTL8811AU, RTL8811CU, RTL8812AU, RTL8812BU, RTL8812CU
+- **USB** : RTL8814AU, RTL8821AU, RTL8821CU, RTL8822BU, RTL8822CU
 
 ---
 
@@ -25,6 +25,7 @@ Compatible with **Linux kernel versions 5.4 and newer** as long as your distro h
 Report problems in Issues after you have checked the [FAQ](#faq) at bottom of this README.
 
 ⚠️ If you see a line such as:
+
 `make[1]: *** /lib/modules/5.17.5-300.fc36.x86_64/build: No such file or directory.` **Stop.**
 
 This indicates **you have NOT installed the kernel headers.** 
@@ -41,15 +42,15 @@ Below are prerequisites for common Linux distributions __before__ you do a [basi
 sudo apt update && sudo apt upgrade
 ```
 ```bash
-sudo apt install make gcc linux-headers-$(uname -r) build-essential git
+sudo apt install linux-headers-$(uname -r) build-essential git
 ```
 
 #### Fedora
 ```bash
-sudo dnf install kernel-headers kernel-devel
+sudo dnf update
 ```
 ```bash
-sudo dnf group install "C Development Tools and Libraries"
+sudo dnf install kernel-devel git
 ```
 
 #### openSUSE
@@ -59,21 +60,19 @@ sudo zypper install make gcc kernel-devel kernel-default-devel git libopenssl-de
 
 #### Arch
 ```bash
-git clone https://aur.archlinux.org/rtw88-dkms-git.git
+sudo pacman -Syu
 ```
 ```bash
-cd rtw88-dkms-git
+sudo pacman -Sy base-devel git linux-firmware
 ```
-```bash
-makepkg -sri
-```
+Remember to install the corresponding [kernel headers](https://archlinux.org/packages/?q=Headers+and+scripts+for+building+modules) which is also needed for compilation.
 
 #### Raspberry Pi OS
 ```bash
 sudo apt update && sudo apt upgrade
 ```
 ```bash
-sudo apt install -y raspberrypi-kernel-headers build-essential bc git
+sudo apt install -y raspberrypi-kernel-headers build-essential git
 ```
 
 ---
@@ -91,6 +90,21 @@ make
 ```bash
 sudo make install
 ```
+```bash
+sudo make install_fw
+```
+---
+
+### Basic Installation for Arch-based Distros 🛠
+```bash
+git clone https://aur.archlinux.org/rtw88-dkms-git.git
+```
+```bash
+cd rtw88-dkms-git
+```
+```bash
+makepkg -si
+```
 ---
 ### Installation with SecureBoot for All Distros 🔒
 
@@ -104,6 +118,9 @@ cd rtw88
 make
 ```
 ```bash
+sudo make install_fw
+```
+```bash
 sudo make sign-install
 ```
 You will be prompted a password, **please keep it in mind and use it in next steps.**
@@ -111,7 +128,7 @@ You will be prompted a password, **please keep it in mind and use it in next ste
 Reboot to activate the new installed module, then in the MOK managerment screen:
 1. Select "Enroll key" and enroll the key created by above sign-install step
 2. When promted, enter the password you entered when create sign key. 
-3. If you enter wrong password, your computer won't not bebootable. In this case,
+3. If you enter wrong password, your computer won't be bootable. In this case,
    use the BOOT menu from your BIOS, to boot into your OS then do below steps:
 ```bash
 sudo mokutil --reset
@@ -152,45 +169,7 @@ sudo modprobe rtw_8723de    # This loads the module
 # Only a single modprobe call is required to load.
 ```
 
-### 4. Driver Parameter Configuration (options) 📝
-
-Example for chipset RTL8814AU and driver name rtw_8814au:
-
-Note: the driver names in the rtw88 in the Linux Mainline kernel are slightly different: rtw88_8814au
-
-```bash
-sudo nano /etc/modprobe.d/rtw_8814au.conf
-```
-
-Note: Change rtw_8814au in the above to the name of the driver you wish to modify.
-
-In the empty file, paste the following:
-
-```bash
-options rtw_8814au switch_usb_mode=N
-
-```
-
-See below for an explanation of the above parameter and for information about other parameters.
-
-The available parameter (option) for USB 3 devices is:
-
-switch_usb_mode=<Y/N>
-
-Set to N to disable switching to USB 3 mode to avoid potential interference in the 2.4 GHz band (default: Y) (bool). This parameter (option) applies to the USB 3 capable devices: RTL8814AU (rtw_8814au), RTL8822CU (rtw_8822cu), RTL8812CU (rtw_8822cu), RTL8822BU (rtw_8822bu), RTL8812BU (rtw_8822bu), and RTL8812AU (rtw_8812au). It's okay to leave the parameter on even when plugging the device into a USB 2 port because it will try to switch to USB 3 mode only once.
-
-The available options for rtw_pci are:
-
-disable_msi
-disable_aspm
-
-The available options for rtw_core are:
-
-disable_lps_deep
-support_bf
-debug_mask
-
-### 5. Kernel Updates 🔄
+### 4. Kernel Updates 🔄
 When your kernel updates, run:
 ```bash
 cd ~/rtw88
@@ -204,15 +183,13 @@ git pull
 make
 ```
 
-Secureboot disabled:
-
 ```
 sudo make install
+or
+sudo make sign-install
 ```
 
-Secureboot enabled:
 
-See section `Installation with SecureBoot for All Distros`.
 
 
 💡 **Remember, every newly installed kernel requires this step - no exceptions**. If the kernel update means that you have no network, skip the 'git pull' and build the driver as it is, but run `git pull` once you have connectivity, and rebuild if any updates were pulled.
@@ -226,7 +203,7 @@ Below are some Frequently Asked Questions:
 ---
 
 ### Q1: Is Secure Boot supported?
-Yes, this repository provides a way to sign the kernel modules to be compatible with Secure Boot. [Check out the Installation with SecureBoot section](#installation-with-secureboot-).
+Yes, this repository provides a way to sign the kernel modules to be compatible with Secure Boot. [Check out the Installation with SecureBoot section](#installation-with-secureboot-for-all-distros-).
 
 ---
 
@@ -235,4 +212,20 @@ Run this command in the rtw88 source directory and then the rtw88 driver will be
 
 `sudo make uninstall`
 
+For Arch-based distro users, run
 
+`sudo pacman -Rn rtw88-dkms-git`
+
+---
+
+### Q3: My wifi adapter is plugged in an USB 3 port, how can I keep it in USB 2 mode to avoid potential interference in 2.4 GHz band?
+The module `rtw_usb` has a parameter named `switch_usb_mode` which can enable or disable USB mode switching, setting it to "N" will keep your adapter in USB 2 mode. You can simply run the command below, unplug the adapter, reboot your computer, replug the adapter back and then your adapter will be in USB 2 mode.
+
+`sudo sh -c 'echo options rtw_usb switch_usb_mode=N > /etc/modprobe.d/rtw88.conf'`
+
+---
+
+### Q4: My wifi adapter still doesn't work after installing this driver and `lsusb` shows it is in CD-ROM mode, what should I do?
+Install `usb_modeswitch` which can switch your adapter from CD-ROM mode to Wi-Fi mode and then your wifi adapter should be in Wi-Fi mode after reboot.
+
+---
