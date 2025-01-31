@@ -196,7 +196,7 @@ legacy:
 	si->ra_report.desc_rate = rate;
 	si->ra_report.bit_rate = bit_rate;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0) || defined(RHEL8)
 	sta->deflink.agg.max_rc_amsdu_len = get_max_amsdu_len(bit_rate);
 #else
 	sta->max_rc_amsdu_len = get_max_amsdu_len(bit_rate);
@@ -734,7 +734,7 @@ void rtw_fw_send_rssi_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si)
 	rtw_fw_send_h2c_command(rtwdev, h2c_pkt);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0) || defined(RHEL9)
 void rtw_fw_send_ra_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si,
 			 bool reset_ra_mask)
 #else
@@ -744,7 +744,7 @@ void rtw_fw_send_ra_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si)
 	u8 h2c_pkt[H2C_PKT_SIZE] = {0};
 	bool disable_pt = true;
 	u32 mask_hi;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0) && !defined(RHEL9)
 	bool reset_ra_mask = true;
 #endif
 
@@ -1256,7 +1256,7 @@ static struct sk_buff *rtw_get_rsvd_page_skb(struct ieee80211_hw *hw,
 
 	switch (rsvd_pkt->type) {
 	case RSVD_BEACON:
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0)) || defined(RHEL8)
 		skb_new = ieee80211_beacon_get_tim(hw, vif, &tim_offset, NULL, 0);
 #else
 		skb_new = ieee80211_beacon_get_tim(hw, vif, &tim_offset, NULL);
@@ -1271,7 +1271,7 @@ static struct sk_buff *rtw_get_rsvd_page_skb(struct ieee80211_hw *hw,
 		break;
 	case RSVD_NULL:
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 17)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0) || defined(RHEL8)
 		skb_new = ieee80211_nullfunc_get(hw, vif, -1, false);
 #else
 		skb_new = ieee80211_nullfunc_get(hw, vif, false);
@@ -1282,7 +1282,7 @@ static struct sk_buff *rtw_get_rsvd_page_skb(struct ieee80211_hw *hw,
 		break;
 	case RSVD_QOS_NULL:
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 17)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0) || defined(RHEL8)
 		skb_new = ieee80211_nullfunc_get(hw, vif, -1, true);
 #else
 		skb_new = ieee80211_nullfunc_get(hw, vif, true);

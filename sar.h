@@ -9,7 +9,7 @@
  */
 #define RTW_COMMON_SAR_FCT 2
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0) || defined(RHEL8)
 struct rtw_sar_arg {
 	u8 sar_band;
 	u8 path;

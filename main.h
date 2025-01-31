@@ -14,7 +14,7 @@
 #include <linux/firmware.h>
 #include <linux/average.h>
 #include <linux/bitops.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0) || defined(RHEL8)
 #include <linux/bitfield.h>
 #else
 #include "bitfield.h"
@@ -27,7 +27,7 @@
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
 #include <linux/etherdevice.h>
 #endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 14, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 14, 0) && !defined(RHEL8)
 #include <linux/leds.h>
 #endif
 
@@ -36,7 +36,7 @@
 #define RHEL_RELEASE_VERSION(a, b) a<<8 & b
 #endif
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)) && !defined(RHEL9)
 /**
  * abs_diff - return absolute value of the difference between the arguments
  * @a: the first argument
@@ -57,7 +57,7 @@
 })
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 8, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 8, 0) && !defined(RHEL9)
 /**
  * cfg80211_ssid_eq - compare two SSIDs
  * @a: first SSID
@@ -78,7 +78,7 @@ cfg80211_ssid_eq(struct cfg80211_ssid *a, struct cfg80211_ssid *b)
 #endif
 
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)) || defined(RHEL_RELEASE) && (RHEL_RELEASE_CODE < RHEL_RELEASE_VERSION(8,0))
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0) && !defined(RHEL8)) || defined(RHEL_RELEASE) && (RHEL_RELEASE_CODE < RHEL_RELEASE_VERSION(8,0))
 /* see Documentation/timers/timers-howto.rst for the thresholds */
 static inline void fsleep(unsigned long usecs)
 {
@@ -2421,7 +2421,7 @@ bool rtw_core_check_sta_active(struct rtw_dev *rtwdev);
 void rtw_core_enable_beacon(struct rtw_dev *rtwdev, bool enable);
 void rtw_set_ampdu_factor(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
 			  struct ieee80211_bss_conf *bss_conf);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 8, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 8, 0) && !defined(RHEL9)
 static inline bool rtw_ssid_equal(struct cfg80211_ssid *a,
                                  struct cfg80211_ssid *b)
 {

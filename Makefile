@@ -20,6 +20,14 @@ else
 DEPMOD_ARGS =
 endif
 
+RHEL_VER := $(shell echo `grep '^ID_LIKE'  /etc/os-release |grep -qi 'fedora' && grep '^VERSION_ID' /etc/os-release | cut -f2 -d= | cut -c2`)
+ifdef RHEL_VER
+EXTRA_CFLAGS += -DRHEL8
+ifeq (${RHEL_VER},9)
+EXTRA_CFLAGS += -DRHEL9
+endif
+endif
+
 #Handle the compression option for modules in 3.18+
 ifneq ("","$(wildcard $(MODDESTDIR)/*.ko.gz)")
 COMPRESS_GZIP := y

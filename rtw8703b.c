@@ -533,14 +533,14 @@ static void try_mac_from_devicetree(struct rtw_dev *rtwdev)
 {
 	struct device_node *node = rtwdev->dev->of_node;
 	struct rtw_efuse *efuse = &rtwdev->efuse;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 13, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 13, 0) || defined(RHEL8)
 	int ret;
 #else
 	const void *ret;
 #endif
 
 	if (node) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 13, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 13, 0) || defined(RHEL8)
 		ret = of_get_mac_address(node, efuse->addr);
 		if (ret == 0) {
 #else
@@ -646,7 +646,7 @@ static void rtw8703b_pwrtrack_init(struct rtw_dev *rtwdev)
 	dm_info->txagc_remnant_ofdm[RF_PATH_A] = 0;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 3, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 3, 0) && !defined(RHEL9)
 #define FIELD_PREP_CONST FIELD_PREP
 #endif
 

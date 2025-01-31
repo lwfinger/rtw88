@@ -208,7 +208,7 @@ static void rtl8821ce_rx_mpdu(_adapter *padapter)
 			_rtw_init_listhead(&precvframe->u.hdr.list);
 			precvframe->u.hdr.len = 0;
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0) && !defined(RHEL8)
 			pci_unmap_single(pdvobjpriv->ppcidev,
 					 *((dma_addr_t *)skb->cb),
 					 r_priv->rxbuffersize,
@@ -251,7 +251,7 @@ static void rtl8821ce_rx_mpdu(_adapter *padapter)
 
 				RTW_INFO("rtl8821ce_rx_mpdu:can't allocate memory for skb copy\n");
 				*((dma_addr_t *) skb->cb) =
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0) && !defined(RHEL8)
 					pci_map_single(pdvobjpriv->ppcidev,
 						       skb_tail_pointer(skb),
 						       r_priv->rxbuffersize,
@@ -278,7 +278,7 @@ static void rtl8821ce_rx_mpdu(_adapter *padapter)
 				rtw_free_recvframe(precvframe, pfree_recv_queue);
 			}
 			*((dma_addr_t *) skb->cb) =
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0) && !defined(RHEL8)
 				pci_map_single(pdvobjpriv->ppcidev,
 					       skb_tail_pointer(skb),
 					       r_priv->rxbuffersize,
@@ -390,7 +390,7 @@ int rtl8821ce_init_rxbd_ring(_adapter *padapter)
 	/* rx_queue_idx 1:RX_CMD_QUEUE */
 	for (rx_queue_idx = 0; rx_queue_idx < 1; rx_queue_idx++) {
 		r_priv->rx_ring[rx_queue_idx].buf_desc =
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0) && !defined(RHEL8)
 			pci_alloc_consistent(pdev,
 			     sizeof(*r_priv->rx_ring[rx_queue_idx].buf_desc) *
 					     r_priv->rxringcount,
@@ -429,7 +429,7 @@ int rtl8821ce_init_rxbd_ring(_adapter *padapter)
 			/* just set skb->cb to mapping addr
 			 * for pci_unmap_single use
 			 */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0) && !defined(RHEL8)
 			*mapping = pci_map_single(pdev, skb_tail_pointer(skb),
 						  r_priv->rxbuffersize,
 						  PCI_DMA_FROMDEVICE);
@@ -479,7 +479,7 @@ void rtl8821ce_free_rxbd_ring(_adapter *padapter)
 			if (!skb)
 				continue;
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0) && !defined(RHEL8)
 			pci_unmap_single(pdev,
 					 *((dma_addr_t *) skb->cb),
 					 r_priv->rxbuffersize,
@@ -493,7 +493,7 @@ void rtl8821ce_free_rxbd_ring(_adapter *padapter)
 			kfree_skb(skb);
 		}
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0) && !defined(RHEL8)
 		pci_free_consistent(pdev,
 			    sizeof(*r_priv->rx_ring[rx_queue_idx].buf_desc) *
 				    r_priv->rxringcount,

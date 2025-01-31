@@ -56,7 +56,7 @@
 #include <linux/list.h>
 #include <linux/vmalloc.h>
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)) || defined(RHEL8)
 	#include <uapi/linux/sched/types.h>
 #endif
 

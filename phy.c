@@ -10,7 +10,7 @@
 #include "phy.h"
 #include "debug.h"
 #include "regd.h"
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0) || defined(RHEL8)
 #include "sar.h"
 #endif
 
@@ -2197,7 +2197,7 @@ err:
 	return (s8)rtwdev->chip->max_power_index;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0) || defined(RHEL8)
 static s8 rtw_phy_get_tx_power_sar(struct rtw_dev *rtwdev, u8 sar_band,
 				   u8 rf_path, u8 rate)
 {
@@ -2231,7 +2231,7 @@ void rtw_get_tx_power_params(struct rtw_dev *rtwdev, u8 path, u8 rate, u8 bw,
 	s8 *offset = &pwr_param->pwr_offset;
 	s8 *limit = &pwr_param->pwr_limit;
 	s8 *remnant = &pwr_param->pwr_remnant;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0) || defined(RHEL8)
 	s8 *sar = &pwr_param->pwr_sar;
 #endif
 
@@ -2257,7 +2257,7 @@ void rtw_get_tx_power_params(struct rtw_dev *rtwdev, u8 path, u8 rate, u8 bw,
 					    rate, ch, regd);
 	*remnant = rate <= DESC_RATE11M ? dm_info->txagc_remnant_cck :
 					  dm_info->txagc_remnant_ofdm[path];
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0) || defined(RHEL8)
 	*sar = rtw_phy_get_tx_power_sar(rtwdev, hal->sar_band, path, rate);
 #endif
 }

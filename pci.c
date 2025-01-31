@@ -1615,7 +1615,7 @@ static struct rtw_hci_ops rtw_pci_ops = {
 
 static int rtw_pci_request_irq(struct rtw_dev *rtwdev, struct pci_dev *pdev)
 {
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)) || defined(RHEL9)
 	unsigned int flags = PCI_IRQ_INTX;
 #else
 	unsigned int flags = PCI_IRQ_LEGACY;
@@ -1706,7 +1706,7 @@ static int rtw_pci_napi_init(struct rtw_dev *rtwdev)
 #endif
 		, &rtwpci->napi
 		, rtw_pci_napi_poll
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0) && !defined(RHEL8)
 		, NAPI_POLL_WEIGHT
 #endif
 	);

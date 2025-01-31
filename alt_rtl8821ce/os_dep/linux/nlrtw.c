@@ -108,7 +108,7 @@ static struct genl_ops nlrtw_genl_ops[] = {
 	{
 		.cmd = NLRTW_CMD_CHANNEL_UTILIZATION,
 		.flags = 0,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0) && !defined(RHEL8)
 		.policy = nlrtw_genl_policy,
 #endif
 		.doit = nlrtw_ch_util_set,
@@ -129,7 +129,7 @@ static struct genl_family nlrtw_genl_family = {
 	.name = "nlrtw_"DRV_NAME,
 	.version = 1,
 	.maxattr = NLRTW_ATTR_MAX,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0) || defined(RHEL8)
 	.policy = nlrtw_genl_policy,
 #endif
 	.netnsok = true,

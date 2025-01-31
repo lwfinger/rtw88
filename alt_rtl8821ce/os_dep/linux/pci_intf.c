@@ -758,7 +758,7 @@ static struct dvobj_priv	*pci_dvobj_init(struct pci_dev *pdev, const struct pci_
 	}
 
 #ifdef CONFIG_64BIT_DMA
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0) && !defined(RHEL8)
 	if (!pci_set_dma_mask(pdev, DMA_BIT_MASK(64))) {
 		RTW_INFO("RTL819xCE: Using 64bit DMA\n");
 		err = pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(64));
@@ -777,7 +777,7 @@ static struct dvobj_priv	*pci_dvobj_init(struct pci_dev *pdev, const struct pci_
 	} else
 #endif
 	{
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0) && !defined(RHEL8)
 		if (!pci_set_dma_mask(pdev, DMA_BIT_MASK(32))) {
 			err = pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(32));
 #else

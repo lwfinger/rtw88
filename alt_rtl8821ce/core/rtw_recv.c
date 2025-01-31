@@ -4852,7 +4852,7 @@ thread_return rtw_recv_thread(thread_context context)
 	s32 err = _SUCCESS;
 #ifdef RTW_RECV_THREAD_HIGH_PRIORITY
 #ifdef PLATFORM_LINUX
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0)) || defined(RHEL8)
 	sched_set_fifo_low(current);
 #else
 	struct sched_param param = { .sched_priority = 1 };

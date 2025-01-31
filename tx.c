@@ -95,7 +95,7 @@ EXPORT_SYMBOL(rtw_tx_fill_tx_desc);
 
 static u8 get_tx_ampdu_factor(struct ieee80211_sta *sta)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0) || defined(RHEL8)
 	u8 exp = sta->deflink.ht_cap.ampdu_factor;
 #else
 	u8 exp = sta->ht_cap.ampdu_factor;
@@ -110,7 +110,7 @@ static u8 get_tx_ampdu_factor(struct ieee80211_sta *sta)
 
 static u8 get_tx_ampdu_density(struct ieee80211_sta *sta)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0) || defined(RHEL8)
 	return sta->deflink.ht_cap.ampdu_density;
 #else
 	return sta->ht_cap.ampdu_density;
@@ -122,7 +122,7 @@ static u8 get_highest_ht_tx_rate(struct rtw_dev *rtwdev,
 {
 	u8 rate;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0) || defined(RHEL8)
 	if (rtwdev->hal.rf_type == RF_2T2R && sta->deflink.ht_cap.mcs.rx_mask[1] != 0)
 #else
 	if (rtwdev->hal.rf_type == RF_2T2R && sta->ht_cap.mcs.rx_mask[1] != 0)
@@ -141,7 +141,7 @@ static u8 get_highest_vht_tx_rate(struct rtw_dev *rtwdev,
 	u8 rate;
 	u16 tx_mcs_map;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0) || defined(RHEL8)
 	tx_mcs_map = le16_to_cpu(sta->deflink.vht_cap.vht_mcs.tx_mcs_map);
 #else
 	tx_mcs_map = le16_to_cpu(sta->vht_cap.vht_mcs.tx_mcs_map);
@@ -387,7 +387,7 @@ static void rtw_tx_data_pkt_info_update(struct rtw_dev *rtwdev,
 	if (info->control.use_rts || skb->len > hw->wiphy->rts_threshold)
 		pkt_info->rts = true;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0) || defined(RHEL8)
 	if (sta->deflink.vht_cap.vht_supported)
 		rate = get_highest_vht_tx_rate(rtwdev, sta);
 	else if (sta->deflink.ht_cap.ht_supported)

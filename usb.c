@@ -555,7 +555,7 @@ static void rtw_usb_tx_kick_off(struct rtw_dev *rtwdev)
 	queue_work(rtwusb->txwq, &rtwusb->tx_work);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0) || defined(RHEL9)
 static void rtw_usb_rx_handler(struct work_struct *work)
 {
 	struct rtw_usb *rtwusb = container_of(work, struct rtw_usb, rx_work);
@@ -713,7 +713,7 @@ static void rtw_usb_read_port_complete(struct urb *urb)
 		} else {
 			skb_put(skb, urb->actual_length);
 			skb_queue_tail(&rtwusb->rx_queue, skb);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0) || defined(RHEL9)
 			queue_work(rtwusb->rxwq, &rtwusb->rx_work);
 #else
 			tasklet_schedule(&rtwusb->rx_tasklet);
@@ -931,7 +931,7 @@ static int rtw_usb_init_rx(struct rtw_dev *rtwdev)
 	struct sk_buff *rx_skb;
 	int i;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0) || defined(RHEL9)
 	rtwusb->rxwq = alloc_workqueue("rtw88_usb: rx wq", WQ_BH, 0);
 #else
 	tasklet_init(&rtwusb->rx_tasklet, rtw_usb_rx_handler,
@@ -947,7 +947,7 @@ static int rtw_usb_init_rx(struct rtw_dev *rtwdev)
 	skb_queue_head_init(&rtwusb->rx_queue);
 	skb_queue_head_init(&rtwusb->rx_free_queue);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0) || defined(RHEL9)
 	INIT_WORK(&rtwusb->rx_work, rtw_usb_rx_handler);
 #endif
 	INIT_WORK(&rtwusb->rx_urb_work, rtw_usb_rx_resubmit_work);

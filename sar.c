@@ -3,7 +3,7 @@
  */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0) || defined(RHEL8)
 #include "sar.h"
 #include "phy.h"
 #include "debug.h"
