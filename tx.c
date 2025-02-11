@@ -33,9 +33,9 @@ void rtw_tx_stats(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
 }
 
 void rtw_tx_fill_tx_desc(struct rtw_dev *rtwdev,
-			 struct rtw_tx_pkt_info *pkt_info, struct sk_buff *skb)
+			 struct rtw_tx_pkt_info *pkt_info,
+			 struct rtw_tx_desc *tx_desc)
 {
-	struct rtw_tx_desc *tx_desc = (struct rtw_tx_desc *)skb->data;
 	bool more_data = false;
 
 	if (pkt_info->qsel == TX_DESC_QSEL_HIGH)

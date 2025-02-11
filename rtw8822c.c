@@ -4561,7 +4561,7 @@ static void rtw8822c_led_set(struct led_classdev *led,
 
 static void rtw8822c_fill_txdesc_checksum(struct rtw_dev *rtwdev,
 					  struct rtw_tx_pkt_info *pkt_info,
-					  u8 *txdesc)
+					  struct rtw_tx_desc *txdesc)
 {
 	const struct rtw_chip_info *chip = rtwdev->chip;
 	size_t words;

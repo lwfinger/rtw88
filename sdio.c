@@ -851,8 +851,8 @@ static void rtw_sdio_tx_skb_prepare(struct rtw_dev *rtwdev,
 {
 	const struct rtw_chip_info *chip = rtwdev->chip;
 	unsigned long data_addr, aligned_addr;
+	struct rtw_tx_desc *pkt_desc;
 	size_t offset;
-	u8 *pkt_desc;
 
 	pkt_desc = skb_push(skb, chip->tx_pkt_desc_sz);
 
@@ -878,7 +878,7 @@ static void rtw_sdio_tx_skb_prepare(struct rtw_dev *rtwdev,
 
 	pkt_info->qsel = rtw_sdio_get_tx_qsel(rtwdev, skb, queue);
 
-	rtw_tx_fill_tx_desc(rtwdev, pkt_info, skb);
+	rtw_tx_fill_tx_desc(rtwdev, pkt_info, pkt_desc);
 	rtw_tx_fill_txdesc_checksum(rtwdev, pkt_info, pkt_desc);
 }
 

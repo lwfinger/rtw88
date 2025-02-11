@@ -1330,12 +1330,12 @@ static void rtw_fill_rsvd_page_desc(struct rtw_dev *rtwdev, struct sk_buff *skb,
 {
 	struct rtw_tx_pkt_info pkt_info = {0};
 	const struct rtw_chip_info *chip = rtwdev->chip;
-	u8 *pkt_desc;
+	struct rtw_tx_desc *pkt_desc;
 
 	rtw_tx_rsvd_page_pkt_info_update(rtwdev, &pkt_info, skb, type);
 	pkt_desc = skb_push(skb, chip->tx_pkt_desc_sz);
 	memset(pkt_desc, 0, chip->tx_pkt_desc_sz);
-	rtw_tx_fill_tx_desc(rtwdev, &pkt_info, skb);
+	rtw_tx_fill_tx_desc(rtwdev, &pkt_info, pkt_desc);
 }
 
 static inline u8 rtw_len_to_page(unsigned int len, u16 page_size)

@@ -680,7 +680,7 @@ void __rtw8723x_pwrtrack_set_xtal(struct rtw_dev *rtwdev, u8 therm_path,
 static
 void __rtw8723x_fill_txdesc_checksum(struct rtw_dev *rtwdev,
 				     struct rtw_tx_pkt_info *pkt_info,
-				     u8 *txdesc)
+				     struct rtw_tx_desc *txdesc)
 {
 	size_t words = 32 / 2; /* calculate the first 32 bytes (16 words) */
 	__le16 chksum = 0;

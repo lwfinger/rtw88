@@ -154,7 +154,7 @@ struct rtw8723x_common {
 	void (*coex_cfg_init)(struct rtw_dev *rtwdev);
 	void (*fill_txdesc_checksum)(struct rtw_dev *rtwdev,
 				     struct rtw_tx_pkt_info *pkt_info,
-				     u8 *txdesc);
+				     struct rtw_tx_desc *txdesc);
 	void (*debug_txpwr_limit)(struct rtw_dev *rtwdev,
 				  struct rtw_txpwr_idx *table,
 				  int tx_path_count);
@@ -450,7 +450,7 @@ static inline void rtw8723x_coex_cfg_init(struct rtw_dev *rtwdev)
 static inline
 void rtw8723x_fill_txdesc_checksum(struct rtw_dev *rtwdev,
 				   struct rtw_tx_pkt_info *pkt_info,
-				   u8 *txdesc)
+				   struct rtw_tx_desc *txdesc)
 {
 	rtw8723x_common.fill_txdesc_checksum(rtwdev, pkt_info, txdesc);
 }

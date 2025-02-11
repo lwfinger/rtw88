@@ -810,7 +810,7 @@ static int rtw_pci_tx_write_data(struct rtw_dev *rtwdev,
 	u32 tx_buf_desc_sz = chip->tx_buf_desc_sz;
 	u32 size;
 	u32 psb_len;
-	u8 *pkt_desc;
+	struct rtw_tx_desc *pkt_desc;
 	struct rtw_pci_tx_buffer_desc *buf_desc;
 
 	ring = &rtwpci->tx_rings[queue];
@@ -825,7 +825,7 @@ static int rtw_pci_tx_write_data(struct rtw_dev *rtwdev,
 	pkt_desc = skb_push(skb, chip->tx_pkt_desc_sz);
 	memset(pkt_desc, 0, tx_pkt_desc_sz);
 	pkt_info->qsel = rtw_pci_get_tx_qsel(skb, queue);
-	rtw_tx_fill_tx_desc(rtwdev, pkt_info, skb);
+	rtw_tx_fill_tx_desc(rtwdev, pkt_info, pkt_desc);
 	dma = dma_map_single(&rtwpci->pdev->dev, skb->data, skb->len,
 			     DMA_TO_DEVICE);
 	if (dma_mapping_error(&rtwpci->pdev->dev, dma))

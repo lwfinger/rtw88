@@ -188,6 +188,7 @@ extern const struct ieee80211_ops rtw_ops;
 
 struct rtw_dev;
 struct rtw_debugfs;
+struct rtw_tx_desc;
 
 enum rtw_hci_type {
 	RTW_HCI_TYPE_PCIE,
@@ -1046,7 +1047,7 @@ struct rtw_chip_ops {
 	/* for USB/SDIO only */
 	void (*fill_txdesc_checksum)(struct rtw_dev *rtwdev,
 				     struct rtw_tx_pkt_info *pkt_info,
-				     u8 *txdesc);
+				     struct rtw_tx_desc *txdesc);
 
 	/* for coex */
 	void (*coex_set_init)(struct rtw_dev *rtwdev);

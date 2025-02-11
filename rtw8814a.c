@@ -2040,7 +2040,7 @@ static void rtw8814a_led_set(struct led_classdev *led,
 
 static void rtw8814a_fill_txdesc_checksum(struct rtw_dev *rtwdev,
 					  struct rtw_tx_pkt_info *pkt_info,
-					  u8 *txdesc)
+					  struct rtw_tx_desc *txdesc)
 {
 	size_t words = 32 / 2; /* calculate the first 32 bytes (16 words) */
 
