@@ -623,6 +623,7 @@ static void rtw_usb_rx_handler(unsigned long shut_up_gcc)
 			  IEEE80211_MAX_MPDU_LEN_VHT_11454;
 	u32 pkt_offset, next_pkt, skb_len;
 	u8 *rx_desc;
+	u8 *rx_buf;
 	int limit;
 
 	for (limit = 0; limit < 200; limit++) {
@@ -639,8 +640,9 @@ static void rtw_usb_rx_handler(unsigned long shut_up_gcc)
 		rx_desc = rx_skb->data;
 
 		do {
-			rtw_rx_query_rx_desc(rtwdev, rx_desc, &pkt_stat,
-					     &rx_status);
+			rx_buf = rx_desc + pkt_desc_sz;
+			rtw_rx_query_rx_desc(rtwdev, rx_desc, rx_buf,
+					     &pkt_stat, &rx_status);
 			pkt_offset = pkt_desc_sz + pkt_stat.drv_info_sz +
 				     pkt_stat.shift;
 
