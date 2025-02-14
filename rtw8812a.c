@@ -1007,6 +1007,8 @@ static const struct rtw_prioq_addrs prioq_addrs_8812a = {
 	.wsize = false,
 };
 
+static const struct rtw_intf_phy_para_table phy_para_table_8812a = {};
+
 static const struct rtw_hw_reg rtw8812a_dig[] = {
 	[0] = { .addr = REG_RXIGI_A, .mask = 0x7f },
 	[1] = { .addr = REG_RXIGI_B, .mask = 0x7f },
@@ -1088,7 +1090,7 @@ const struct rtw_chip_info rtw8812a_hw_spec = {
 	.rqpn_table = rqpn_table_8812a,
 	.prioq_addrs = &prioq_addrs_8812a,
 	.page_table = page_table_8812a,
-	.intf_table = NULL,
+	.intf_table = &phy_para_table_8812a,
 	.dig = rtw8812a_dig,
 	.rf_sipi_addr = {REG_LSSI_WRITE_A, REG_LSSI_WRITE_B},
 	.ltecoex_addr = NULL,
