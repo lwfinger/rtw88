@@ -2005,6 +2005,8 @@ static void rtw8814a_fill_txdesc_checksum(struct rtw_dev *rtwdev,
 	fill_txdesc_checksum_common(txdesc, words);
 }
 
+static const struct rtw_intf_phy_para_table phy_para_table_8814a = {};
+
 static const struct rtw_hw_reg rtw8814a_dig[] = {
 	[0] = { .addr = 0xc50, .mask = 0x7f },
 	[1] = { .addr = 0xe50, .mask = 0x7f },
@@ -2169,7 +2171,7 @@ const struct rtw_chip_info rtw8814a_hw_spec = {
 	.rqpn_table = rqpn_table_8814a,
 	.prioq_addrs = &prioq_addrs_8814a,
 	.page_table = page_table_8814a,
-	.intf_table = NULL,
+	.intf_table = &phy_para_table_8814a,
 	.dig = rtw8814a_dig,
 	.dig_cck = NULL,
 	.rf_base_addr = {0x2800, 0x2c00, 0x3800, 0x3c00},
