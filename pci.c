@@ -1461,9 +1461,6 @@ static void rtw_pci_phy_cfg(struct rtw_dev *rtwdev)
 	int i;
 	int ret;
 
-	if (!chip->intf_table)
-		return;
-
 	cut = BIT(0) << rtwdev->hal.cut_version;
 
 	for (i = 0; i < chip->intf_table->n_gen1_para; i++) {
