@@ -340,7 +340,7 @@ static void rtw8814a_phy_set_param(struct rtw_dev *rtwdev)
 	rtw_write8(rtwdev, REG_NAV_CTRL + 2, 235);
 
 	/* enable Tx report. */
-	rtw_write8(rtwdev,  REG_FWHW_TXQ_CTRL + 1, 0x0F);
+	rtw_write8(rtwdev,  REG_FWHW_TXQ_CTRL + 1, 0x1F);
 
 	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_USB) {
 		/* Reset USB mode switch setting */
