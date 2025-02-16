@@ -2128,6 +2128,9 @@ static const struct coex_rf_para rf_para_rx_8814a[] = {
 static_assert(ARRAY_SIZE(rf_para_tx_8814a) == ARRAY_SIZE(rf_para_rx_8814a));
 
 static const struct rtw_rfe_def rtw8814a_rfe_defs[] = {
+	[0] = { .phy_pg_tbl	= &rtw8814a_bb_pg_type0_tbl,
+		.txpwr_lmt_tbl	= &rtw8814a_txpwr_lmt_type0_tbl,
+		.pwr_track_tbl	= &rtw8814a_rtw_pwrtrk_type0_tbl },
 	[1] = { .phy_pg_tbl	= &rtw8814a_bb_pg_tbl,
 		.txpwr_lmt_tbl	= &rtw8814a_txpwr_lmt_type1_tbl,
 		.pwr_track_tbl	= &rtw8814a_rtw_pwrtrk_tbl },
