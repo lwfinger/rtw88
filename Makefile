@@ -2,6 +2,7 @@ SHELL := /bin/sh
 KVER ?= $(if $(KERNELRELEASE),$(KERNELRELEASE),$(shell uname -r))
 KSRC ?= $(if $(KERNEL_SRC),$(KERNEL_SRC),/lib/modules/$(KVER)/build)
 FWDIR := /lib/firmware/rtw88
+JOBS ?= $(shell nproc --ignore=1)
 MODLIST := rtw_8723cs rtw_8723de rtw_8723ds rtw_8723du \
 	   rtw_8812au rtw_8814ae rtw_8814au rtw_8821au rtw_8821ce rtw_8821cs rtw_8821cu \
 	   rtw_8822be rtw_8822bs rtw_8822bu rtw_8822ce rtw_8822cs rtw_8822cu \
@@ -185,7 +186,7 @@ rtw_usb-objs	:= usb.o
 ccflags-y += -D__CHECK_ENDIAN__
 
 all: 
-	$(MAKE) -j`nproc` -C $(KSRC) M=$$PWD modules
+	$(MAKE) -j$(JOBS) -C $(KSRC) M=$$PWD modules
 	
 install: all
 	@install -D -m 644 -t $(MODDESTDIR) *.ko
