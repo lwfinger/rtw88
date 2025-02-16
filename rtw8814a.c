@@ -340,7 +340,7 @@ static void rtw8814a_phy_set_param(struct rtw_dev *rtwdev)
 	rtw_write8(rtwdev, REG_NAV_CTRL + 2, 235);
 
 	/* enable Tx report. */
-	rtw_write8(rtwdev,  REG_FWHW_TXQ_CTRL + 1, 0x0F);
+	rtw_write8(rtwdev,  REG_FWHW_TXQ_CTRL + 1, 0x1F);
 
 	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_USB) {
 		/* Reset USB mode switch setting */
@@ -2005,6 +2005,8 @@ static void rtw8814a_fill_txdesc_checksum(struct rtw_dev *rtwdev,
 	fill_txdesc_checksum_common(txdesc, words);
 }
 
+static const struct rtw_intf_phy_para_table phy_para_table_8814a = {};
+
 static const struct rtw_hw_reg rtw8814a_dig[] = {
 	[0] = { .addr = 0xc50, .mask = 0x7f },
 	[1] = { .addr = 0xe50, .mask = 0x7f },
@@ -2126,6 +2128,9 @@ static const struct coex_rf_para rf_para_rx_8814a[] = {
 static_assert(ARRAY_SIZE(rf_para_tx_8814a) == ARRAY_SIZE(rf_para_rx_8814a));
 
 static const struct rtw_rfe_def rtw8814a_rfe_defs[] = {
+	[0] = { .phy_pg_tbl	= &rtw8814a_bb_pg_type0_tbl,
+		.txpwr_lmt_tbl	= &rtw8814a_txpwr_lmt_type0_tbl,
+		.pwr_track_tbl	= &rtw8814a_rtw_pwrtrk_type0_tbl },
 	[1] = { .phy_pg_tbl	= &rtw8814a_bb_pg_tbl,
 		.txpwr_lmt_tbl	= &rtw8814a_txpwr_lmt_type1_tbl,
 		.pwr_track_tbl	= &rtw8814a_rtw_pwrtrk_tbl },
@@ -2162,14 +2167,14 @@ const struct rtw_chip_info rtw8814a_hw_spec = {
 	.tx_report_sn = true,
 	.ht_supported = true,
 	.vht_supported = true,
-	.lps_deep_mode_supported = 0,
+	.lps_deep_mode_supported = BIT(LPS_DEEP_MODE_LCLK),
 	.sys_func_en = 0xDC,
 	.pwr_on_seq = card_enable_flow_8814a,
 	.pwr_off_seq = card_disable_flow_8814a,
 	.rqpn_table = rqpn_table_8814a,
 	.prioq_addrs = &prioq_addrs_8814a,
 	.page_table = page_table_8814a,
-	.intf_table = NULL,
+	.intf_table = &phy_para_table_8814a,
 	.dig = rtw8814a_dig,
 	.dig_cck = NULL,
 	.rf_base_addr = {0x2800, 0x2c00, 0x3800, 0x3c00},

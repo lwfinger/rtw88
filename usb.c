@@ -267,7 +267,6 @@ static void rtw_usb_write_port_tx_complete(struct urb *urb)
 	struct rtw_usb_txcb *txcb = urb->context;
 	struct rtw_dev *rtwdev = txcb->rtwdev;
 	struct ieee80211_hw *hw = rtwdev->hw;
-	struct ieee80211_hdr *hdr;
 
 	while (true) {
 		struct sk_buff *skb = skb_dequeue(&txcb->tx_ack_queue);
@@ -282,12 +281,8 @@ static void rtw_usb_write_port_tx_complete(struct urb *urb)
 
 		skb_pull(skb, rtwdev->chip->tx_pkt_desc_sz);
 
-		hdr = (struct ieee80211_hdr *)skb->data;
-
 		/* enqueue to wait for tx report */
-		if ((info->flags & IEEE80211_TX_CTL_REQ_TX_STATUS) &&
-		    !(rtwdev->chip->id == RTW_CHIP_TYPE_8814A &&
-		      ieee80211_is_mgmt(hdr->frame_control))) {
+		if (info->flags & IEEE80211_TX_CTL_REQ_TX_STATUS) {
 			rtw_tx_report_enqueue(rtwdev, skb, tx_data->sn);
 			continue;
 		}
@@ -303,7 +298,6 @@ static void rtw_usb_write_port_tx_complete(struct urb *urb)
 	}
 
 	kfree(txcb);
-	usb_free_urb(urb);
 }
 
 static int qsel_to_ep(struct rtw_usb *rtwusb, unsigned int qsel)
@@ -335,6 +329,8 @@ static int rtw_usb_write_port(struct rtw_dev *rtwdev, u8 qsel, struct sk_buff *s
 	usb_fill_bulk_urb(urb, usbd, pipe, skb->data, skb->len, cb, context);
 	urb->transfer_flags |= URB_ZERO_PACKET;
 	ret = usb_submit_urb(urb, GFP_ATOMIC);
+
+	usb_free_urb(urb);
 
 	return ret;
 }
@@ -446,7 +442,6 @@ static void rtw_usb_write_port_complete(struct urb *urb)
 	struct sk_buff *skb = urb->context;
 
 	dev_kfree_skb_any(skb);
-	usb_free_urb(urb);
 }
 
 static int rtw_usb_write_data(struct rtw_dev *rtwdev,
