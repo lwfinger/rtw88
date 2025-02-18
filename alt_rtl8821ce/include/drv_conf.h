@@ -110,7 +110,7 @@
 	#endif
 
 	#if (CONFIG_RTW_ANDROID >= 11)
-		#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
+		#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0)) || defined(RHEL8)
 			#ifndef CONFIG_RTW_ANDROID_GKI
 			#define CONFIG_RTW_ANDROID_GKI
 			#endif

@@ -1309,7 +1309,7 @@ u32 _rtw_down_sema(_sema *sema)
 inline void thread_exit(_completion *comp)
 {
 #ifdef PLATFORM_LINUX
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0) && !defined(RHEL8)
 	complete_and_exit(comp, 0);
 #else
 	kthread_complete_and_exit(comp, 0);
@@ -2501,7 +2501,7 @@ static int isFileReadable(const char *path, u32 *sz)
 {
 	struct file *fp;
 	int ret = 0;
-	#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
+	#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)) && !defined(RHEL8)
 	mm_segment_t oldfs;
 	#endif
 	char buf;
@@ -2510,9 +2510,9 @@ static int isFileReadable(const char *path, u32 *sz)
 	if (IS_ERR(fp))
 		ret = PTR_ERR(fp);
 	else {
-		#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
+		#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)) && !defined(RHEL8)
 		oldfs = get_fs();
-		#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0))
+		#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0)) || defined(RHEL8)
 		set_fs(KERNEL_DS);
 		#else
 		set_fs(get_ds());
@@ -2530,7 +2530,7 @@ static int isFileReadable(const char *path, u32 *sz)
 			#endif
 		}
 
-		#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
+		#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)) && !defined(RHEL8)
 		set_fs(oldfs);
 		#endif
 		filp_close(fp, NULL);
@@ -2548,7 +2548,7 @@ static int isFileReadable(const char *path, u32 *sz)
 static int storeToFile(const char *path, u8 *buf, u32 sz)
 {
 	int ret = 0;
-	#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
+	#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)) && !defined(RHEL8)
 	mm_segment_t oldfs;
 	#endif
 	struct file *fp;
@@ -2558,9 +2558,9 @@ static int storeToFile(const char *path, u8 *buf, u32 sz)
 		if (0 == ret) {
 			RTW_INFO("%s openFile path:%s fp=%p\n", __FUNCTION__, path , fp);
 
-			#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
+			#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)) && !defined(RHEL8)
 			oldfs = get_fs();
-			#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0))
+			#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0)) || defined(RHEL8)
 			set_fs(KERNEL_DS);
 			#else
 			set_fs(get_ds());
@@ -2569,7 +2569,7 @@ static int storeToFile(const char *path, u8 *buf, u32 sz)
 
 			ret = writeFile(fp, buf, sz);
 
-			#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
+			#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)) && !defined(RHEL8)
 			set_fs(oldfs);
 			#endif
 			closeFile(fp);
@@ -2651,7 +2651,7 @@ static int retriveFromFile(const char *path, u8 *buf, u32 sz)
 	return ret;
 #else /* !defined(CONFIG_RTW_ANDROID_GKI) */
 	int ret = -1;
-	#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
+	#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)) && !defined(RHEL8)
 	mm_segment_t oldfs;
 	#endif
 	struct file *fp;
@@ -2661,9 +2661,9 @@ static int retriveFromFile(const char *path, u8 *buf, u32 sz)
 		if (0 == ret) {
 			RTW_INFO("%s openFile path:%s fp=%p\n", __FUNCTION__, path , fp);
 
-			#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
+			#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)) && !defined(RHEL8)
 			oldfs = get_fs();
-			#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0))
+			#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0)) || defined(RHEL8)
 			set_fs(KERNEL_DS);
 			#else
 			set_fs(get_ds());
@@ -2672,7 +2672,7 @@ static int retriveFromFile(const char *path, u8 *buf, u32 sz)
 
 			ret = readFile(fp, buf, sz);
 
-			#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
+			#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)) && !defined(RHEL8)
 			set_fs(oldfs);
 			#endif
 			closeFile(fp);
@@ -2967,7 +2967,7 @@ inline u32 rtw_random32(void)
 {
 #ifdef PLATFORM_LINUX
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0) || defined(RHEL8)
 	return get_random_u32();
 #else
 	return prandom_u32();

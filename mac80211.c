@@ -13,7 +13,7 @@
 #include "bf.h"
 #include "debug.h"
 #include "wow.h"
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0) || defined(RHEL8)
 #include "sar.h"
 #endif
 
@@ -378,7 +378,7 @@ static void rtw_conf_tx(struct rtw_dev *rtwdev,
 static void rtw_ops_bss_info_changed(struct ieee80211_hw *hw,
 				     struct ieee80211_vif *vif,
 				     struct ieee80211_bss_conf *conf,
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0) || defined(RHEL8))
 				     u64 changed)
 #else
 				     u32 changed)
@@ -396,7 +396,7 @@ static void rtw_ops_bss_info_changed(struct ieee80211_hw *hw,
 
 	if (changed & BSS_CHANGED_ASSOC) {
 		rtw_vif_assoc_changed(rtwvif, conf);
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0) || defined(RHEL8))
 		if (vif->cfg.assoc) {
 #else
 		if (conf->assoc) {
@@ -405,7 +405,7 @@ static void rtw_ops_bss_info_changed(struct ieee80211_hw *hw,
 			rtw_fw_download_rsvd_page(rtwdev);
 			rtw_send_rsvd_page_h2c(rtwdev);
 			rtw_fw_default_port(rtwdev, rtwvif);
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0) || defined(RHEL8))
 			rtw_coex_media_status_notify(rtwdev, vif->cfg.assoc);
 #else
 			rtw_coex_media_status_notify(rtwdev, conf->assoc);
@@ -476,7 +476,7 @@ static void rtw_ops_bss_info_changed(struct ieee80211_hw *hw,
 	mutex_unlock(&rtwdev->mutex);
 }
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0) || defined(RHEL8))
 static int rtw_ops_start_ap(struct ieee80211_hw *hw,
 			    struct ieee80211_vif *vif,
 			    struct ieee80211_bss_conf *link_conf)
@@ -497,7 +497,7 @@ static int rtw_ops_start_ap(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
 	return 0;
 }
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0) || defined(RHEL8))
 static void rtw_ops_stop_ap(struct ieee80211_hw *hw,
 			    struct ieee80211_vif *vif,
 			    struct ieee80211_bss_conf *link_conf)
@@ -518,7 +518,7 @@ static void rtw_ops_stop_ap(struct ieee80211_hw *hw,
 
 static int rtw_ops_conf_tx(struct ieee80211_hw *hw,
 			   struct ieee80211_vif *vif,
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0) || defined(RHEL8))
 			   unsigned int link_id, u16 ac,
 #else
 			   u16 ac,
@@ -680,7 +680,7 @@ static int rtw_ops_ampdu_action(struct ieee80211_hw *hw,
 	switch (action) {
 #endif
 	case IEEE80211_AMPDU_TX_START:
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0) || defined(RHEL8)
 		return IEEE80211_AMPDU_TX_START_IMMEDIATE;
 #else
 		ieee80211_start_tx_ba_cb_irqsafe(vif, sta->addr, tid);
@@ -706,7 +706,7 @@ static int rtw_ops_ampdu_action(struct ieee80211_hw *hw,
 	return 0;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0) || defined(RHEL8)
 static bool rtw_ops_can_aggregate_in_amsdu(struct ieee80211_hw *hw,
 					   struct sk_buff *head,
 					   struct sk_buff *skb)
@@ -744,10 +744,10 @@ static void rtw_ops_sw_scan_complete(struct ieee80211_hw *hw,
 	mutex_unlock(&rtwdev->mutex);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0) || defined(RHEL8)
 static void rtw_ops_mgd_prepare_tx(struct ieee80211_hw *hw,
 				   struct ieee80211_vif *vif,
-    #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,14,0))
+    #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,14,0) || defined(RHEL8))
 				   struct ieee80211_prep_tx_info *info)
     #else
 				   u16 duration)
@@ -974,7 +974,7 @@ static void rtw_ops_cancel_hw_scan(struct ieee80211_hw *hw,
 	mutex_unlock(&rtwdev->mutex);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0) || defined(RHEL8)
 static int rtw_ops_set_sar_specs(struct ieee80211_hw *hw,
 				 const struct cfg80211_sar_specs *sar)
 {
@@ -1008,7 +1008,7 @@ static void rtw_ops_sta_rc_update(struct ieee80211_hw *hw,
 }
 
 const struct ieee80211_ops rtw_ops = {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0) || defined(RHEL9)
 	.add_chanctx = ieee80211_emulate_add_chanctx,
 	.remove_chanctx = ieee80211_emulate_remove_chanctx,
 	.change_chanctx = ieee80211_emulate_change_chanctx,
@@ -1032,7 +1032,7 @@ const struct ieee80211_ops rtw_ops = {
 	.set_tim		= rtw_ops_set_tim,
 	.set_key		= rtw_ops_set_key,
 	.ampdu_action		= rtw_ops_ampdu_action,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0) || defined(RHEL8)
 	.can_aggregate_in_amsdu	= rtw_ops_can_aggregate_in_amsdu,
 #endif
 	.sw_scan_start		= rtw_ops_sw_scan_start,
@@ -1052,7 +1052,7 @@ const struct ieee80211_ops rtw_ops = {
 #else
 	.link_sta_rc_update	= rtw_ops_sta_rc_update,
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0) || defined(RHEL8)
 	.set_sar_specs          = rtw_ops_set_sar_specs,
 #endif
 #ifdef CONFIG_PM

@@ -88,7 +88,7 @@ static void rtl8821ce_reset_bd(_adapter *padapter)
 				#ifdef CONFIG_64BIT_DMA
 					mapping |= (dma_addr_t)GET_TX_BD_PHYSICAL_ADDR0_HIGH(tx_bd) << 32;
 				#endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0) && !defined(RHEL8)
 					pci_unmap_single(pdvobjpriv->ppcidev,
 						mapping,
 						pxmitbuf->len, PCI_DMA_TODEVICE);
@@ -484,7 +484,7 @@ static void rtl8821ce_unmap_beacon_icf(PADAPTER Adapter)
 	}
 //	RTW_INFO("FREE pxmitbuf: %p, buf_desc: %p, sz: %d\n", pxmitbuf, tx_bufdesc, pxmitbuf->len);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0) && !defined(RHEL8)
 	pci_unmap_single(pdvobjpriv->ppcidev,
 			 GET_TX_BD_PHYSICAL_ADDR0_LOW(tx_bufdesc),
 			 pxmitbuf->len,
