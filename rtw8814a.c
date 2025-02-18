@@ -168,6 +168,8 @@ static int rtw8814a_read_efuse(struct rtw_dev *rtwdev, u8 *log_map)
 		ether_addr_copy(efuse->addr, map->u.mac_addr);
 		break;
 	case RTW_HCI_TYPE_PCIE:
+		ether_addr_copy(efuse->addr, map->e.mac_addr);
+		break;
 	case RTW_HCI_TYPE_SDIO:
 	default:
 		/* unsupported now */
@@ -358,8 +360,9 @@ static int rtw8814a_mac_init(struct rtw_dev *rtwdev)
 
 	rtw_load_table(rtwdev, rtwdev->chip->mac_tbl);
 
-	rtw_write8(rtwdev, REG_AUTO_LLT_V1 + 3,
-		   rtwdev->chip->usb_tx_agg_desc_num << 1);
+	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_USB)
+		rtw_write8(rtwdev, REG_AUTO_LLT_V1 + 3,
+			   rtwdev->chip->usb_tx_agg_desc_num << 1);
 
 	rtw_write32(rtwdev, REG_HIMR0, 0);
 	rtw_write32(rtwdev, REG_HIMR1, 0);

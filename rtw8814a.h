@@ -10,7 +10,7 @@
 struct rtw8814au_efuse {
 	u8 vid[2];			/* 0xd0 */
 	u8 pid[2];			/* 0xd2 */
-	u8 res[4];			/* 0xd0 */
+	u8 res[4];			/* 0xd4 */
 	u8 mac_addr[ETH_ALEN];		/* 0xd8 */
 } __packed;
 
