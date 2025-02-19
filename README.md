@@ -198,9 +198,7 @@ sudo make sign-install
 
 ---
 
-## FAQ
-
-Below are some Frequently Asked Questions:
+## Q&A
 
 ---
 
@@ -231,3 +229,7 @@ The module `rtw_usb` has a parameter named `switch_usb_mode` which can enable or
 Install `usb_modeswitch` which can switch your adapter from CD-ROM mode to Wi-Fi mode and then your wifi adapter should be in Wi-Fi mode after reboot.
 
 ---
+
+### Q5: My computer becomes very slow while building the driver, any idea to avoid that?
+Run `make JOBS=x` instead, `x` is the number of compilation jobs that will be executed simultaneously, you can adjust it according to the CPU cores available on your machine.
+
