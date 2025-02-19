@@ -351,6 +351,34 @@ static void rtw8814a_phy_set_param(struct rtw_dev *rtwdev)
 	}
 }
 
+static void rtw8814ae_enable_rf_1_2v(struct rtw_dev *rtwdev)
+{
+	/* This is for fullsize card, because GPIO7 there is floating.
+	 * We should pull GPIO7 high to enable RF 1.2V Switch Power Supply
+	 */
+
+	/* 1. set 0x40[1:0] to 0, BIT_GPIOSEL=0, select pin as GPIO */
+	rtw_write8_clr(rtwdev, REG_GPIO_MUXCFG, BIT(1) | BIT(0));
+
+	/* 2. set 0x44[31] to 0
+	 * mode=0: data port;
+	 * mode=1 and BIT_GPIO_IO_SEL=0: interrupt mode;
+	 */
+	rtw_write8_clr(rtwdev, REG_GPIO_PIN_CTRL + 3, BIT(7));
+
+	/* 3. data mode
+	 * 3.1 set 0x44[23] to 1
+	 * sel=0: input;
+	 * sel=1: output;
+	 */
+	rtw_write8_set(rtwdev, REG_GPIO_PIN_CTRL + 2, BIT(7));
+
+	/* 3.2 set 0x44[15] to 1
+	 * output high value;
+	 */
+	rtw_write8_set(rtwdev, REG_GPIO_PIN_CTRL + 1, BIT(7));
+}
+
 static int rtw8814a_mac_init(struct rtw_dev *rtwdev)
 {
 	struct rtw_usb *rtwusb = rtw_get_usb_priv(rtwdev);
@@ -418,6 +446,8 @@ static int rtw8814a_mac_init(struct rtw_dev *rtwdev)
 
 		rtw_write8_clr(rtwdev, REG_SW_AMPDU_BURST_MODE_CTRL,
 			       BIT_PRE_TX_CMD);
+	} else if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_PCIE) {
+		rtw8814ae_enable_rf_1_2v(rtwdev);
 	}
 
 	return 0;

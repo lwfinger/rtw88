@@ -77,6 +77,8 @@
 #define BIT_BT_PTA_EN		BIT(5)
 #define BIT_WLRFE_4_5_EN	BIT(2)
 
+#define REG_GPIO_PIN_CTRL	0x0044
+
 #define REG_LED_CFG		0x004C
 #define BIT_LNAON_SEL_EN	BIT(26)
 #define BIT_PAPE_SEL_EN		BIT(25)
