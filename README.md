@@ -233,3 +233,5 @@ Install `usb_modeswitch` which can switch your adapter from CD-ROM mode to Wi-Fi
 ### Q5: My computer becomes very slow while building the driver, any idea to avoid that?
 Run `make JOBS=x` instead, `x` is the number of compilation jobs that will be executed simultaneously, you can adjust it according to the CPU cores available on your machine.
 
+### Q6: Can I use `dkms` to automate the re-building and re-signing of the driver after kernel updates?
+Yes, `dkms` can be used to automate the process. To enable this, first copy the cloned repository to the appropriate location using `sudo cp -r rtw88 /usr/src/rtw88-0.6`. Next, add the driver to dkms using `sudo dkms add -m rtw88 -v 0.6`. Finally, build and install the module using `sudo dkms build -m rtw88 -v 0.6` and `sudo dkms install -m rtw88 -v 0.6`, respectively. You can verify the installation with `dkms status`. Once configured, `dkms` should automatically sign the module using the existing Machine Owner Key (MOK) stored at `/var/lib/dkms`.
