@@ -144,8 +144,9 @@ __Installation Process__
 __Uninstallation Process__
 ```bash
 sudo dkms remove -m rtw88 -v 0.6 --all # Remove rtw88 from dkms
-sudo rm -r /var/lib/dkms/rtw88 # Remove this folder (if it exists)
-sudo rm -r /usr/src/rtw88-0.6 # Remove the cloned GitHub repository
+sudo rm -r /var/lib/dkms/rtw88 # Remove rtw88 dkms build files (if they exist)
+sudo make -C /usr/src/rtw88-0.6 uninstall # Run uninstall target in Makefile
+sudo rm -r /usr/src/rtw88-0.6 # Remove cloned source code directory
 ```
 
 ---
