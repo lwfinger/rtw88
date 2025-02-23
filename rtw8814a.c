@@ -448,6 +448,12 @@ static int rtw8814a_mac_init(struct rtw_dev *rtwdev)
 			       BIT_PRE_TX_CMD);
 	} else if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_PCIE) {
 		rtw8814ae_enable_rf_1_2v(rtwdev);
+
+		/* Force the antenna b to wifi. */
+		rtw_write8_set(rtwdev, REG_PAD_CTRL1, BIT(2));
+		rtw_write8_set(rtwdev, REG_PAD_CTRL1 + 1, BIT(0));
+		rtw_write8_set(rtwdev, REG_LED_CFG + 3,
+			       (BIT(27) | BIT_DPDT_WL_SEL) >> 24);
 	}
 
 	return 0;
