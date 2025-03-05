@@ -78,6 +78,79 @@ sudo apt install -y raspberrypi-kernel-headers build-essential git
 ```
 
 ---
+
+### Installation Using DKMS 🔄
+Using DKMS (Dynamic Kernel Module Support) ensures that the `rtw88` kernel modules are automatically rebuilt and re-signed whenever the Linux kernel is updated on systems with secure boot enabled. Without DKMS, these drivers would stop working after each kernel update, requiring manual re-compilation and re-signing. DKMS should be available through your distribution’s package manager. You can learn more about DKMS [here](https://github.com/dell/dkms).
+
+__Installation Process__
+1. Install `dkms` and all its required dependencies using your preferred package manager.
+2. Create a new Machine Owner Key (MOK).
+    1. Generate a private RSA key.
+
+        ```bash
+        sudo openssl genrsa -out /var/lib/dkms/mok.key 2048
+        ```
+
+    2. Generate an X.509 certificate from the private key.
+
+        ```bash
+        sudo openssl req -new -x509 -key /var/lib/dkms/mok.key -outform DER -out /var/lib/dkms/mok.pub -nodes -days 36500 -subj "/CN=DKMS Kernel Module Signing Key/"
+        ```
+
+    3. Enroll the certificate.
+
+        ```bash
+        sudo mokutil --import /var/lib/dkms/mok.pub
+        ```
+
+        Note: At this point, you will be requested to enter a password. Remember this password and re-enter it after rebooting your system in order to enrol your new MOK into your system's UEFI.
+
+    4. Verify the new MOK was enrolled.
+
+        ```bash
+        mokutil --list-enrolled
+        ```
+
+3. Clone the `rtw88` GitHub repository to `/usr/src`.
+
+    ```bash
+    cd /usr/src && sudo git clone https://github.com/lwfinger/rtw88.git rtw88-0.6
+    ```
+
+4. Add `rtw88` to `dkms`.
+
+    ```bash
+    sudo dkms add -m rtw88 -v 0.6
+    ```
+
+5. Build and sign `rtw88` using your new MOK.
+
+    ```bash
+    sudo dkms build -m rtw88 -v 0.6
+    ```
+
+6. Install `rtw88`.
+
+    ```bash
+    sudo dkms install -m rtw88 -v 0.6
+    ```
+
+7. Verify `rtw88` was installed.
+
+    ```bash
+    dkms status
+    ```
+
+__Uninstallation Process__
+```bash
+sudo dkms remove -m rtw88 -v 0.6 --all # Remove rtw88 from dkms
+sudo rm -r /var/lib/dkms/rtw88 # Remove rtw88 dkms build files (if they exist)
+sudo make -C /usr/src/rtw88-0.6 uninstall # Run uninstall target in Makefile
+sudo rm -r /usr/src/rtw88-0.6 # Remove cloned source code directory
+```
+
+---
+
 ### Basic Installation for All Distros 🛠
 
 ```bash
@@ -232,4 +305,3 @@ Install `usb_modeswitch` which can switch your adapter from CD-ROM mode to Wi-Fi
 
 ### Q5: My computer becomes very slow while building the driver, any idea to avoid that?
 Run `make JOBS=x` instead, `x` is the number of compilation jobs that will be executed simultaneously, you can adjust it according to the CPU cores available on your machine.
-
