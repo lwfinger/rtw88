@@ -238,7 +238,7 @@ clean:
 
 sign:
 ifeq ($(NO_SKIP_SIGN), y)
-	@openssl req -new -x509 -newkey rsa:2048 -keyout MOK.priv -outform DER -out MOK.der -nodes -days 36500 -subj "/CN=Custom MOK/"
+	@openssl req -new -x509 -newkey rsa:2048 -keyout MOK.priv -outform DER -out MOK.der -nodes -days 36500 -subj "/CN=rtw88 driver key/"
 	@mokutil --import MOK.der
 else
 	echo "Skipping key creation"
