@@ -93,7 +93,6 @@ struct rtw_c2h_ra_rpt {
 	u8 byte4;
 	u8 ra_ratio;
 	u8 bw;
-	u8 txcls_rate;
 } __packed;
 
 #define RTW_C2H_RA_RPT_RATE	GENMASK(6, 0)
