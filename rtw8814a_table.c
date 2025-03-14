@@ -23916,14 +23916,14 @@ static const struct rtw_pwr_seq_cmd trans_cardemu_to_carddis_8814a[] = {
 	 RTW_PWR_CMD_END, 0, 0},
 };
 
-const struct rtw_pwr_seq_cmd *card_enable_flow_8814a[] = {
+const struct rtw_pwr_seq_cmd * const card_enable_flow_8814a[] = {
 	init_power_on_8814a,
 	trans_carddis_to_cardemu_8814a,
 	trans_cardemu_to_act_8814a,
 	NULL
 };
 
-const struct rtw_pwr_seq_cmd *card_disable_flow_8814a[] = {
+const struct rtw_pwr_seq_cmd * const card_disable_flow_8814a[] = {
 	trans_act_to_cardemu_8814a,
 	trans_cardemu_to_carddis_8814a,
 	NULL

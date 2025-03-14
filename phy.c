@@ -54,61 +54,71 @@ static const u32 db_invert_table[12][8] = {
 	 1995262315,	2511886432U,	3162277660U,	3981071706U}
 };
 
-u8 rtw_cck_rates[] = { DESC_RATE1M, DESC_RATE2M, DESC_RATE5_5M, DESC_RATE11M };
-u8 rtw_ofdm_rates[] = {
+const u8 rtw_cck_rates[] = { DESC_RATE1M, DESC_RATE2M, DESC_RATE5_5M, DESC_RATE11M };
+
+const u8 rtw_ofdm_rates[] = {
 	DESC_RATE6M,  DESC_RATE9M,  DESC_RATE12M,
 	DESC_RATE18M, DESC_RATE24M, DESC_RATE36M,
 	DESC_RATE48M, DESC_RATE54M
 };
-u8 rtw_ht_1s_rates[] = {
+
+const u8 rtw_ht_1s_rates[] = {
 	DESC_RATEMCS0, DESC_RATEMCS1, DESC_RATEMCS2,
 	DESC_RATEMCS3, DESC_RATEMCS4, DESC_RATEMCS5,
 	DESC_RATEMCS6, DESC_RATEMCS7
 };
-u8 rtw_ht_2s_rates[] = {
+
+const u8 rtw_ht_2s_rates[] = {
 	DESC_RATEMCS8,  DESC_RATEMCS9,  DESC_RATEMCS10,
 	DESC_RATEMCS11, DESC_RATEMCS12, DESC_RATEMCS13,
 	DESC_RATEMCS14, DESC_RATEMCS15
 };
-u8 rtw_vht_1s_rates[] = {
+
+const u8 rtw_vht_1s_rates[] = {
 	DESC_RATEVHT1SS_MCS0, DESC_RATEVHT1SS_MCS1,
 	DESC_RATEVHT1SS_MCS2, DESC_RATEVHT1SS_MCS3,
 	DESC_RATEVHT1SS_MCS4, DESC_RATEVHT1SS_MCS5,
 	DESC_RATEVHT1SS_MCS6, DESC_RATEVHT1SS_MCS7,
 	DESC_RATEVHT1SS_MCS8, DESC_RATEVHT1SS_MCS9
 };
-u8 rtw_vht_2s_rates[] = {
+
+const u8 rtw_vht_2s_rates[] = {
 	DESC_RATEVHT2SS_MCS0, DESC_RATEVHT2SS_MCS1,
 	DESC_RATEVHT2SS_MCS2, DESC_RATEVHT2SS_MCS3,
 	DESC_RATEVHT2SS_MCS4, DESC_RATEVHT2SS_MCS5,
 	DESC_RATEVHT2SS_MCS6, DESC_RATEVHT2SS_MCS7,
 	DESC_RATEVHT2SS_MCS8, DESC_RATEVHT2SS_MCS9
 };
-u8 rtw_ht_3s_rates[] = {
+
+const u8 rtw_ht_3s_rates[] = {
 	DESC_RATEMCS16, DESC_RATEMCS17, DESC_RATEMCS18,
 	DESC_RATEMCS19, DESC_RATEMCS20, DESC_RATEMCS21,
 	DESC_RATEMCS22, DESC_RATEMCS23
 };
-u8 rtw_ht_4s_rates[] = {
+
+const u8 rtw_ht_4s_rates[] = {
 	DESC_RATEMCS24, DESC_RATEMCS25, DESC_RATEMCS26,
 	DESC_RATEMCS27, DESC_RATEMCS28, DESC_RATEMCS29,
 	DESC_RATEMCS30, DESC_RATEMCS31
 };
-u8 rtw_vht_3s_rates[] = {
+
+const u8 rtw_vht_3s_rates[] = {
 	DESC_RATEVHT3SS_MCS0, DESC_RATEVHT3SS_MCS1,
 	DESC_RATEVHT3SS_MCS2, DESC_RATEVHT3SS_MCS3,
 	DESC_RATEVHT3SS_MCS4, DESC_RATEVHT3SS_MCS5,
 	DESC_RATEVHT3SS_MCS6, DESC_RATEVHT3SS_MCS7,
 	DESC_RATEVHT3SS_MCS8, DESC_RATEVHT3SS_MCS9
 };
-u8 rtw_vht_4s_rates[] = {
+
+const u8 rtw_vht_4s_rates[] = {
 	DESC_RATEVHT4SS_MCS0, DESC_RATEVHT4SS_MCS1,
 	DESC_RATEVHT4SS_MCS2, DESC_RATEVHT4SS_MCS3,
 	DESC_RATEVHT4SS_MCS4, DESC_RATEVHT4SS_MCS5,
 	DESC_RATEVHT4SS_MCS6, DESC_RATEVHT4SS_MCS7,
 	DESC_RATEVHT4SS_MCS8, DESC_RATEVHT4SS_MCS9
 };
-u8 *rtw_rate_section[RTW_RATE_SECTION_MAX] = {
+
+const u8 * const rtw_rate_section[RTW_RATE_SECTION_NUM] = {
 	rtw_cck_rates, rtw_ofdm_rates,
 	rtw_ht_1s_rates, rtw_ht_2s_rates,
 	rtw_vht_1s_rates, rtw_vht_2s_rates,
@@ -117,7 +127,7 @@ u8 *rtw_rate_section[RTW_RATE_SECTION_MAX] = {
 };
 EXPORT_SYMBOL(rtw_rate_section);
 
-u8 rtw_rate_size[RTW_RATE_SECTION_MAX] = {
+const u8 rtw_rate_size[RTW_RATE_SECTION_NUM] = {
 	ARRAY_SIZE(rtw_cck_rates),
 	ARRAY_SIZE(rtw_ofdm_rates),
 	ARRAY_SIZE(rtw_ht_1s_rates),
@@ -1662,11 +1672,13 @@ rtw_xref_5g_txpwr_lmt(struct rtw_dev *rtwdev, u8 regd,
 static void
 rtw_xref_txpwr_lmt_by_rs(struct rtw_dev *rtwdev, u8 regd, u8 bw, u8 ch_idx)
 {
+	static const u8 rs_cmp[4][2] = {
+		{RTW_RATE_SECTION_HT_1S, RTW_RATE_SECTION_VHT_1S},
+		{RTW_RATE_SECTION_HT_2S, RTW_RATE_SECTION_VHT_2S},
+		{RTW_RATE_SECTION_HT_3S, RTW_RATE_SECTION_VHT_3S},
+		{RTW_RATE_SECTION_HT_4S, RTW_RATE_SECTION_VHT_4S}
+	};
 	u8 rs_idx, rs_ht, rs_vht;
-	u8 rs_cmp[4][2] = {{RTW_RATE_SECTION_HT_1S, RTW_RATE_SECTION_VHT_1S},
-			   {RTW_RATE_SECTION_HT_2S, RTW_RATE_SECTION_VHT_2S},
-			   {RTW_RATE_SECTION_HT_3S, RTW_RATE_SECTION_VHT_3S},
-			   {RTW_RATE_SECTION_HT_4S, RTW_RATE_SECTION_VHT_4S} };
 
 	for (rs_idx = 0; rs_idx < 4; rs_idx++) {
 		rs_ht = rs_cmp[rs_idx][0];
@@ -2295,7 +2307,7 @@ static void rtw_phy_set_tx_power_index_by_rs(struct rtw_dev *rtwdev,
 {
 	struct rtw_hal *hal = &rtwdev->hal;
 	u8 regd = rtw_regd_get(rtwdev);
-	u8 *rates;
+	const u8 *rates;
 	u8 size;
 	u8 rate;
 	u8 pwr_idx;
@@ -2355,7 +2367,7 @@ EXPORT_SYMBOL(rtw_phy_set_tx_power_level);
 
 static void
 rtw_phy_tx_power_by_rate_config_by_path(struct rtw_hal *hal, u8 path,
-					u8 rs, u8 size, u8 *rates)
+					u8 rs, u8 size, const u8 *rates)
 {
 	u8 rate;
 	u8 base_idx, rate_idx;

@@ -198,7 +198,7 @@ enum rtw_hci_type {
 };
 
 struct rtw_hci {
-	struct rtw_hci_ops *ops;
+	const struct rtw_hci_ops *ops;
 	enum rtw_hci_type type;
 
 	u32 rpwm_addr;

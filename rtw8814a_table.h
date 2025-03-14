@@ -34,7 +34,7 @@ extern const struct rtw_pwr_track_tbl rtw8814a_rtw_pwrtrk_type2_tbl;
 extern const struct rtw_pwr_track_tbl rtw8814a_rtw_pwrtrk_type5_tbl;
 extern const struct rtw_pwr_track_tbl rtw8814a_rtw_pwrtrk_type7_tbl;
 extern const struct rtw_pwr_track_tbl rtw8814a_rtw_pwrtrk_type8_tbl;
-extern const struct rtw_pwr_seq_cmd *card_disable_flow_8814a[];
-extern const struct rtw_pwr_seq_cmd *card_enable_flow_8814a[];
+extern const struct rtw_pwr_seq_cmd * const card_disable_flow_8814a[];
+extern const struct rtw_pwr_seq_cmd * const card_enable_flow_8814a[];
 
 #endif
