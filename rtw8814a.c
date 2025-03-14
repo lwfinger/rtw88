@@ -2012,8 +2012,6 @@ static void rtw8814a_phy_cck_pd_set(struct rtw_dev *rtwdev, u8 new_lvl)
 	rtw_write8(rtwdev, REG_CCK_PD_TH, pd[new_lvl]);
 }
 
-#ifdef CONFIG_LEDS_CLASS
-
 static void rtw8814a_led_set(struct led_classdev *led,
 			     enum led_brightness brightness)
 {
@@ -2032,8 +2030,6 @@ static void rtw8814a_led_set(struct led_classdev *led,
 
 	rtw_write32(rtwdev, REG_GPIO_PIN_CTRL_2, led_gpio_cfg);
 }
-
-#endif
 
 static void rtw8814a_fill_txdesc_checksum(struct rtw_dev *rtwdev,
 					  struct rtw_tx_pkt_info *pkt_info,

@@ -878,8 +878,6 @@ static void rtw8812a_pwr_track(struct rtw_dev *rtwdev)
 	dm_info->pwr_trk_triggered = false;
 }
 
-#ifdef CONFIG_LEDS_CLASS
-
 static void rtw8812a_led_set(struct led_classdev *led,
 			     enum led_brightness brightness)
 {
@@ -895,8 +893,6 @@ static void rtw8812a_led_set(struct led_classdev *led,
 
 	rtw_write8(rtwdev, REG_LED_CFG, ledcfg);
 }
-
-#endif
 
 static void rtw8812a_fill_txdesc_checksum(struct rtw_dev *rtwdev,
 					  struct rtw_tx_pkt_info *pkt_info,
@@ -947,9 +943,7 @@ static const struct rtw_chip_ops rtw8812a_ops = {
 	.config_bfee		= NULL,
 	.set_gid_table		= NULL,
 	.cfg_csi_rate		= NULL,
-#ifdef CONFIG_LEDS_CLASS
 	.led_set		= rtw8812a_led_set,
-#endif
 	.fill_txdesc_checksum	= rtw8812a_fill_txdesc_checksum,
 	.coex_set_init		= rtw8812a_coex_cfg_init,
 	.coex_set_ant_switch	= NULL,

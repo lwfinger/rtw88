@@ -1214,8 +1214,6 @@ static void rtw8821c_phy_cck_pd_set(struct rtw_dev *rtwdev, u8 new_lvl)
 			 dm_info->cck_pd_default + new_lvl * 2);
 }
 
-#ifdef CONFIG_LEDS_CLASS
-
 static void rtw8821c_led_set(struct led_classdev *led,
 			     enum led_brightness brightness)
 {
@@ -1233,8 +1231,6 @@ static void rtw8821c_led_set(struct led_classdev *led,
 
 	rtw_write32(rtwdev, REG_LED_CFG, ledcfg);
 }
-
-#endif
 
 static void rtw8821c_fill_txdesc_checksum(struct rtw_dev *rtwdev,
 					  struct rtw_tx_pkt_info *pkt_info,
@@ -1686,9 +1682,7 @@ static const struct rtw_chip_ops rtw8821c_ops = {
 	.config_bfee		= rtw8821c_bf_config_bfee,
 	.set_gid_table		= rtw_bf_set_gid_table,
 	.cfg_csi_rate		= rtw_bf_cfg_csi_rate,
-#ifdef CONFIG_LEDS_CLASS
 	.led_set		= rtw8821c_led_set,
-#endif
 	.fill_txdesc_checksum	= rtw8821c_fill_txdesc_checksum,
 
 	.coex_set_init		= rtw8821c_coex_cfg_init,

@@ -1573,8 +1573,6 @@ static void rtw8822b_adaptivity(struct rtw_dev *rtwdev)
 	rtw_phy_set_edcca_th(rtwdev, l2h, h2l);
 }
 
-#ifdef CONFIG_LEDS_CLASS
-
 static void rtw8822b_led_set(struct led_classdev *led,
 			     enum led_brightness brightness)
 {
@@ -1592,8 +1590,6 @@ static void rtw8822b_led_set(struct led_classdev *led,
 
 	rtw_write32(rtwdev, REG_LED_CFG, ledcfg);
 }
-
-#endif
 
 static void rtw8822b_fill_txdesc_checksum(struct rtw_dev *rtwdev,
 					  struct rtw_tx_pkt_info *pkt_info,
@@ -2176,9 +2172,7 @@ static const struct rtw_chip_ops rtw8822b_ops = {
 	.cfg_csi_rate		= rtw_bf_cfg_csi_rate,
 	.adaptivity_init	= rtw8822b_adaptivity_init,
 	.adaptivity		= rtw8822b_adaptivity,
-#ifdef CONFIG_LEDS_CLASS
 	.led_set		= rtw8822b_led_set,
-#endif
 	.fill_txdesc_checksum	= rtw8822b_fill_txdesc_checksum,
 
 	.coex_set_init		= rtw8822b_coex_cfg_init,
