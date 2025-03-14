@@ -295,11 +295,11 @@ static void rtw8812a_iqk(struct rtw_dev *rtwdev)
 	bool iqk0_ready = false, tx0_finish = false, rx0_finish = false;
 	bool iqk1_ready = false, tx1_finish = false, rx1_finish = false;
 	u8 tx0_avg = 0, tx1_avg = 0, rx0_avg = 0, rx1_avg = 0;
+	int tx_x0 = 0, tx_y0 = 0, tx_x1 = 0, tx_y1 = 0;
+	int rx_x0 = 0, rx_y0 = 0, rx_x1 = 0, rx_y1 = 0;
 	struct rtw_efuse *efuse = &rtwdev->efuse;
 	bool tx0_fail = true, rx0_fail = true;
 	bool tx1_fail = true, rx1_fail = true;
-	int tx_x0, tx_y0, tx_x1, tx_y1;
-	int rx_x0, rx_y0, rx_x1, rx_y1;
 	u8 cal0_retry, cal1_retry;
 	u8 delay_count;
 
@@ -1001,8 +1001,6 @@ static const struct rtw_prioq_addrs prioq_addrs_8812a = {
 	.wsize = false,
 };
 
-static const struct rtw_intf_phy_para_table phy_para_table_8812a = {};
-
 static const struct rtw_hw_reg rtw8812a_dig[] = {
 	[0] = { .addr = REG_RXIGI_A, .mask = 0x7f },
 	[1] = { .addr = REG_RXIGI_B, .mask = 0x7f },
@@ -1061,30 +1059,23 @@ const struct rtw_chip_info rtw8812a_hw_spec = {
 	.txff_size = 131072,
 	.rxff_size = 16128,
 	.rsvd_drv_pg_num = 9,
-	.band = RTW_BAND_2G | RTW_BAND_5G,
-	.page_size = 512,
-	.csi_buf_pg_num = 0,
-	.dig_min = 0x20,
 	.txgi_factor = 1,
 	.is_pwr_by_rate_dec = true,
-	.rx_ldpc = false,
 	.max_power_index = 0x3f,
-	.ampdu_density = IEEE80211_HT_MPDU_DENSITY_16,
-	.usb_tx_agg_desc_num = 1,
-	.hw_feature_report = false,
-	.c2h_ra_report_size = 4,
-	.old_datarate_fb_limit = true,
-	.tx_report_sn = false,
+	.csi_buf_pg_num = 0,
+	.band = RTW_BAND_2G | RTW_BAND_5G,
+	.page_size = 512,
+	.dig_min = 0x20,
 	.ht_supported = true,
 	.vht_supported = true,
 	.lps_deep_mode_supported = 0,
 	.sys_func_en = 0xFD,
 	.pwr_on_seq = card_enable_flow_8812a,
 	.pwr_off_seq = card_disable_flow_8812a,
+	.page_table = page_table_8812a,
 	.rqpn_table = rqpn_table_8812a,
 	.prioq_addrs = &prioq_addrs_8812a,
-	.page_table = page_table_8812a,
-	.intf_table = &phy_para_table_8812a,
+	.intf_table = NULL,
 	.dig = rtw8812a_dig,
 	.rf_sipi_addr = {REG_LSSI_WRITE_A, REG_LSSI_WRITE_B},
 	.ltecoex_addr = NULL,
@@ -1094,7 +1085,14 @@ const struct rtw_chip_info rtw8812a_hw_spec = {
 	.rf_tbl = {&rtw8812a_rf_a_tbl, &rtw8812a_rf_b_tbl},
 	.rfe_defs = rtw8812a_rfe_defs,
 	.rfe_defs_size = ARRAY_SIZE(rtw8812a_rfe_defs),
+	.rx_ldpc = false,
+	.amsdu_in_ampdu = true,
+	.hw_feature_report = false,
+	.c2h_ra_report_size = 4,
+	.old_datarate_fb_limit = true,
+	.usb_tx_agg_desc_num = 1,
 	.iqk_threshold = 8,
+	.ampdu_density = IEEE80211_HT_MPDU_DENSITY_16,
 	.max_scan_ie_len = IEEE80211_MAX_DATA_LEN,
 
 	.coex_para_ver = 0, /* no coex code in 8812au driver */

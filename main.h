@@ -1250,8 +1250,8 @@ enum rtw_rfe_fem {
 struct rtw_rfe_def {
 	const struct rtw_table *phy_pg_tbl;
 	const struct rtw_table *txpwr_lmt_tbl;
-	const struct rtw_table *agc_btg_tbl;
 	const struct rtw_pwr_track_tbl *pwr_track_tbl;
+	const struct rtw_table *agc_btg_tbl;
 };
 
 #define RTW_DEF_RFE(chip, bb_pg, pwrlmt, track) {				  \
@@ -1367,11 +1367,11 @@ struct rtw_chip_info {
 	u16 fw_fifo_addr[RTW_FW_FIFO_MAX];
 	const struct rtw_fwcd_segs *fwcd_segs;
 
+	bool amsdu_in_ampdu;
 	u8 usb_tx_agg_desc_num;
 	bool hw_feature_report;
 	u8 c2h_ra_report_size;
 	bool old_datarate_fb_limit;
-	bool tx_report_sn;
 
 	u8 default_1ss_tx_path;
 

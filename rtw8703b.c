@@ -1922,7 +1922,6 @@ const struct rtw_chip_info rtw8703b_hw_spec = {
 	.hw_feature_report = true,
 	.c2h_ra_report_size = 7,
 	.old_datarate_fb_limit = true,
-	.tx_report_sn = false,
 
 	.path_div_supported = false,
 	.ht_supported = true,

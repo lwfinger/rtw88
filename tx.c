@@ -271,7 +271,7 @@ void rtw_tx_report_handle(struct rtw_dev *rtwdev, struct sk_buff *skb, int src)
 	spin_lock_irqsave(&tx_report->q_lock, flags);
 	skb_queue_walk_safe(&tx_report->queue, cur, tmp) {
 		n = (u8 *)IEEE80211_SKB_CB(cur)->status.status_driver_data;
-		if (*n == sn || !rtwdev->chip->tx_report_sn) {
+		if (*n == sn || rtw_chip_wcpu_11n(rtwdev)) {
 			__skb_unlink(cur, &tx_report->queue);
 			rtw_tx_report_tx_status(rtwdev, cur, st == 0);
 			break;
