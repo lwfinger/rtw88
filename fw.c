@@ -1646,13 +1646,13 @@ static int  __rtw_build_rsvd_page_from_vifs(struct rtw_dev *rtwdev)
 
 static u8 *rtw_build_rsvd_page(struct rtw_dev *rtwdev, u32 *size)
 {
-	struct ieee80211_hw *hw = rtwdev->hw;
 	const struct rtw_chip_info *chip = rtwdev->chip;
-	struct sk_buff *iter;
+	struct ieee80211_hw *hw = rtwdev->hw;
 	struct rtw_rsvd_page *rsvd_pkt;
-	u32 page = 0;
-	u8 total_page = 0;
+	struct sk_buff *iter;
 	u16 page_size, page_margin, tx_desc_sz;
+	u8 total_page = 0;
+	u32 page = 0;
 	u8 *buf;
 	int ret;
 
