@@ -1164,17 +1164,17 @@ static int rtw_usb_switch_mode(struct rtw_dev *rtwdev)
 #define USB_PHY_PAGE0	0x9b
 #define USB_PHY_PAGE1	0xbb
 
-static void rtw_usb_phy_write(struct rtw_dev *rtwdev, u16 addr, u16 data,
+static void rtw_usb_phy_write(struct rtw_dev *rtwdev, u8 addr, u16 data,
 			      enum usb_device_speed speed)
 {
 	if (speed == USB_SPEED_SUPER) {
-		rtw_write8(rtwdev, 0xff0d, (u8)data);
-		rtw_write8(rtwdev, 0xff0e, (u8)(data >> 8));
-		rtw_write8(rtwdev, 0xff0c, addr | BIT(7));
+		rtw_write8(rtwdev, REG_USB3_PHY_DAT_L, data & 0xff);
+		rtw_write8(rtwdev, REG_USB3_PHY_DAT_H, data >> 8);
+		rtw_write8(rtwdev, REG_USB3_PHY_ADR, addr | BIT_USB3_PHY_ADR_WR);
 	} else if (speed == USB_SPEED_HIGH) {
-		rtw_write8(rtwdev, 0xfe41, (u8)data);
-		rtw_write8(rtwdev, 0xfe40, addr);
-		rtw_write8(rtwdev, 0xfe42, 0x81);
+		rtw_write8(rtwdev, REG_USB2_PHY_DAT, data);
+		rtw_write8(rtwdev, REG_USB2_PHY_ADR, addr);
+		rtw_write8(rtwdev, REG_USB2_PHY_CMD, BIT_USB2_PHY_CMD_TRG);
 	}
 }
 
@@ -1191,7 +1191,7 @@ static void rtw_usb_phy_cfg(struct rtw_dev *rtwdev,
 			    enum usb_device_speed speed)
 {
 	const struct rtw_intf_phy_para *para = NULL;
-	u16 cut, offset;
+	u16 offset;
 
 	if (!rtwdev->chip->intf_table)
 		return;
@@ -1204,10 +1204,8 @@ static void rtw_usb_phy_cfg(struct rtw_dev *rtwdev,
 	if (!para)
 		return;
 
-	cut = BIT(0) << rtwdev->hal.cut_version;
-
 	for ( ; para->offset != 0xffff; para++) {
-		if (!(para->cut_mask & cut))
+		if (!(para->cut_mask & BIT(rtwdev->hal.cut_version)))
 			continue;
 
 		offset = para->offset;
