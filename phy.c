@@ -1149,22 +1149,23 @@ static bool check_positive(struct rtw_dev *rtwdev, struct rtw_phy_cond cond,
 
 	if (rtwdev->chip->id == RTW_CHIP_TYPE_8812A ||
 	    rtwdev->chip->id == RTW_CHIP_TYPE_8821A) {
-		if (cond.rfe & 0x0f) {
-			if ((cond.rfe & drv_cond.rfe) != cond.rfe)
-				return false;
+		if (!(cond.rfe & 0x0f))
+			return true;
 
-			if ((cond.rfe & BIT(0)) && cond2.type_glna != drv_cond2.type_glna)
-				return false;
+		if ((cond.rfe & drv_cond.rfe) != cond.rfe)
+			return false;
 
-			if ((cond.rfe & BIT(1)) && cond2.type_gpa != drv_cond2.type_gpa)
-				return false;
+		if ((cond.rfe & BIT(0)) && cond2.type_glna != drv_cond2.type_glna)
+			return false;
 
-			if ((cond.rfe & BIT(2)) && cond2.type_alna != drv_cond2.type_alna)
-				return false;
+		if ((cond.rfe & BIT(1)) && cond2.type_gpa != drv_cond2.type_gpa)
+			return false;
 
-			if ((cond.rfe & BIT(3)) && cond2.type_apa != drv_cond2.type_apa)
-				return false;
-		}
+		if ((cond.rfe & BIT(2)) && cond2.type_alna != drv_cond2.type_alna)
+			return false;
+
+		if ((cond.rfe & BIT(3)) && cond2.type_apa != drv_cond2.type_apa)
+			return false;
 	} else {
 		if (cond.rfe != drv_cond.rfe)
 			return false;
