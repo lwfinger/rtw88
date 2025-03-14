@@ -768,18 +768,19 @@ void rtw_fw_send_ra_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si)
 
 	rtw_fw_send_h2c_command(rtwdev, h2c_pkt);
 
-	if (rtwdev->chip->rf_tbl[RF_PATH_C]) {
-		SET_H2C_CMD_ID_CLASS(h2c_pkt, H2C_CMD_RA_INFO_HI);
+	if (rtwdev->chip->id != RTW_CHIP_TYPE_8814A)
+		return;
 
-		mask_hi = si->ra_mask >> 32;
+	SET_H2C_CMD_ID_CLASS(h2c_pkt, H2C_CMD_RA_INFO_HI);
 
-		SET_RA_INFO_RA_MASK0(h2c_pkt, (mask_hi & 0xff));
-		SET_RA_INFO_RA_MASK1(h2c_pkt, (mask_hi & 0xff00) >> 8);
-		SET_RA_INFO_RA_MASK2(h2c_pkt, (mask_hi & 0xff0000) >> 16);
-		SET_RA_INFO_RA_MASK3(h2c_pkt, (mask_hi & 0xff000000) >> 24);
+	mask_hi = si->ra_mask >> 32;
 
-		rtw_fw_send_h2c_command(rtwdev, h2c_pkt);
-	}
+	SET_RA_INFO_RA_MASK0(h2c_pkt, (mask_hi & 0xff));
+	SET_RA_INFO_RA_MASK1(h2c_pkt, (mask_hi & 0xff00) >> 8);
+	SET_RA_INFO_RA_MASK2(h2c_pkt, (mask_hi & 0xff0000) >> 16);
+	SET_RA_INFO_RA_MASK3(h2c_pkt, (mask_hi & 0xff000000) >> 24);
+
+	rtw_fw_send_h2c_command(rtwdev, h2c_pkt);
 }
 
 void rtw_fw_media_status_report(struct rtw_dev *rtwdev, u8 mac_id, bool connect)
