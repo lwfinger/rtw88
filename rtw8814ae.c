@@ -26,6 +26,6 @@ static struct pci_driver rtw_8814ae_driver = {
 };
 module_pci_driver(rtw_8814ae_driver);
 
-MODULE_AUTHOR("Realtek Corporation");
+MODULE_AUTHOR("Bitterblue Smith <rtl8821cerfe2@gmail.com>");
 MODULE_DESCRIPTION("Realtek 802.11ac wireless 8814ae driver");
 MODULE_LICENSE("Dual BSD/GPL");

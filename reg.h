@@ -40,8 +40,8 @@
 #define BIT_RF_RSTB		BIT(1)
 #define BIT_RF_EN		BIT(0)
 
-#define REG_RF_CTRL1		0x20
-#define REG_RF_CTRL2		0x21
+#define REG_RF_CTRL1		0x0020
+#define REG_RF_CTRL2		0x0021
 
 #define REG_AFE_CTRL1		0x0024
 #define BIT_MAC_CLK_SEL		(BIT(20) | BIT(21))
@@ -116,7 +116,7 @@
 #define BIT_SDIO_PAD_E5		BIT(18)
 
 #define REG_RF_B_CTRL		0x76
-#define REG_RF_CTRL3		0x76
+#define REG_RF_CTRL3		0x0076
 
 #define REG_AFE_CTRL_4		0x0078
 #define BIT_CK320M_AFE_EN	BIT(4)
@@ -622,8 +622,11 @@
 #define REG_FPGA0_XCD_RF_PARA	0x08B4
 #define REG_RX_MCS_LIMIT	0x08BC
 #define REG_ADC160		0x08C4
+#define REG_DBGSEL		0x08fc
 #define REG_ANTSEL_SW		0x0900
 #define REG_DAC_RSTB		0x090c
+#define REG_PSD			0x0910
+#define BIT_PSD_INI		GENMASK(23, 22)
 #define REG_SINGLE_TONE_CONT_TX	0x0914
 #define REG_AGC_TABLE		0x0958
 #define REG_RFE_CTRL_E		0x0974
@@ -635,8 +638,14 @@
 
 #define REG_FAS			0x09a4
 #define REG_RXSB		0x0a00
+#define BIT_RXSB_ANA_DIV	BIT(15)
 #define REG_CCK_RX		0x0a04
 #define REG_CCK_PD_TH		0x0a0a
+#define REG_PRECTRL		0x0a14
+#define BIT_DIS_CO_PATHSEL	BIT(7)
+#define BIT_IQ_WGT		GENMASK(9, 8)
+#define REG_CCA_MF		0x0a20
+#define BIT_MBC_WIN		GENMASK(5, 4)
 #define REG_CCK0_TX_FILTER1	0x0a20
 #define REG_CCK0_TX_FILTER2	0x0a24
 #define REG_CCK0_DEBUG_PORT	0x0a28
@@ -658,6 +667,13 @@
 #define DIS_DPD_RATEVHT2SS_MCS0	BIT(8)
 #define DIS_DPD_RATEVHT2SS_MCS1	BIT(9)
 #define DIS_DPD_RATEALL		GENMASK(9, 0)
+
+#define REG_CCA			0x0a70
+#define BIT_CCA_CO		BIT(7)
+#define REG_ANTSEL		0x0a74
+#define BIT_ANT_BYCO		BIT(8)
+#define REG_CCKTX		0x0a84
+#define BIT_CMB_CCA_2R		BIT(28)
 
 #define REG_CNTRST		0x0b58
 
@@ -764,6 +780,7 @@
 #define REG_CRC_HT		0x0f10
 #define REG_CRC_OFDM		0x0f14
 #define REG_FA_OFDM		0x0f48
+#define REG_DBGRPT		0x0fa0
 #define REG_CCA_CCK		0x0fcc
 
 #define REG_SYS_CFG3_8814A	0x1000
@@ -895,6 +912,7 @@
 #define REG_RFE_PINMUX_C	0x18b4
 
 #define REG_RFESEL_CTRL	0x1990
+#define REG_AGC_TBL		0x1998
 
 #define REG_RX_IQC_AB_D		0x1a10
 #define REG_RX_IQC_CD_D		0x1a14
@@ -903,6 +921,8 @@
 #define REG_AFE_PWR1_D		0x1a60
 #define REG_TX_AGC_D		0x1a94
 #define REG_RFE_PINMUX_D	0x1ab4
+#define REG_RFE_INVSEL_D	0x1abc
+#define BIT_RFE_SELSW0_D	GENMASK(27, 20)
 
 #define REG_NOMASK_TXBT	0x1ca7
 #define REG_ANAPAR	0x1c30
@@ -943,6 +963,7 @@
 #define RF18_BAND_MASK	(BIT(16) | BIT(9) | BIT(8))
 #define RF18_CHANNEL_MASK	(MASKBYTE0)
 #define RF18_RFSI_MASK	(BIT(18) | BIT(17))
+#define RF_RCK1_V1	0x1c
 #define RF_RCK		0x1d
 #define RF_MODE_TABLE_ADDR	0x30
 #define RF_MODE_TABLE_DATA0	0x31

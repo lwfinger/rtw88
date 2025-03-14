@@ -5,8 +5,6 @@
 #ifndef __RTW8814A_H__
 #define __RTW8814A_H__
 
-#define RF_RCK1		0x1c
-
 struct rtw8814au_efuse {
 	u8 vid[2];			/* 0xd0 */
 	u8 pid[2];			/* 0xd2 */
