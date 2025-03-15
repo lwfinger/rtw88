@@ -519,11 +519,12 @@ static void rtw_phy_dig(struct rtw_dev *rtwdev)
 {
 	struct rtw_dm_info *dm_info = &rtwdev->dm_info;
 	u8 upper_bound, lower_bound;
-	u8 pre_igi, cur_igi;
+	u8 chip = rtwdev->chip->id;
 	u16 fa_th[3], fa_cnt;
-	u8 level;
-	u8 step[3];
+	u8 pre_igi, cur_igi;
 	bool linked;
+	u8 step[3];
+	u8 level;
 
 	if (test_bit(RTW_FLAG_DIG_DISABLE, rtwdev->flags))
 		return;
@@ -568,8 +569,9 @@ static void rtw_phy_dig(struct rtw_dev *rtwdev)
 	/* Mitigate beacon loss and connectivity issues, mainly (only?)
 	 * in the 5 GHz band
 	 */
-	if (rtwdev->chip->id == RTW_CHIP_TYPE_8812A && rtwdev->beacon_loss &&
-	    linked && dm_info->total_fa_cnt < DIG_PERF_FA_TH_EXTRA_HIGH)
+	if ((chip == RTW_CHIP_TYPE_8812A || chip == RTW_CHIP_TYPE_8814A) &&
+	    rtwdev->beacon_loss && linked &&
+	    dm_info->total_fa_cnt < DIG_PERF_FA_TH_EXTRA_HIGH)
 		cur_igi = DIG_CVRG_MIN;
 
 	if (cur_igi != pre_igi)
