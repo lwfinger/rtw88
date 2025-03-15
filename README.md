@@ -24,7 +24,7 @@ Compatible with **Linux kernel versions 5.4 and newer** as long as your distro h
 ---
 
 ## Issues 🚨
-Report problems in Issues after you have checked the [FAQ](#faq) at bottom of this README.
+Report problems in Issues after you have checked the [Q&A](#qa) at bottom of this README.
 
 ⚠️ If you see a line such as:
 
