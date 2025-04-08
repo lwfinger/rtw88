@@ -372,6 +372,21 @@ static void rtw_phy_statistics(struct rtw_dev *rtwdev)
 #define DIG_CVRG_MIN				0x1c
 #define DIG_RSSI_GAIN_OFFSET			15
 
+void rtw_phy_dig_set_max_coverage(struct rtw_dev *rtwdev) {
+	rtw_dbg(rtwdev, RTW_DBG_PHY, "Setting IGI to max coverage\n");
+	rtw_phy_dig_write(rtwdev, DIG_CVRG_MAX);
+}
+
+void rtw_phy_dig_reset(struct rtw_dev *rtwdev) {
+	struct rtw_dm_info *dm_info = &rtwdev->dm_info;
+	u8 last_igi;
+
+	last_igi = dm_info->igi_history[0];
+	rtw_dbg(rtwdev, RTW_DBG_PHY, "Resetting IGI=%u\n", last_igi);
+
+	rtw_phy_dig_write(rtwdev, last_igi);
+}
+
 static bool
 rtw_phy_dig_check_damping(struct rtw_dm_info *dm_info)
 {
