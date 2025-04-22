@@ -165,6 +165,54 @@ static void rtw_usb_write32(struct rtw_dev *rtwdev, u32 addr, u32 val)
 	rtw_usb_write(rtwdev, addr, val, 4);
 }
 
+static void rtw_usb_write_block(struct rtw_dev *rtwdev, u32 addr,
+				u8 *data, u32 len)
+{
+	struct rtw_usb *rtwusb = (struct rtw_usb *)rtwdev->priv;
+	struct usb_device *udev = rtwusb->udev;
+	int ret;
+
+	ret = usb_control_msg(udev, usb_sndctrlpipe(udev, 0),
+			      RTW_USB_CMD_REQ, RTW_USB_CMD_WRITE,
+			      addr, 0, (void *)data, len, 500);
+	if (ret < 0 && ret != -ENODEV)
+		rtw_err(rtwdev, "write register 0x%x len %d failed with %d\n",
+			addr, len, ret);
+}
+
+static void rtw_usb_write_firmware_page(struct rtw_dev *rtwdev, u32 page,
+					const u8 *data, u32 size)
+{
+	u32 addr = FW_8192C_START_ADDRESS;
+	u8 *data_dup, *buf;
+	u32 n;
+
+	data_dup = kmemdup(data, size, GFP_KERNEL);
+	if (!data_dup)
+		return;
+
+	buf = data_dup;
+
+	rtw_write32_mask(rtwdev, REG_MCUFW_CTRL, BIT_ROM_PGE, page);
+
+	while (size > 0) {
+		if (size >= 196)
+			n = 196;
+		else if (size >= 8)
+			n = 8;
+		else
+			n = 1;
+
+		rtw_usb_write_block(rtwdev, addr, buf, n);
+
+		addr += n;
+		buf += n;
+		size -= n;
+	}
+
+	kfree(data_dup);
+}
+
 static int dma_mapping_to_ep(enum rtw_dma_mapping dma_mapping)
 {
 	switch (dma_mapping) {
@@ -908,6 +956,7 @@ static const struct rtw_hci_ops rtw_usb_ops = {
 	.link_ps = rtw_usb_link_ps,
 	.interface_cfg = rtw_usb_interface_cfg,
 	.dynamic_rx_agg = rtw_usb_dynamic_rx_agg,
+	.write_firmware_page = rtw_usb_write_firmware_page,
 
 	.write8  = rtw_usb_write8,
 	.write16 = rtw_usb_write16,
