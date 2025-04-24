@@ -425,6 +425,9 @@ out:
 	pkt_info->stbc = stbc;
 	pkt_info->ldpc = ldpc;
 
+	if (skb->protocol == cpu_to_be16(ETH_P_PAE))
+		rtw_tx_pkt_info_update_rate(rtwdev, pkt_info, skb, true);
+
 	fix_rate = dm_info->fix_rate;
 	if (fix_rate < DESC_RATE_MAX) {
 		pkt_info->rate = fix_rate;
