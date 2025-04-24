@@ -646,6 +646,13 @@ static void rtw_usb_rx_handler(unsigned long shut_up_gcc)
 				goto skip_packet;
 			}
 
+			if (pkt_stat.pkt_len <= FCS_LEN) {
+				rtw_dbg(rtwdev, RTW_DBG_USB,
+					"skipping too small packet: %u + %u\n",
+					pkt_offset, pkt_stat.pkt_len);
+				goto skip_packet;
+			}
+
 			skb = alloc_skb(skb_len, GFP_ATOMIC);
 			if (!skb) {
 				rtw_dbg(rtwdev, RTW_DBG_USB,
