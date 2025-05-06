@@ -192,7 +192,7 @@ all:
 	
 install: all
 	@install -D -m 644 -t $(MODDESTDIR) *.ko
-	@install -D -m 644 -t /etc/modprobe.d blacklist-rtw88.conf
+	@install -D -m 644 -t /etc/modprobe.d rtw88.conf
 
 ifeq ($(COMPRESS_GZIP), y)
 	@gzip -f $(MODDESTDIR)/*.ko
@@ -230,7 +230,7 @@ uninstall:
 		rmmod -s $$mod || true; \
 	done
 	@rm -vf $(MODDESTDIR)/rtw_*.ko*
-	@rm -vf /etc/modprobe.d/blacklist-rtw88.conf
+	@rm -vf /etc/modprobe.d/rtw88.conf
 	@depmod $(DEPMOD_ARGS)
 	@echo "The rtw88 drivers were removed successfully."
 
