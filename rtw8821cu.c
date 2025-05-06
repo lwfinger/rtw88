@@ -37,8 +37,6 @@ static const struct usb_device_id rtw_8821cu_id_table[] = {
 	  .driver_info = (kernel_ulong_t)&(rtw8821c_hw_spec) }, /* Edimax */
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x7392, 0xd811, 0xff, 0xff, 0xff),
 	  .driver_info = (kernel_ulong_t)&(rtw8821c_hw_spec) }, /* Edimax */
-	{ USB_DEVICE_AND_INTERFACE_INFO(0x2357, 0x013c, 0xff, 0xff, 0xff),
-	  .driver_info = (kernel_ulong_t)&(rtw8821c_hw_spec) }, /* TP-LINK Archer T2UB Nano */
 	{},
 };
 MODULE_DEVICE_TABLE(usb, rtw_8821cu_id_table);
