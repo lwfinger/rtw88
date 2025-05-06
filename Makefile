@@ -36,17 +36,11 @@ ifeq ("","$(wildcard MOK.der)")
 NO_SKIP_SIGN := y
 endif
 
-EXTRA_CFLAGS += -O2 -std=gnu11 -Wno-declaration-after-statement
-ifeq ($(CONFIG_PCI), y)
-EXTRA_CFLAGS += -DCONFIG_RTW88_8822BE=1
-EXTRA_CFLAGS += -DCONFIG_RTW88_8821CE=1
-EXTRA_CFLAGS += -DCONFIG_RTW88_8822CE=1
-EXTRA_CFLAGS += -DCONFIG_RTW88_8723DE=1
-endif
-EXTRA_CFLAGS += -DCONFIG_RTW88_LEDS=1
-EXTRA_CFLAGS += -DCONFIG_RTW88_DEBUG=1
-EXTRA_CFLAGS += -DCONFIG_RTW88_DEBUGFS=1
-#EXTRA_CFLAGS += -DCONFIG_RTW88_REGD_USER_REG_HINTS
+ccflags-y += -O2 -std=gnu11 -Wno-declaration-after-statement
+ccflags-y += -DCONFIG_RTW88_LEDS=1
+ccflags-y += -DCONFIG_RTW88_DEBUG=1
+ccflags-y += -DCONFIG_RTW88_DEBUGFS=1
+ccflags-y += -D__CHECK_ENDIAN__
 
 obj-m		+= rtw_core.o
 rtw_core-objs	+= main.o \
@@ -184,8 +178,6 @@ endif
 
 obj-m		+= rtw_usb.o
 rtw_usb-objs	:= usb.o
-
-ccflags-y += -D__CHECK_ENDIAN__
 
 all: 
 	$(MAKE) -j$(JOBS) -C $(KSRC) M=$$PWD modules
