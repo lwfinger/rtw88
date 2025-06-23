@@ -1201,11 +1201,14 @@ static void rtw_sdio_indicate_tx_status(struct rtw_dev *rtwdev,
 	struct rtw_sdio_tx_data *tx_data = rtw_sdio_get_tx_data(skb);
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 	struct ieee80211_hw *hw = rtwdev->hw;
+	struct ieee80211_hdr *hdr;
 
 	skb_pull(skb, rtwdev->chip->tx_pkt_desc_sz);
+	hdr = (struct ieee80211_hdr *)skb->data;
 
 	/* enqueue to wait for tx report */
-	if (info->flags & IEEE80211_TX_CTL_REQ_TX_STATUS) {
+	if ((info->flags & IEEE80211_TX_CTL_REQ_TX_STATUS) &&
+	    !(rtwdev->chip->id == RTW_CHIP_TYPE_8703B && ieee80211_is_mgmt(hdr->frame_control))) {
 		rtw_tx_report_enqueue(rtwdev, skb, tx_data->sn);
 		return;
 	}
