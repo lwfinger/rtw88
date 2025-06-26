@@ -680,6 +680,8 @@ static void rtw_sdio_enable_rx_aggregation(struct rtw_dev *rtwdev)
 
 	switch (rtwdev->chip->id) {
 	case RTW_CHIP_TYPE_8703B:
+	case RTW_CHIP_TYPE_8821A:
+	case RTW_CHIP_TYPE_8812A:
 		size = 0x6;
 		timeout = 0x6;
 		break;
