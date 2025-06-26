@@ -1309,7 +1309,6 @@ static void rtw_sdio_deinit_tx(struct rtw_dev *rtwdev)
 		skb_queue_purge(&rtwsdio->tx_queue[i]);
 #endif
 
-	flush_workqueue(rtwsdio->txwq);
 	destroy_workqueue(rtwsdio->txwq);
 	kfree(rtwsdio->tx_handler_data);
 
