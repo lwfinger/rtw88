@@ -49,16 +49,6 @@ static void rtw8821a_cfg_ldo25(struct rtw_dev *rtwdev, bool enable)
 {
 }
 
-static void rtw8821a_set_ampdu_factor(struct rtw_dev *rtwdev, u8 factor)
-{
-	u32 len;
-
-	factor = min_t(u8, factor, IEEE80211_VHT_MAX_AMPDU_64K);
-	len = BIT(31) | ((8192 << factor) - 1);
-
-	rtw_write32(rtwdev, REG_AMPDU_MAX_LENGTH, len);
-}
-
 #define CAL_NUM_8821A 3
 #define MACBB_REG_NUM_8821A 8
 #define AFE_REG_NUM_8821A 4
@@ -881,7 +871,7 @@ static const struct rtw_chip_ops rtw8821a_ops = {
 	.set_tx_power_index	= rtw88xxa_set_tx_power_index,
 	.cfg_ldo25		= rtw8821a_cfg_ldo25,
 	.efuse_grant		= rtw88xxa_efuse_grant,
-	.set_ampdu_factor	= rtw8821a_set_ampdu_factor,
+	.set_ampdu_factor	= NULL,
 	.false_alarm_statistics	= rtw88xxa_false_alarm_statistics,
 	.phy_calibration	= rtw8821a_phy_calibration,
 	.cck_pd_set		= rtw88xxa_phy_cck_pd_set,

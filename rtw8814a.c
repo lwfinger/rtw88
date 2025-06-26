@@ -1332,6 +1332,9 @@ static void rtw8814a_cfg_ldo25(struct rtw_dev *rtwdev, bool enable)
 {
 }
 
+/* Without this RTL8814A sends too many frames and (some?) 11n AP
+ * can't handle it, resulting in low TX speed. Other chips seem fine.
+ */
 static void rtw8814a_set_ampdu_factor(struct rtw_dev *rtwdev, u8 factor)
 {
 	factor = min_t(u8, factor, IEEE80211_VHT_MAX_AMPDU_256K);
@@ -2197,7 +2200,7 @@ const struct rtw_chip_info rtw8814a_hw_spec = {
 	.rx_ldpc = true,
 	.max_power_index = 0x3f,
 	.ampdu_density = IEEE80211_HT_MPDU_DENSITY_2,
-	.amsdu_in_ampdu = false,
+	.amsdu_in_ampdu = false, /* RX speed is better without AMSDU */
 	.usb_tx_agg_desc_num = 3,
 	.hw_feature_report = false,
 	.c2h_ra_report_size = 6,

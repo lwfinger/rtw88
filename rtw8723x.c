@@ -433,13 +433,6 @@ static void __rtw8723x_efuse_grant(struct rtw_dev *rtwdev, bool on)
 	}
 }
 
-static void __rtw8723x_set_ampdu_factor(struct rtw_dev *rtwdev, u8 factor)
-{
-	factor = min_t(u8, factor, IEEE80211_HT_MAX_AMPDU_32K);
-
-	rtw_write32(rtwdev, REG_AMPDU_MAX_LENGTH, (8192 << factor) - 1);
-}
-
 static void __rtw8723x_false_alarm_statistics(struct rtw_dev *rtwdev)
 {
 	struct rtw_dm_info *dm_info = &rtwdev->dm_info;
@@ -770,7 +763,6 @@ const struct rtw8723x_common rtw8723x_common = {
 	.cfg_ldo25 = __rtw8723x_cfg_ldo25,
 	.set_tx_power_index = __rtw8723x_set_tx_power_index,
 	.efuse_grant = __rtw8723x_efuse_grant,
-	.set_ampdu_factor = __rtw8723x_set_ampdu_factor,
 	.false_alarm_statistics = __rtw8723x_false_alarm_statistics,
 	.iqk_backup_regs = __rtw8723x_iqk_backup_regs,
 	.iqk_restore_regs = __rtw8723x_iqk_restore_regs,

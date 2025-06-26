@@ -140,7 +140,6 @@ struct rtw8723x_common {
 	void (*cfg_ldo25)(struct rtw_dev *rtwdev, bool enable);
 	void (*set_tx_power_index)(struct rtw_dev *rtwdev);
 	void (*efuse_grant)(struct rtw_dev *rtwdev, bool on);
-	void (*set_ampdu_factor)(struct rtw_dev *rtwdev, u8 factor);
 	void (*false_alarm_statistics)(struct rtw_dev *rtwdev);
 	void (*iqk_backup_regs)(struct rtw_dev *rtwdev,
 				struct rtw8723x_iqk_backup_regs *backup);
@@ -397,11 +396,6 @@ static inline void rtw8723x_set_tx_power_index(struct rtw_dev *rtwdev)
 static inline void rtw8723x_efuse_grant(struct rtw_dev *rtwdev, bool on)
 {
 	rtw8723x_common.efuse_grant(rtwdev, on);
-}
-
-static inline void rtw8723x_set_ampdu_factor(struct rtw_dev *rtwdev, u8 factor)
-{
-	rtw8723x_common.set_ampdu_factor(rtwdev, factor);
 }
 
 static inline void rtw8723x_false_alarm_statistics(struct rtw_dev *rtwdev)
