@@ -1012,6 +1012,9 @@ struct rtw_chip_ops {
 	int (*rsvd_page_dump)(struct rtw_dev *rtwdev, u8 *buf, u32 offset,
 			      u32 size);
 	int (*set_antenna)(struct rtw_dev *rtwdev,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
+			   int radio_idx,
+#endif
 			   u32 antenna_tx,
 			   u32 antenna_rx);
 	void (*cfg_ldo25)(struct rtw_dev *rtwdev, bool enable);

@@ -77,7 +77,11 @@ static void rtw_ops_stop(struct ieee80211_hw *hw, bool suspend)
 	mutex_unlock(&rtwdev->mutex);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
+static int rtw_ops_config(struct ieee80211_hw *hw, int radio_idx, u32 changed)
+#else
 static int rtw_ops_config(struct ieee80211_hw *hw, u32 changed)
+#endif
 {
 	struct rtw_dev *rtwdev = hw->priv;
 	int ret = 0;
@@ -766,7 +770,12 @@ static void rtw_ops_mgd_prepare_tx(struct ieee80211_hw *hw,
 	mutex_unlock(&rtwdev->mutex);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
+static int rtw_ops_set_rts_threshold(struct ieee80211_hw *hw, int radio_idx,
+				     u32 value)
+#else
 static int rtw_ops_set_rts_threshold(struct ieee80211_hw *hw, u32 value)
+#endif
 {
 	struct rtw_dev *rtwdev = hw->priv;
 
@@ -854,7 +863,11 @@ static int rtw_ops_set_bitrate_mask(struct ieee80211_hw *hw,
 	return 0;
 }
 
+
 static int rtw_ops_set_antenna(struct ieee80211_hw *hw,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
+			       int radio_idx,
+#endif
 			       u32 tx_antenna,
 			       u32 rx_antenna)
 {
@@ -866,13 +879,20 @@ static int rtw_ops_set_antenna(struct ieee80211_hw *hw,
 		return -EOPNOTSUPP;
 
 	mutex_lock(&rtwdev->mutex);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
+	ret = chip->ops->set_antenna(rtwdev, -1, tx_antenna, rx_antenna);
+#else
 	ret = chip->ops->set_antenna(rtwdev, tx_antenna, rx_antenna);
+#endif
 	mutex_unlock(&rtwdev->mutex);
 
 	return ret;
 }
 
 static int rtw_ops_get_antenna(struct ieee80211_hw *hw,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
+			       int radio_idx,
+#endif
 			       u32 *tx_antenna,
 			       u32 *rx_antenna)
 {
