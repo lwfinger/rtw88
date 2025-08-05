@@ -199,7 +199,8 @@ void rtw_tx_report_purge_timer(void *cntx)
 #endif
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
-	struct rtw_dev *rtwdev = from_timer(rtwdev, t, tx_report.purge_timer);
+	struct rtw_dev *rtwdev = timer_container_of(rtwdev, t,
+						    tx_report.purge_timer);
 #else
 	struct rtw_dev *rtwdev = (struct rtw_dev *)cntx;
 #endif
