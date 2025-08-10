@@ -149,6 +149,8 @@ sudo cp rtw88.conf /etc/modprobe.d/
 
 This is the best way for Arch-based distro users to install this driver, one more step is required after running `makepkg -si` if Secure Boot is enabled on your machine: Enroll the MOK. Please see the step 6 in [Installation Using DKMS](#installation-using-dkms-) for details.
 
+#### Using the AUR
+
 ```bash
 git clone https://aur.archlinux.org/rtw88-dkms-git.git
 ```
@@ -158,6 +160,19 @@ cd rtw88-dkms-git
 ```bash
 makepkg -si
 ```
+
+#### Using AUR Helper
+
+##### Using YAY
+```
+yay -S rtw88-dkms-git
+```
+
+##### Using PARU
+```
+paru -S rtw88-dkms-git
+```
+
 ---
 
 ## Important Information
