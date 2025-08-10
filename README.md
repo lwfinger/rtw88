@@ -160,6 +160,16 @@ makepkg -si
 ```
 ---
 
+### Installation for Nixos 🛠
+
+Add the following snipet into your `hardware-configuration.nix`. Doing this will automatically match the the versions between the driver and kernel. Remember to restart after rebuilding with `nixos-rebuild switch`.
+
+```nix
+  # boot.blacklistedKernelModules = [ "rtl8xxxu" ]; # Likely unneeded, if unsure leave commented out
+  boot.extraModulePackages = with config.boot.kernelPackages; [ rtw88 ];
+```
+---
+
 ## Important Information
 Below is important information for using this driver.
 
