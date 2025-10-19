@@ -67,7 +67,7 @@ sudo pacman -Syu
 ```bash
 sudo pacman -Sy base-devel git linux-firmware
 ```
-Remember to install the corresponding [kernel headers](https://archlinux.org/packages/?q=Headers+and+scripts+for+building+modules) which is also needed for compilation.
+Remember to install the corresponding [kernel headers](https://archlinux.org/packages/?q=Headers+and+scripts+for+building+modules) which are also needed for compilation.
 
 #### Raspberry Pi OS
 ```bash
@@ -80,7 +80,7 @@ sudo apt install -y raspberrypi-kernel-headers build-essential git
 ---
 
 ### Installation Using DKMS 🔄
-It's highly recommended to install this driver via DKMS especially Secure Boot is enabled on your machine. Using DKMS (Dynamic Kernel Module Support) ensures that the `rtw88` kernel modules are automatically rebuilt and re-signed whenever the Linux kernel is updated. Without DKMS, these drivers would stop working after each kernel update, requiring manual re-compilation and re-signing. DKMS should be available through your distribution’s package manager. You can learn more about DKMS [here](https://github.com/dell/dkms).
+Installing this driver via DKMS is highly recommended, especially if Secure Boot is enabled on your machine. Using DKMS (Dynamic Kernel Module Support) ensures that the `rtw88` kernel modules are automatically rebuilt and re-signed whenever the Linux kernel is updated. Without DKMS, these drivers would stop working after each kernel update, requiring manual re-compilation and re-signing. DKMS should be available through your distribution’s package manager. You can learn more about DKMS [here](https://github.com/dell/dkms).
 
 1. Install `dkms` and all its required dependencies using your preferred package manager.
 
@@ -89,7 +89,7 @@ It's highly recommended to install this driver via DKMS especially Secure Boot i
    git clone https://github.com/lwfinger/rtw88
    ```
 
-3. Build, sign and install the rtw88 driver
+3. Build, sign, and install the rtw88 driver
    ```
    cd rtw88
    ```
@@ -204,7 +204,7 @@ cfg80211             1064960  2 rtw_core,mac80211
 
 ### 4. How To Update The Driver Installed via DKMS
 
-1. Remove the rtw88 drivers and its source code.
+1. Remove the rtw88 driver and its source code.
    ```
    sudo dkms remove rtw88/0.6 --all
    ```
@@ -217,7 +217,7 @@ cfg80211             1064960  2 rtw_core,mac80211
    git pull
    ```
 
-3. Build, sign, install the rtw88 driver from the latest code
+3. Build, sign, and install the rtw88 driver from the latest code
    ```
    sudo dkms install $PWD
    ```
@@ -238,7 +238,7 @@ sudo rm -rf /usr/src/rtw88-0.6
 sudo rm -f /etc/modprobe.d/rtw88.conf
 ```
 
-For users who installed this driver via `make`, run this command in the rtw88 source directory and then the rtw88 driver will be unloaded and removed.
+For users who installed this driver via `make`, run these commands in the rtw88 source directory and then the rtw88 driver will be unloaded and removed.
 
 ```
 sudo make uninstall
@@ -253,7 +253,7 @@ For Arch-based distro users, run
 sudo pacman -Rn rtw88-dkms-git
 ```
 
-### Q2: My Wi-Fi adapter is plugged in an USB 3 port, how can I keep it in USB 2 mode to avoid potential interference in 2.4 GHz band?
+### Q2: My Wi-Fi adapter is plugged into a USB 3 port. How can I keep it in USB 2 mode to avoid potential interference in the 2.4 GHz band?
 The module `rtw_usb` has a parameter named `switch_usb_mode` which can enable or disable USB mode switching, setting it to "n" will keep your adapter in USB 2 mode.
 
 Steps:
@@ -261,7 +261,7 @@ Steps:
 2. Change `switch_usb_mode=y` to `switch_usb_mode=n` in line 7.
 3. Unplug the Wi-Fi adapter.
 4. Reboot (or [unload the rtw88 drivers](#3-how-to-loadunload-kernel-modules-aka-drivers))
-5. Plug your Wi-Fi adapter back.
+5. Plug your Wi-Fi adapter back in.
 
 ### Q3: My Wi-Fi adapter still doesn't work after installing this driver and `lsusb` shows it is in CD-ROM mode, what should I do?
 Install `usb_modeswitch` which can switch your adapter from CD-ROM mode to Wi-Fi mode and then your Wi-Fi adapter should be in Wi-Fi mode after reboot.
