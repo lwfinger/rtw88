@@ -94,7 +94,7 @@ Installing this driver via DKMS is highly recommended, especially if Secure Boot
    cd rtw88
    ```
    ```
-   pwd | sudo dkms install
+   sudo dkms install $PWD
    ```
 
 4. Install the firmware necessary for the rtw88 driver
