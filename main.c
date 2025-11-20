@@ -744,7 +744,7 @@ EXPORT_SYMBOL(rtw_set_rx_freq_band);
 void rtw_set_dtim_period(struct rtw_dev *rtwdev, int dtim_period)
 {
 	rtw_write32_set(rtwdev, REG_TCR, BIT_TCR_UPDATE_TIMIE);
-	rtw_write8(rtwdev, REG_DTIM_COUNTER_ROOT, dtim_period - 1);
+	rtw_write8(rtwdev, REG_DTIM_COUNTER_ROOT, dtim_period);
 }
 
 void rtw_update_channel(struct rtw_dev *rtwdev, u8 center_channel,
