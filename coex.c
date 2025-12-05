@@ -2767,8 +2767,10 @@ void rtw_coex_power_on_setting(struct rtw_dev *rtwdev)
 	rtw_coex_set_ant_path(rtwdev, true, COEX_SET_ANT_POWERON);
 
 	rtw_coex_table(rtwdev, true, table_case);
-	/* red x issue */
-	rtw_write8(rtwdev, 0xff1a, 0x0);
+	if (rtwdev->chip->id != RTW_CHIP_TYPE_8821A &&
+	    rtwdev->chip->id != RTW_CHIP_TYPE_8812A)
+		/* red x issue */
+		rtw_write8(rtwdev, 0xff1a, 0x0);
 	rtw_coex_set_gnt_debug(rtwdev);
 }
 EXPORT_SYMBOL(rtw_coex_power_on_setting);
