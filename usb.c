@@ -989,8 +989,7 @@ static int rtw_usb_init_rx(struct rtw_dev *rtwdev)
 	int i;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
-	rtwusb->rxwq = alloc_workqueue("rtw88_usb: rx wq", WQ_BH | WQ_UNBOUND,
-				       0);
+	rtwusb->rxwq = alloc_workqueue("rtw88_usb: rx wq", WQ_BH, 0);
 #else
 	tasklet_init(&rtwusb->rx_tasklet, rtw_usb_rx_handler,
 		     (unsigned long)rtwusb);
