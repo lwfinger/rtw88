@@ -892,9 +892,11 @@ EXPORT_SYMBOL(rtw_write_firmware_page);
 static int
 download_firmware_legacy(struct rtw_dev *rtwdev, const u8 *data, u32 size)
 {
-	u32 page;
-	u32 total_page;
+	const u8 *data_orig;
 	u32 last_page_size;
+	u32 total_page;
+	u32 page;
+	int i;
 
 	data += sizeof(struct rtw_fw_hdr_legacy);
 	size -= sizeof(struct rtw_fw_hdr_legacy);
@@ -902,23 +904,29 @@ download_firmware_legacy(struct rtw_dev *rtwdev, const u8 *data, u32 size)
 	total_page = size >> DLFW_PAGE_SIZE_SHIFT_LEGACY;
 	last_page_size = size & (DLFW_PAGE_SIZE_LEGACY - 1);
 
-	rtw_write8_set(rtwdev, REG_MCUFW_CTRL, BIT_FWDL_CHK_RPT);
+	data_orig = data;
 
-	for (page = 0; page < total_page; page++) {
-		rtw_hci_write_firmware_page(rtwdev, page, data,
-					    DLFW_PAGE_SIZE_LEGACY);
-		data += DLFW_PAGE_SIZE_LEGACY;
+	for (i = 0; i < 5; i++) {
+		data = data_orig;
+
+		rtw_write8_set(rtwdev, REG_MCUFW_CTRL, BIT_FWDL_CHK_RPT);
+
+		for (page = 0; page < total_page; page++) {
+			rtw_hci_write_firmware_page(rtwdev, page, data,
+						    DLFW_PAGE_SIZE_LEGACY);
+			data += DLFW_PAGE_SIZE_LEGACY;
+		}
+		if (last_page_size)
+			rtw_hci_write_firmware_page(rtwdev, page, data,
+						    last_page_size);
+
+		if (check_hw_ready(rtwdev, REG_MCUFW_CTRL, BIT_FWDL_CHK_RPT, 1))
+			return 0;
 	}
-	if (last_page_size)
-		rtw_hci_write_firmware_page(rtwdev, page, data,
-					    last_page_size);
 
-	if (!check_hw_ready(rtwdev, REG_MCUFW_CTRL, BIT_FWDL_CHK_RPT, 1)) {
-		rtw_err(rtwdev, "failed to check download firmware report\n");
-		return -EINVAL;
-	}
+	rtw_err(rtwdev, "failed to check download firmware report\n");
 
-	return 0;
+	return -EINVAL;
 }
 
 static int download_firmware_validate_legacy(struct rtw_dev *rtwdev)
