@@ -7,10 +7,15 @@
 #include "pci.h"
 #include "rtw8723d.h"
 
+static const struct rtw_pci_info rtw_8723de_pci_info = {
+	.chip_info = &rtw8723d_hw_spec,
+	.pci_gen = &rtw_pci_gen_new,
+};
+
 static const struct pci_device_id rtw_8723de_id_table[] = {
 	{
 		PCI_DEVICE(PCI_VENDOR_ID_REALTEK, 0xD723),
-		.driver_data = (kernel_ulong_t)&rtw8723d_hw_spec
+		.driver_data = (kernel_ulong_t)&rtw_8723de_pci_info
 	},
 	{}
 };

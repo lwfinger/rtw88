@@ -203,8 +203,37 @@ struct rtw_pci_rx_ring {
 
 #define RX_TAG_MAX	8192
 
+struct rtw_pci;
+
+struct rtw_pci_gen {
+	int (*init_tx_ring)(struct rtw_dev *rtwdev,
+			    struct rtw_pci_tx_ring *tx_ring,
+			    u8 desc_size, u32 len);
+	int (*reset_rx_desc)(struct rtw_dev *rtwdev, struct sk_buff *skb,
+			     struct rtw_pci_rx_ring *rx_ring, u32 idx,
+			     u32 desc_sz);
+	int (*reset)(struct rtw_dev *rtwdev);
+	void (*flush_queue)(struct rtw_dev *rtwdev, u8 pci_q, bool drop);
+	void (*tx_kick_off_queue)(struct rtw_dev *rtwdev,
+				  enum rtw_tx_queue_type queue);
+	int (*tx_write_data)(struct rtw_dev *rtwdev,
+			     struct rtw_tx_pkt_info *pkt_info,
+			     struct sk_buff *skb,
+			     enum rtw_tx_queue_type queue);
+	void (*kick_beacon_queue)(struct rtw_dev *rtwdev);
+	void (*tx_isr)(struct rtw_dev *rtwdev, struct rtw_pci *rtwpci,
+		       u8 hw_queue);
+	int (*get_hw_rx_ring_nr)(struct rtw_dev *rtwdev,
+				 struct rtw_pci *rtwpci);
+	u32 (*rx_napi)(struct rtw_dev *rtwdev, struct rtw_pci *rtwpci,
+		       u8 hw_queue, u32 limit);
+	void (*clkreq_set)(struct rtw_dev *rtwdev, bool enable);
+	void (*aspm_set)(struct rtw_dev *rtwdev, bool enable);
+};
+
 struct rtw_pci {
 	struct pci_dev *pdev;
+	const struct rtw_pci_gen *gen;
 
 	/* Used for PCI interrupt. */
 	spinlock_t hwirq_lock;
@@ -234,8 +263,14 @@ struct rtw_pci {
 	void __iomem *mmap;
 };
 
+struct rtw_pci_info {
+	const struct rtw_chip_info *chip_info;
+	const struct rtw_pci_gen *pci_gen;
+};
+
 extern const struct dev_pm_ops rtw_pm_ops;
 extern const struct pci_error_handlers rtw_pci_err_handler;
+extern const struct rtw_pci_gen rtw_pci_gen_new;
 
 int rtw_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id);
 void rtw_pci_remove(struct pci_dev *pdev);

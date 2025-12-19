@@ -7,10 +7,15 @@
 #include "pci.h"
 #include "rtw8814a.h"
 
+static const struct rtw_pci_info rtw_8814ae_pci_info = {
+	.chip_info = &rtw8814a_hw_spec,
+	.pci_gen = &rtw_pci_gen_new,
+};
+
 static const struct pci_device_id rtw_8814ae_id_table[] = {
 	{
 		PCI_DEVICE(PCI_VENDOR_ID_REALTEK, 0x8813),
-		.driver_data = (kernel_ulong_t)&rtw8814a_hw_spec
+		.driver_data = (kernel_ulong_t)&rtw_8814ae_pci_info
 	},
 	{}
 };

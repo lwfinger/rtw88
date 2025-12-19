@@ -253,6 +253,8 @@ static int rtw_pci_init_rx_ring(struct rtw_dev *rtwdev,
 				struct rtw_pci_rx_ring *rx_ring,
 				u8 desc_size, u32 len)
 {
+	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
+	const struct rtw_pci_gen *pci_gen = rtwpci->gen;
 	struct pci_dev *pdev = to_pci_dev(rtwdev->dev);
 	struct sk_buff *skb = NULL;
 	dma_addr_t dma;
@@ -268,6 +270,11 @@ static int rtw_pci_init_rx_ring(struct rtw_dev *rtwdev,
 		return -ENOMEM;
 	}
 	rx_ring->r.head = head;
+	rx_ring->r.dma = dma;
+	rx_ring->r.len = len;
+	rx_ring->r.desc_size = desc_size;
+	rx_ring->r.wp = 0;
+	rx_ring->r.rp = 0;
 
 	for (i = 0; i < len; i++) {
 		skb = dev_alloc_skb(buf_sz);
@@ -279,19 +286,13 @@ static int rtw_pci_init_rx_ring(struct rtw_dev *rtwdev,
 
 		memset(skb->data, 0, buf_sz);
 		rx_ring->buf[i] = skb;
-		ret = rtw_pci_reset_rx_desc(rtwdev, skb, rx_ring, i, desc_size);
+		ret = pci_gen->reset_rx_desc(rtwdev, skb, rx_ring, i, desc_size);
 		if (ret) {
 			allocated = i;
 			dev_kfree_skb_any(skb);
 			goto err_out;
 		}
 	}
-
-	rx_ring->r.dma = dma;
-	rx_ring->r.len = len;
-	rx_ring->r.desc_size = desc_size;
-	rx_ring->r.wp = 0;
-	rx_ring->r.rp = 0;
 
 	return 0;
 
@@ -315,6 +316,7 @@ err_out:
 static int rtw_pci_init_trx_ring(struct rtw_dev *rtwdev)
 {
 	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
+	const struct rtw_pci_gen *pci_gen = rtwpci->gen;
 	struct rtw_pci_tx_ring *tx_ring;
 	struct rtw_pci_rx_ring *rx_ring;
 	const struct rtw_chip_info *chip = rtwdev->chip;
@@ -328,7 +330,7 @@ static int rtw_pci_init_trx_ring(struct rtw_dev *rtwdev)
 	for (i = 0; i < RTK_MAX_TX_QUEUE_NUM; i++) {
 		tx_ring = &rtwpci->tx_rings[i];
 		len = max_num_of_tx_queue(i);
-		ret = rtw_pci_init_tx_ring(rtwdev, tx_ring, tx_desc_size, len);
+		ret = pci_gen->init_tx_ring(rtwdev, tx_ring, tx_desc_size, len);
 		if (ret)
 			goto out;
 	}
@@ -524,7 +526,7 @@ static void rtw_pci_dma_reset(struct rtw_dev *rtwdev, struct rtw_pci *rtwpci)
 	rtwpci->rx_tag = 0;
 }
 
-static int rtw_pci_setup(struct rtw_dev *rtwdev)
+static int rtw_pci_reset(struct rtw_dev *rtwdev)
 {
 	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
 
@@ -532,6 +534,14 @@ static int rtw_pci_setup(struct rtw_dev *rtwdev)
 	rtw_pci_dma_reset(rtwdev, rtwpci);
 
 	return 0;
+}
+
+static int rtw_pci_setup(struct rtw_dev *rtwdev)
+{
+	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
+	const struct rtw_pci_gen *pci_gen = rtwpci->gen;
+
+	return pci_gen->reset(rtwdev);
 }
 
 static void rtw_pci_dma_release(struct rtw_dev *rtwdev, struct rtw_pci *rtwpci)
@@ -709,7 +719,7 @@ static u32 __pci_get_hw_tx_ring_rp(struct rtw_dev *rtwdev, u8 pci_q)
 	return FIELD_GET(TRX_BD_IDX_MASK, bd_idx);
 }
 
-static void __pci_flush_queue(struct rtw_dev *rtwdev, u8 pci_q, bool drop)
+static void rtw_pci_flush_queue(struct rtw_dev *rtwdev, u8 pci_q, bool drop)
 {
 	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
 	struct rtw_pci_tx_ring *ring = &rtwpci->tx_rings[pci_q];
@@ -737,6 +747,9 @@ static void __pci_flush_queue(struct rtw_dev *rtwdev, u8 pci_q, bool drop)
 static void __rtw_pci_flush_queues(struct rtw_dev *rtwdev, u32 pci_queues,
 				   bool drop)
 {
+	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
+	const struct rtw_pci_gen *pci_gen = rtwpci->gen;
+
 	u8 q;
 
 	for (q = 0; q < RTK_MAX_TX_QUEUE_NUM; q++) {
@@ -746,7 +759,7 @@ static void __rtw_pci_flush_queues(struct rtw_dev *rtwdev, u32 pci_queues,
 			continue;
 
 		if (pci_queues & BIT(q))
-			__pci_flush_queue(rtwdev, q, drop);
+			pci_gen->flush_queue(rtwdev, q, drop);
 	}
 }
 
@@ -789,11 +802,12 @@ static void rtw_pci_tx_kick_off_queue(struct rtw_dev *rtwdev,
 static void rtw_pci_tx_kick_off(struct rtw_dev *rtwdev)
 {
 	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
+	const struct rtw_pci_gen *pci_gen = rtwpci->gen;
 	enum rtw_tx_queue_type queue;
 
 	for (queue = 0; queue < RTK_MAX_TX_QUEUE_NUM; queue++)
 		if (test_and_clear_bit(queue, rtwpci->tx_queued))
-			rtw_pci_tx_kick_off_queue(rtwdev, queue);
+			pci_gen->tx_kick_off_queue(rtwdev, queue);
 }
 
 static int rtw_pci_tx_write_data(struct rtw_dev *rtwdev,
@@ -866,28 +880,32 @@ out_unlock:
 	return 0;
 }
 
+static void rtw_pci_kick_beacon_queue(struct rtw_dev *rtwdev)
+{
+	rtw_write8_set(rtwdev, RTK_PCI_TXBD_BCN_WORK, BIT_PCI_BCNQ_FLAG);
+}
+
 static int rtw_pci_write_data_rsvd_page(struct rtw_dev *rtwdev, u8 *buf,
 					u32 size)
 {
-	struct sk_buff *skb;
+	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
+	const struct rtw_pci_gen *pci_gen = rtwpci->gen;
 	struct rtw_tx_pkt_info pkt_info = {0};
-	u8 reg_bcn_work;
+	struct sk_buff *skb;
 	int ret;
 
 	skb = rtw_tx_write_data_rsvd_page_get(rtwdev, &pkt_info, buf, size);
 	if (!skb)
 		return -ENOMEM;
 
-	ret = rtw_pci_tx_write_data(rtwdev, &pkt_info, skb, RTW_TX_QUEUE_BCN);
+	ret = pci_gen->tx_write_data(rtwdev, &pkt_info, skb, RTW_TX_QUEUE_BCN);
 	if (ret) {
 		rtw_err(rtwdev, "failed to write rsvd page data\n");
 		return ret;
 	}
 
 	/* reserved pages go through beacon queue */
-	reg_bcn_work = rtw_read8(rtwdev, RTK_PCI_TXBD_BCN_WORK);
-	reg_bcn_work |= BIT_PCI_BCNQ_FLAG;
-	rtw_write8(rtwdev, RTK_PCI_TXBD_BCN_WORK, reg_bcn_work);
+	pci_gen->kick_beacon_queue(rtwdev);
 
 	return 0;
 }
@@ -919,10 +937,11 @@ static int rtw_pci_tx_write(struct rtw_dev *rtwdev,
 {
 	enum rtw_tx_queue_type queue = rtw_tx_queue_mapping(skb);
 	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
+	const struct rtw_pci_gen *pci_gen = rtwpci->gen;
 	struct rtw_pci_tx_ring *ring;
 	int ret;
 
-	ret = rtw_pci_tx_write_data(rtwdev, pkt_info, skb, queue);
+	ret = pci_gen->tx_write_data(rtwdev, pkt_info, skb, queue);
 	if (ret)
 		return ret;
 
@@ -1165,6 +1184,7 @@ static irqreturn_t rtw_pci_interrupt_threadfn(int irq, void *dev)
 {
 	struct rtw_dev *rtwdev = dev;
 	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
+	const struct rtw_pci_gen *pci_gen = rtwpci->gen;
 	u32 irq_status[4];
 	bool rx = false;
 
@@ -1172,19 +1192,19 @@ static irqreturn_t rtw_pci_interrupt_threadfn(int irq, void *dev)
 	rtw_pci_irq_recognized(rtwdev, rtwpci, irq_status);
 
 	if (irq_status[0] & IMR_MGNTDOK)
-		rtw_pci_tx_isr(rtwdev, rtwpci, RTW_TX_QUEUE_MGMT);
+		pci_gen->tx_isr(rtwdev, rtwpci, RTW_TX_QUEUE_MGMT);
 	if (irq_status[0] & IMR_HIGHDOK)
-		rtw_pci_tx_isr(rtwdev, rtwpci, RTW_TX_QUEUE_HI0);
+		pci_gen->tx_isr(rtwdev, rtwpci, RTW_TX_QUEUE_HI0);
 	if (irq_status[0] & IMR_BEDOK)
-		rtw_pci_tx_isr(rtwdev, rtwpci, RTW_TX_QUEUE_BE);
+		pci_gen->tx_isr(rtwdev, rtwpci, RTW_TX_QUEUE_BE);
 	if (irq_status[0] & IMR_BKDOK)
-		rtw_pci_tx_isr(rtwdev, rtwpci, RTW_TX_QUEUE_BK);
+		pci_gen->tx_isr(rtwdev, rtwpci, RTW_TX_QUEUE_BK);
 	if (irq_status[0] & IMR_VODOK)
-		rtw_pci_tx_isr(rtwdev, rtwpci, RTW_TX_QUEUE_VO);
+		pci_gen->tx_isr(rtwdev, rtwpci, RTW_TX_QUEUE_VO);
 	if (irq_status[0] & IMR_VIDOK)
-		rtw_pci_tx_isr(rtwdev, rtwpci, RTW_TX_QUEUE_VI);
+		pci_gen->tx_isr(rtwdev, rtwpci, RTW_TX_QUEUE_VI);
 	if (irq_status[3] & IMR_H2CDOK)
-		rtw_pci_tx_isr(rtwdev, rtwpci, RTW_TX_QUEUE_H2C);
+		pci_gen->tx_isr(rtwdev, rtwpci, RTW_TX_QUEUE_H2C);
 	if (irq_status[0] & IMR_ROK) {
 		rtw_pci_rx_isr(rtwdev);
 		rx = true;
@@ -1376,6 +1396,7 @@ static void rtw_pci_aspm_set(struct rtw_dev *rtwdev, bool enable)
 static void rtw_pci_link_ps(struct rtw_dev *rtwdev, bool enter)
 {
 	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
+	const struct rtw_pci_gen *pci_gen = rtwpci->gen;
 
 	/* Like CLKREQ, ASPM is also implemented by two HW modules, and can
 	 * only be enabled when host supports it.
@@ -1392,13 +1413,14 @@ static void rtw_pci_link_ps(struct rtw_dev *rtwdev, bool enter)
 
 	if ((enter && atomic_dec_if_positive(&rtwpci->link_usage) == 0) ||
 	    (!enter && atomic_inc_return(&rtwpci->link_usage) == 1))
-		rtw_pci_aspm_set(rtwdev, enter);
+		pci_gen->aspm_set(rtwdev, enter);
 }
 
 static void rtw_pci_link_cfg(struct rtw_dev *rtwdev)
 {
-	const struct rtw_chip_info *chip = rtwdev->chip;
 	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
+	const struct rtw_pci_gen *pci_gen = rtwpci->gen;
+	const struct rtw_chip_info *chip = rtwdev->chip;
 	struct pci_dev *pdev = rtwpci->pdev;
 	u16 link_ctrl;
 	int ret;
@@ -1432,7 +1454,7 @@ static void rtw_pci_link_cfg(struct rtw_dev *rtwdev)
 	}
 
 	if (link_ctrl & PCI_EXP_LNKCTL_CLKREQ_EN)
-		rtw_pci_clkreq_set(rtwdev, true);
+		pci_gen->clkreq_set(rtwdev, true);
 
 	rtwpci->link_ctrl = link_ctrl;
 }
@@ -1659,6 +1681,7 @@ static int rtw_pci_napi_poll(struct napi_struct *napi, int budget)
 	struct rtw_pci *rtwpci = container_of(napi, struct rtw_pci, napi);
 	struct rtw_dev *rtwdev = container_of((void *)rtwpci, struct rtw_dev,
 					      priv);
+	const struct rtw_pci_gen *pci_gen = rtwpci->gen;
 	int work_done = 0;
 
 	if (rtwpci->rx_no_aspm)
@@ -1667,8 +1690,9 @@ static int rtw_pci_napi_poll(struct napi_struct *napi, int budget)
 	while (work_done < budget) {
 		u32 work_done_once;
 
-		work_done_once = rtw_pci_rx_napi(rtwdev, rtwpci, RTW_RX_QUEUE_MPDU,
-						 budget - work_done);
+		work_done_once = pci_gen->rx_napi(rtwdev, rtwpci,
+						  RTW_RX_QUEUE_MPDU,
+						  budget - work_done);
 		if (work_done_once == 0)
 			break;
 		work_done += work_done_once;
@@ -1684,7 +1708,7 @@ static int rtw_pci_napi_poll(struct napi_struct *napi, int budget)
 		 * not be processed immediately. Check whether dma ring is
 		 * empty and perform napi_schedule accordingly.
 		 */
-		if (rtw_pci_get_hw_rx_ring_nr(rtwdev, rtwpci))
+		if (pci_gen->get_hw_rx_ring_nr(rtwdev, rtwpci))
 			napi_schedule(napi);
 	}
 	if (rtwpci->rx_no_aspm)
@@ -1769,6 +1793,7 @@ EXPORT_SYMBOL(rtw_pci_err_handler);
 int rtw_pci_probe(struct pci_dev *pdev,
 		  const struct pci_device_id *id)
 {
+	struct rtw_pci_info *pci_info = (struct rtw_pci_info *)id->driver_data;
 	struct pci_dev *bridge = pci_upstream_bridge(pdev);
 	struct ieee80211_hw *hw;
 	struct rtw_dev *rtwdev;
@@ -1786,12 +1811,14 @@ int rtw_pci_probe(struct pci_dev *pdev,
 	rtwdev = hw->priv;
 	rtwdev->hw = hw;
 	rtwdev->dev = &pdev->dev;
-	rtwdev->chip = (struct rtw_chip_info *)id->driver_data;
+	rtwdev->chip = pci_info->chip_info;
 	rtwdev->hci.ops = &rtw_pci_ops;
 	rtwdev->hci.type = RTW_HCI_TYPE_PCIE;
 
 	rtwpci = (struct rtw_pci *)rtwdev->priv;
 	atomic_set(&rtwpci->link_usage, 1);
+
+	rtwpci->gen = pci_info->pci_gen;
 
 	ret = rtw_core_init(rtwdev);
 	if (ret)
@@ -1903,6 +1930,22 @@ void rtw_pci_shutdown(struct pci_dev *pdev)
 	pci_set_power_state(pdev, PCI_D3hot);
 }
 EXPORT_SYMBOL(rtw_pci_shutdown);
+
+const struct rtw_pci_gen rtw_pci_gen_new = {
+	.init_tx_ring = rtw_pci_init_tx_ring,
+	.reset_rx_desc = rtw_pci_reset_rx_desc,
+	.reset = rtw_pci_reset,
+	.flush_queue = rtw_pci_flush_queue,
+	.tx_kick_off_queue = rtw_pci_tx_kick_off_queue,
+	.tx_write_data = rtw_pci_tx_write_data,
+	.kick_beacon_queue = rtw_pci_kick_beacon_queue,
+	.tx_isr = rtw_pci_tx_isr,
+	.get_hw_rx_ring_nr = rtw_pci_get_hw_rx_ring_nr,
+	.rx_napi = rtw_pci_rx_napi,
+	.clkreq_set = rtw_pci_clkreq_set,
+	.aspm_set = rtw_pci_aspm_set,
+};
+EXPORT_SYMBOL(rtw_pci_gen_new);
 
 MODULE_AUTHOR("Realtek Corporation");
 MODULE_DESCRIPTION("Realtek PCI 802.11ac wireless driver");
