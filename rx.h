@@ -31,6 +31,8 @@ struct rtw_rx_desc {
 #define RTW_RX_DESC_W0_SHIFT		GENMASK(25, 24)
 #define RTW_RX_DESC_W0_PHYST		BIT(26)
 #define RTW_RX_DESC_W0_SWDEC		BIT(27)
+#define RTW_RX_DESC_W0_EOR		BIT(30)
+#define RTW_RX_DESC_W0_OWN		BIT(31)
 
 #define RTW_RX_DESC_W1_MACID		GENMASK(6, 0)
 
@@ -42,6 +44,8 @@ struct rtw_rx_desc {
 #define RTW_RX_DESC_W4_BW		GENMASK(5, 4)
 
 #define RTW_RX_DESC_W5_TSFL		GENMASK(31, 0)
+
+#define RTW_RX_DESC_W6_BUF_ADDR		GENMASK(31, 0)
 
 void rtw_rx_stats(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
 		  struct sk_buff *skb);

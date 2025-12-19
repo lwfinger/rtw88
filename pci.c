@@ -15,7 +15,7 @@
 #include "mac.h"
 
 static bool rtw_disable_msi;
-static bool rtw_pci_disable_aspm;
+bool rtw_pci_disable_aspm;
 module_param_named(disable_msi, rtw_disable_msi, bool, 0644);
 module_param_named(disable_aspm, rtw_pci_disable_aspm, bool, 0644);
 MODULE_PARM_DESC(disable_msi, "Set Y to disable MSI interrupt support");
@@ -31,8 +31,7 @@ static const u32 rtw_pci_tx_queue_idx_addr[] = {
 	[RTW_TX_QUEUE_H2C]	= RTK_PCI_TXBD_IDX_H2CQ,
 };
 
-static u8 rtw_pci_get_tx_qsel(struct sk_buff *skb,
-			      enum rtw_tx_queue_type queue)
+u8 rtw_pci_get_tx_qsel(struct sk_buff *skb, enum rtw_tx_queue_type queue)
 {
 	switch (queue) {
 	case RTW_TX_QUEUE_BCN:
@@ -674,8 +673,8 @@ static void rtw_pci_deep_ps(struct rtw_dev *rtwdev, bool enter)
 	spin_unlock_bh(&rtwpci->irq_lock);
 }
 
-static void rtw_pci_release_rsvd_page(struct rtw_pci *rtwpci,
-				      struct rtw_pci_tx_ring *ring)
+void rtw_pci_release_rsvd_page(struct rtw_pci *rtwpci,
+			       struct rtw_pci_tx_ring *ring)
 {
 	struct sk_buff *prev = skb_dequeue(&ring->queue);
 	struct rtw_pci_tx_data *tx_data;
