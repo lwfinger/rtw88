@@ -36,6 +36,16 @@
 #define RHEL_RELEASE_VERSION(a, b) a<<8 & b
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0)
+/* Taken from kernel 6.18.1: include/linux/device/devres.h
+ * Removed size_dup(...) to support kernels older than 5.15. */
+static inline void *devm_kmemdup_array(struct device *dev, const void *src,
+				       size_t n, size_t size, gfp_t flags)
+{
+	return devm_kmemdup(dev, src, (size * n), flags);
+}
+#endif
+
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
 /**
  * abs_diff - return absolute value of the difference between the arguments
