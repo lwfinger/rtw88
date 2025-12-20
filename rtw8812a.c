@@ -948,7 +948,7 @@ static const struct rtw_chip_ops rtw8812a_ops = {
 static const struct rtw_page_table page_table_8812a[] = {
 	/* hq_num, nq_num, lq_num, exq_num, gapq_num */
 	{0, 0, 0, 0, 0},	/* SDIO */
-	{0, 0, 0, 0, 0},	/* PCI */
+	{16, 0, 16, 0, 1},	/* PCI */
 	{16, 0, 0, 0, 1},	/* 2 bulk out endpoints */
 	{16, 0, 16, 0, 1},	/* 3 bulk out endpoints */
 	{16, 0, 16, 0, 1},	/* 4 bulk out endpoints */
