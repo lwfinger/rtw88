@@ -270,6 +270,8 @@ int rtw88xxa_read_efuse(struct rtw_dev *rtwdev, u8 *log_map)
 			ether_addr_copy(efuse->addr, map->rtw8812au.mac_addr);
 		break;
 	case RTW_HCI_TYPE_PCIE:
+		ether_addr_copy(efuse->addr, map->rtw88xxae.mac_addr);
+		break;
 	case RTW_HCI_TYPE_SDIO:
 	default:
 		/* unsupported now */

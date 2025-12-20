@@ -25,6 +25,15 @@ struct rtw8812au_efuse {
 	u8 res1[291];
 } __packed;
 
+struct rtw88xxae_efuse {
+	u8 mac_addr[ETH_ALEN];		/* 0xd0 */
+	u8 vid[2];			/* 0xd6 */
+	u8 did[2];			/* 0xd8 */
+	u8 svid[2];			/* 0xda */
+	u8 smid[2];			/* 0xdc */
+	u8 res1[290];
+} __packed;
+
 struct rtw88xxa_efuse {
 	__le16 rtl_id;
 	u8 res0[6];			/* 0x02 */
@@ -58,6 +67,7 @@ struct rtw88xxa_efuse {
 	union {
 		struct rtw8821au_efuse rtw8821au;
 		struct rtw8812au_efuse rtw8812au;
+		struct rtw88xxae_efuse rtw88xxae;
 	};
 } __packed;
 
