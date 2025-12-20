@@ -121,26 +121,13 @@ static void rtw8812a_read_rfe_type(struct rtw_dev *rtwdev,
 	}
 }
 
-static void rtw88xxa_read_usb_type(struct rtw_dev *rtwdev)
+static void rtw8812a_read_usb_type(struct rtw_dev *rtwdev)
 {
 	struct rtw_efuse *efuse = &rtwdev->efuse;
 	struct rtw_hal *hal = &rtwdev->hal;
 	u8 antenna = 0;
 	u8 wmode = 0;
 	u8 val8, i;
-
-	efuse->hw_cap.bw = BIT(RTW_CHANNEL_WIDTH_20) |
-			   BIT(RTW_CHANNEL_WIDTH_40) |
-			   BIT(RTW_CHANNEL_WIDTH_80);
-	efuse->hw_cap.ptcl = EFUSE_HW_CAP_PTCL_VHT;
-
-	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A)
-		efuse->hw_cap.nss = 1;
-	else
-		efuse->hw_cap.nss = 2;
-
-	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A)
-		goto print_hw_cap;
 
 	for (i = 0; i < 2; i++) {
 		rtw_read8_physical_efuse(rtwdev, 1019 - i, &val8);
@@ -189,8 +176,26 @@ static void rtw88xxa_read_usb_type(struct rtw_dev *rtwdev)
 			efuse->hw_cap.bw &= ~BIT(RTW_CHANNEL_WIDTH_80);
 		}
 	}
+}
 
-print_hw_cap:
+static void rtw88xxa_fill_hw_cap(struct rtw_dev *rtwdev)
+{
+	struct rtw_efuse *efuse = &rtwdev->efuse;
+
+	efuse->hw_cap.bw = BIT(RTW_CHANNEL_WIDTH_20) |
+			   BIT(RTW_CHANNEL_WIDTH_40) |
+			   BIT(RTW_CHANNEL_WIDTH_80);
+	efuse->hw_cap.ptcl = EFUSE_HW_CAP_PTCL_VHT;
+
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A)
+		efuse->hw_cap.nss = 1;
+	else
+		efuse->hw_cap.nss = 2;
+
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8812A &&
+	    rtwdev->hci.type == RTW_HCI_TYPE_USB)
+		rtw8812a_read_usb_type(rtwdev);
+
 	rtw_dbg(rtwdev, RTW_DBG_EFUSE,
 		"hw cap: hci=0x%02x, bw=0x%02x, ptcl=0x%02x, ant_num=%d, nss=%d\n",
 		efuse->hw_cap.hci, efuse->hw_cap.bw, efuse->hw_cap.ptcl,
@@ -238,7 +243,7 @@ int rtw88xxa_read_efuse(struct rtw_dev *rtwdev, u8 *log_map)
 	efuse->tx_bb_swing_setting_2g = map->tx_bb_swing_setting_2g;
 	efuse->tx_bb_swing_setting_5g = map->tx_bb_swing_setting_5g;
 
-	rtw88xxa_read_usb_type(rtwdev);
+	rtw88xxa_fill_hw_cap(rtwdev);
 
 	if (chip->id == RTW_CHIP_TYPE_8821A)
 		efuse->btcoex = rtw_read32_mask(rtwdev, REG_WL_BT_PWR_CTRL,
