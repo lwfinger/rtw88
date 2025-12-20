@@ -92,6 +92,11 @@ rtw_8723du-objs	:= rtw8723du.o
 obj-m		+= rtw_8723x.o
 rtw_8723x-objs	:= rtw8723x.o
 
+ifeq ($(CONFIG_PCI), y)
+obj-m		+= rtw_8812ae.o
+rtw_8812ae-objs	:= rtw8812ae.o
+endif
+
 obj-m		+= rtw_8812au.o
 rtw_8812au-objs	:= rtw8812au.o
 
@@ -103,6 +108,11 @@ rtw_8812a-objs	:= rtw8812a.o rtw8812a_table.o
 
 obj-m		+= rtw_88xxa.o
 rtw_88xxa-objs	:= rtw88xxa.o
+
+ifeq ($(CONFIG_PCI), y)
+obj-m		+= rtw_8821ae.o
+rtw_8821ae-objs	:= rtw8821ae.o
+endif
 
 obj-m		+= rtw_8821au.o
 rtw_8821au-objs	:= rtw8821au.o
@@ -168,7 +178,7 @@ rtw_8822cu-objs	:= rtw8822cu.o
 
 ifeq ($(CONFIG_PCI), y)
 obj-m		+= rtw_pci.o
-rtw_pci-objs	:= pci.o
+rtw_pci-objs	:= pci.o pci_old.o
 endif
 
 ifneq ($(CONFIG_MMC), )
