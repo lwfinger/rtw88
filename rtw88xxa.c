@@ -580,7 +580,10 @@ static void rtw88xxa_phy_bb_config(struct rtw_dev *rtwdev)
 
 	/* power on BB/RF domain */
 	val8 = rtw_read8(rtwdev, REG_SYS_FUNC_EN);
-	val8 |= BIT_FEN_USBA;
+	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_USB)
+		val8 |= BIT_FEN_USBA;
+	else if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_PCIE)
+		val8 |= BIT_FEN_PCIEA;
 	rtw_write8(rtwdev, REG_SYS_FUNC_EN, val8);
 
 	/* toggle BB reset */
@@ -706,7 +709,6 @@ void rtw88xxa_power_off(struct rtw_dev *rtwdev,
 			const struct rtw_pwr_seq_cmd *const *enter_lps_flow)
 {
 	struct rtw_usb *rtwusb = rtw_get_usb_priv(rtwdev);
-	enum usb_device_speed speed = rtwusb->udev->speed;
 	u16 ori_fsmc0;
 	u8 reg_cr;
 
@@ -722,7 +724,8 @@ void rtw88xxa_power_off(struct rtw_dev *rtwdev,
 		rtw_write16_clr(rtwdev, REG_GPIO_MUXCFG, BIT_EN_SIC);
 
 	/* set Reg 0xf008[3:4] to 2'11 to enable U1/U2 Mode in USB3.0. */
-	if (speed == USB_SPEED_SUPER)
+	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_USB &&
+	    rtwusb->udev->speed == USB_SPEED_SUPER)
 		rtw_write8_set(rtwdev, REG_USB_MOD, 0x18);
 
 	rtw_write32(rtwdev, REG_HISR0, 0xffffffff);
@@ -1038,7 +1041,8 @@ int rtw88xxa_power_on(struct rtw_dev *rtwdev)
 	 * Reset after MAC power on to prevent RF R/W error.
 	 * Is it a right method?
 	 */
-	if (chip->id == RTW_CHIP_TYPE_8812A) {
+	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_USB &&
+	    chip->id == RTW_CHIP_TYPE_8812A) {
 		rtw_write8(rtwdev, REG_RF_CTRL, 5);
 		rtw_write8(rtwdev, REG_RF_CTRL, 7);
 		rtw_write8(rtwdev, REG_RF_B_CTRL, 5);
@@ -1113,7 +1117,8 @@ int rtw88xxa_power_on(struct rtw_dev *rtwdev)
 	rtw_write8_set(rtwdev, REG_FWHW_TXQ_CTRL, BIT(7));
 	rtw_write8(rtwdev, REG_ACKTO, 0x80);
 
-	rtw88xxau_tx_aggregation(rtwdev);
+	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_USB)
+		rtw88xxau_tx_aggregation(rtwdev);
 
 	rtw88xxa_init_beacon_parameters(rtwdev);
 	rtw_write8(rtwdev, REG_BCN_MAX_ERR, 0xff);
@@ -1121,7 +1126,8 @@ int rtw88xxa_power_on(struct rtw_dev *rtwdev)
 	rtw_hci_interface_cfg(rtwdev);
 
 	/* usb3 rx interval */
-	rtw_write8(rtwdev, REG_USB3_RXITV, 0x01);
+	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_USB)
+		rtw_write8(rtwdev, REG_USB3_RXITV, 0x01);
 
 	/* burst length=4, set 0x3400 for burst length=2 */
 	rtw_write16(rtwdev, REG_RXDMA_STATUS, 0x7400);
@@ -1137,7 +1143,8 @@ int rtw88xxa_power_on(struct rtw_dev *rtwdev)
 	rtw_write8(rtwdev, REG_USTIME_TSF, 0x50);
 	rtw_write8(rtwdev, REG_USTIME_EDCA, 0x50);
 
-	if (rtwusb->udev->speed == USB_SPEED_SUPER)
+	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_USB &&
+	    rtwusb->udev->speed == USB_SPEED_SUPER)
 		/* Disable U1/U2 Mode to avoid 2.5G spur in USB3.0. */
 		rtw_write8_clr(rtwdev, REG_USB_MOD, BIT(4) | BIT(3));
 
@@ -1212,11 +1219,13 @@ int rtw88xxa_power_on(struct rtw_dev *rtwdev)
 
 	rtw_write16(rtwdev, REG_TX_RPT_TIME, 0x3df0);
 
-	/* Reset USB mode switch setting */
-	rtw_write8(rtwdev, REG_SYS_SDIO_CTRL, 0x0);
-	rtw_write8(rtwdev, REG_ACLK_MON, 0x0);
+	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_USB) {
+		/* Reset USB mode switch setting */
+		rtw_write8(rtwdev, REG_SYS_SDIO_CTRL, 0x0);
+		rtw_write8(rtwdev, REG_ACLK_MON, 0x0);
 
-	rtw_write8(rtwdev, REG_USB_HRPWM, 0);
+		rtw_write8(rtwdev, REG_USB_HRPWM, 0);
+	}
 
 	/* ack for xmit mgmt frames. */
 	rtw_write32_set(rtwdev, REG_FWHW_TXQ_CTRL, BIT(12));
