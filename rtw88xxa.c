@@ -157,24 +157,14 @@ static void rtw8812a_read_usb_type(struct rtw_dev *rtwdev)
 		hal->rf_phy_num = 1;
 		hal->antenna_tx = BB_PATH_A;
 		hal->antenna_rx = BB_PATH_A;
-	} else {
-		/* Override rtw_chip_parameter_setup(). It detects 8812au as 1T1R. */
-		efuse->hw_cap.nss = 2;
-		hal->rf_type = RF_2T2R;
-		hal->rf_path_num = 2;
-		hal->rf_phy_num = 2;
-		hal->antenna_tx = BB_PATH_AB;
-		hal->antenna_rx = BB_PATH_AB;
+	} else if (antenna == 2 && wmode == 2) {
+		rtw_info(rtwdev, "This RTL8812AU says it can't do VHT.\n");
 
-		if (antenna == 2 && wmode == 2) {
-			rtw_info(rtwdev, "This RTL8812AU says it can't do VHT.\n");
-
-			/* Can't be EFUSE_HW_CAP_IGNORE and can't be
-			 * EFUSE_HW_CAP_PTCL_VHT, so make it 1.
-			 */
-			efuse->hw_cap.ptcl = 1;
-			efuse->hw_cap.bw &= ~BIT(RTW_CHANNEL_WIDTH_80);
-		}
+		/* Can't be EFUSE_HW_CAP_IGNORE and can't be
+		 * EFUSE_HW_CAP_PTCL_VHT, so make it 1.
+		 */
+		efuse->hw_cap.ptcl = 1;
+		efuse->hw_cap.bw &= ~BIT(RTW_CHANNEL_WIDTH_80);
 	}
 }
 
@@ -209,8 +199,16 @@ int rtw88xxa_read_efuse(struct rtw_dev *rtwdev, u8 *log_map)
 	struct rtw88xxa_efuse *map;
 	int i;
 
-	if (chip->id == RTW_CHIP_TYPE_8812A)
+	if (chip->id == RTW_CHIP_TYPE_8812A) {
 		rtwdev->hal.cut_version += 1;
+
+		/* Override rtw_chip_parameter_setup(). It detects 8812a as 1T1R. */
+		rtwdev->hal.rf_type = RF_2T2R;
+		rtwdev->hal.rf_path_num = 2;
+		rtwdev->hal.rf_phy_num = 2;
+		rtwdev->hal.antenna_tx = BB_PATH_AB;
+		rtwdev->hal.antenna_rx = BB_PATH_AB;
+	}
 
 	if (rtw_dbg_is_enabled(rtwdev, RTW_DBG_EFUSE))
 		print_hex_dump(KERN_INFO, "", DUMP_PREFIX_OFFSET, 16, 1,
