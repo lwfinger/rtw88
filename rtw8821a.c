@@ -814,6 +814,8 @@ static void rtw8821a_coex_cfg_ant_switch(struct rtw_dev *rtwdev, u8 ctrl_type,
 		rtw_write32_mask(rtwdev, REG_RFE_CTRL8, 0x30000000,
 				 share_ant ? 0x2 : 0x1);
 		break;
+	case COEX_SET_ANT_2G_FREERUN:
+		break;
 	default:
 		rtw_warn(rtwdev, "%s: not handling phase %d\n",
 			 __func__, phase);
