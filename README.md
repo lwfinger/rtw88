@@ -5,7 +5,7 @@ The most recent addition to this repo is the driver for the RTL8814AU chipset. T
 
 Update: There is now also a driver for RTL8814AE PCIe cards, ID 10ec:8813. lspci may call it RTL8813AE, same thing. Please test and report if you still have this card.
 
-Update: RTL8812AE is supported now but it's completely untested. Please report if it works/doesn't work. RTL8821AE is also supported. It was tested some.
+Update: RTL8812AE and RTL8821AE are supported now. Please report if it works/doesn't work.
 
 🌟 The code in this repo stays in sync with the `wireless-next` repository, with additional changes to accommodate kernel API changes over time.
 
