@@ -229,6 +229,8 @@ struct rtw_pci_gen {
 		       u8 hw_queue, u32 limit);
 	void (*clkreq_set)(struct rtw_dev *rtwdev, bool enable);
 	void (*aspm_set)(struct rtw_dev *rtwdev, bool enable);
+
+	u32 irq_mask[4];
 };
 
 struct rtw_pci {
@@ -239,7 +241,6 @@ struct rtw_pci {
 	spinlock_t hwirq_lock;
 	/* Used for PCI TX ring/queueing, and enable INT. */
 	spinlock_t irq_lock;
-	u32 irq_mask[4];
 	bool irq_enabled;
 	bool running;
 

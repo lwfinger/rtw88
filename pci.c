@@ -372,20 +372,6 @@ static int rtw_pci_init(struct rtw_dev *rtwdev)
 	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
 	int ret = 0;
 
-	rtwpci->irq_mask[0] = IMR_HIGHDOK |
-			      IMR_MGNTDOK |
-			      IMR_BKDOK |
-			      IMR_BEDOK |
-			      IMR_VIDOK |
-			      IMR_VODOK |
-			      IMR_ROK |
-			      IMR_BCNDMAINT_E |
-			      IMR_C2HCMD |
-			      0;
-	rtwpci->irq_mask[1] = IMR_TXFOVW |
-			      0;
-	rtwpci->irq_mask[3] = IMR_H2CDOK |
-			      0;
 	spin_lock_init(&rtwpci->irq_lock);
 	spin_lock_init(&rtwpci->hwirq_lock);
 	ret = rtw_pci_init_trx_ring(rtwdev);
@@ -481,15 +467,17 @@ static void rtw_pci_reset_trx_ring(struct rtw_dev *rtwdev)
 static void rtw_pci_enable_interrupt(struct rtw_dev *rtwdev,
 				     struct rtw_pci *rtwpci, bool exclude_rx)
 {
+	const struct rtw_pci_gen *pci_gen = rtwpci->gen;
+	u32 imr0_unmask = exclude_rx ? IMR_ROK | IMR_RDU : 0;
+	u32 imr1_unmask = exclude_rx ? IMR_RXFOVW : 0;
 	unsigned long flags;
-	u32 imr0_unmask = exclude_rx ? IMR_ROK : 0;
 
 	spin_lock_irqsave(&rtwpci->hwirq_lock, flags);
 
-	rtw_write32(rtwdev, RTK_PCI_HIMR0, rtwpci->irq_mask[0] & ~imr0_unmask);
-	rtw_write32(rtwdev, RTK_PCI_HIMR1, rtwpci->irq_mask[1]);
+	rtw_write32(rtwdev, RTK_PCI_HIMR0, pci_gen->irq_mask[0] & ~imr0_unmask);
+	rtw_write32(rtwdev, RTK_PCI_HIMR1, pci_gen->irq_mask[1] & ~imr1_unmask);
 	if (rtw_chip_wcpu_3081(rtwdev))
-		rtw_write32(rtwdev, RTK_PCI_HIMR3, rtwpci->irq_mask[3]);
+		rtw_write32(rtwdev, RTK_PCI_HIMR3, pci_gen->irq_mask[3]);
 
 	rtwpci->irq_enabled = true;
 
@@ -1140,6 +1128,7 @@ next_rp:
 static void rtw_pci_irq_recognized(struct rtw_dev *rtwdev,
 				   struct rtw_pci *rtwpci, u32 *irq_status)
 {
+	const struct rtw_pci_gen *pci_gen = rtwpci->gen;
 	unsigned long flags;
 
 	spin_lock_irqsave(&rtwpci->hwirq_lock, flags);
@@ -1150,9 +1139,9 @@ static void rtw_pci_irq_recognized(struct rtw_dev *rtwdev,
 		irq_status[3] = rtw_read32(rtwdev, RTK_PCI_HISR3);
 	else
 		irq_status[3] = 0;
-	irq_status[0] &= rtwpci->irq_mask[0];
-	irq_status[1] &= rtwpci->irq_mask[1];
-	irq_status[3] &= rtwpci->irq_mask[3];
+	irq_status[0] &= pci_gen->irq_mask[0];
+	irq_status[1] &= pci_gen->irq_mask[1];
+	irq_status[3] &= pci_gen->irq_mask[3];
 	rtw_write32(rtwdev, RTK_PCI_HISR0, irq_status[0]);
 	rtw_write32(rtwdev, RTK_PCI_HISR1, irq_status[1]);
 	if (rtw_chip_wcpu_3081(rtwdev))
@@ -1204,7 +1193,8 @@ static irqreturn_t rtw_pci_interrupt_threadfn(int irq, void *dev)
 		pci_gen->tx_isr(rtwdev, rtwpci, RTW_TX_QUEUE_VI);
 	if (irq_status[3] & IMR_H2CDOK)
 		pci_gen->tx_isr(rtwdev, rtwpci, RTW_TX_QUEUE_H2C);
-	if (irq_status[0] & IMR_ROK) {
+	if (irq_status[0] & (IMR_ROK | IMR_RDU) ||
+	    irq_status[1] & IMR_RXFOVW) {
 		rtw_pci_rx_isr(rtwdev);
 		rx = true;
 	}
@@ -1943,6 +1933,13 @@ const struct rtw_pci_gen rtw_pci_gen_new = {
 	.rx_napi = rtw_pci_rx_napi,
 	.clkreq_set = rtw_pci_clkreq_set,
 	.aspm_set = rtw_pci_aspm_set,
+
+	.irq_mask = { IMR_HIGHDOK | IMR_MGNTDOK | IMR_BKDOK |
+		      IMR_BEDOK | IMR_VIDOK | IMR_VODOK | IMR_ROK |
+		      IMR_BCNDMAINT_E | IMR_C2HCMD,
+		      IMR_TXFOVW,
+		      0,
+		      IMR_H2CDOK, }
 };
 EXPORT_SYMBOL(rtw_pci_gen_new);
 
