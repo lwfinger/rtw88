@@ -1362,7 +1362,11 @@ static struct rtw_rsvd_page *rtw_alloc_rsvd_page(struct rtw_dev *rtwdev,
 {
 	struct rtw_rsvd_page *rsvd_pkt = NULL;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 0, 0)
+	rsvd_pkt = kzalloc_obj(*rsvd_pkt, GFP_KERNEL);
+#else
 	rsvd_pkt = kzalloc(sizeof(*rsvd_pkt), GFP_KERNEL);
+#endif
 
 	if (!rsvd_pkt)
 		return NULL;

@@ -122,7 +122,11 @@ static void rtw_collect_sta_iter(void *data, struct ieee80211_sta *sta)
 	struct rtw_iter_stas_data *iter_stas = data;
 	struct rtw_stas_entry *stas_entry;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 0, 0)
+	stas_entry = kmalloc_obj(*stas_entry, GFP_ATOMIC);
+#else
 	stas_entry = kmalloc(sizeof(*stas_entry), GFP_ATOMIC);
+#endif
 	if (!stas_entry)
 		return;
 
@@ -172,7 +176,11 @@ static void rtw_collect_vif_iter(void *data, u8 *mac, struct ieee80211_vif *vif)
 	struct rtw_iter_vifs_data *iter_stas = data;
 	struct rtw_vifs_entry *vifs_entry;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 0, 0)
+	vifs_entry = kmalloc_obj(*vifs_entry, GFP_ATOMIC);
+#else
 	vifs_entry = kmalloc(sizeof(*vifs_entry), GFP_ATOMIC);
+#endif
 	if (!vifs_entry)
 		return;
 

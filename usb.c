@@ -403,7 +403,11 @@ static bool rtw_usb_tx_agg_skb(struct rtw_usb *rtwusb, struct sk_buff_head *list
 	if (skb_queue_empty(list))
 		return false;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 0, 0)
+	txcb = kmalloc_obj(*txcb, GFP_ATOMIC);
+#else
 	txcb = kmalloc(sizeof(*txcb), GFP_ATOMIC);
+#endif
 	if (!txcb)
 		return false;
 
