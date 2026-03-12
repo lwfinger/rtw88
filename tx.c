@@ -274,7 +274,7 @@ void rtw_tx_report_handle(struct rtw_dev *rtwdev, struct sk_buff *skb, int src)
 	spin_lock_irqsave(&tx_report->q_lock, flags);
 	skb_queue_walk_safe(&tx_report->queue, cur, tmp) {
 		n = (u8 *)IEEE80211_SKB_CB(cur)->status.status_driver_data;
-		if (*n == sn || rtw_chip_wcpu_8051(rtwdev)) {
+		if (*n == sn) {
 			__skb_unlink(cur, &tx_report->queue);
 			rtw_tx_report_tx_status(rtwdev, cur, st == 0);
 			break;
@@ -461,7 +461,7 @@ void rtw_tx_pkt_info_update(struct rtw_dev *rtwdev,
 		pkt_info->mac_id = rtwvif->mac_id;
 	}
 
-	if (ieee80211_is_mgmt(fc) || ieee80211_is_nullfunc(fc))
+	if (ieee80211_is_mgmt(fc) || ieee80211_is_any_nullfunc(fc))
 		rtw_tx_mgmt_pkt_info_update(rtwdev, pkt_info, sta, skb);
 	else if (ieee80211_is_data(fc))
 		rtw_tx_data_pkt_info_update(rtwdev, pkt_info, sta, skb);
