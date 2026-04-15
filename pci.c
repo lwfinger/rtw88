@@ -2,6 +2,7 @@
 /* Copyright(c) 2018-2019  Realtek Corporation
  */
 
+#include <linux/dmi.h>
 #include <linux/module.h>
 #include <linux/pci.h>
 #include "main.h"
@@ -1779,6 +1780,34 @@ const struct pci_error_handlers rtw_pci_err_handler = {
 };
 EXPORT_SYMBOL(rtw_pci_err_handler);
 
+static int rtw_pci_disable_caps(const struct dmi_system_id *dmi)
+{
+	uintptr_t dis_caps = (uintptr_t)dmi->driver_data;
+
+	if (dis_caps & BIT(QUIRK_DIS_CAP_PCI_ASPM))
+		rtw_pci_disable_aspm = true;
+
+	if (dis_caps & BIT(QUIRK_DIS_CAP_LPS_DEEP))
+		rtw_disable_lps_deep_mode = true;
+
+	return 1;
+}
+
+static const struct dmi_system_id rtw_pci_quirks[] = {
+	{
+		.callback = rtw_pci_disable_caps,
+		.ident = "HP Notebook - P3S95EA#ACB",
+		.matches = {
+			DMI_MATCH(DMI_SYS_VENDOR, "HP"),
+			DMI_MATCH(DMI_PRODUCT_NAME, "HP Notebook"),
+			DMI_MATCH(DMI_PRODUCT_SKU, "P3S95EA#ACB"),
+		},
+		.driver_data = (void *)(BIT(QUIRK_DIS_CAP_PCI_ASPM) |
+					BIT(QUIRK_DIS_CAP_LPS_DEEP)),
+	},
+	{}
+};
+
 int rtw_pci_probe(struct pci_dev *pdev,
 		  const struct pci_device_id *id)
 {
@@ -1808,6 +1837,8 @@ int rtw_pci_probe(struct pci_dev *pdev,
 	atomic_set(&rtwpci->link_usage, 1);
 
 	rtwpci->gen = pci_info->pci_gen;
+
+	dmi_check_system(rtw_pci_quirks);
 
 	ret = rtw_core_init(rtwdev);
 	if (ret)
