@@ -1631,6 +1631,7 @@ struct rtw_coex_stat {
 	bool bt_game_hid_exist;
 	bool bt_hid_handle_cnt;
 	bool bt_mailbox_reply;
+	bool bt_ctr_ok;
 
 	bool wl_under_lps;
 	bool wl_under_ips;
