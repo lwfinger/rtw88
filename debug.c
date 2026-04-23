@@ -97,12 +97,79 @@ struct rtw_debugfs {
 	struct rtw_debugfs_priv fw_crash;
 	struct rtw_debugfs_priv force_lowest_basic_rate;
 	struct rtw_debugfs_priv dm_cap;
+	struct rtw_debugfs_priv tsf;
 };
 
 static const char * const rtw_dm_cap_strs[] = {
 	[RTW_DM_CAP_NA] = "NA",
 	[RTW_DM_CAP_TXGAPK] = "TXGAPK",
 };
+
+/* TSF debugfs support - UPDATED WITH CORRECT REGISTERS */
+static int rtw_debugfs_get_tsf(struct seq_file *m, void *v)
+{
+	struct rtw_debugfs_priv *debugfs_priv = m->private;
+	struct rtw_dev *rtwdev = debugfs_priv->rtwdev;
+	u64 tsf;
+
+	mutex_lock(&rtwdev->mutex);
+	
+	/* CORRECT TSF registers for 8821CU based on your discovery */
+	tsf = (u64)rtw_read32(rtwdev, 0x0560) | ((u64)rtw_read32(rtwdev, 0x0564) << 32);
+	
+	seq_printf(m, "0x%016llx\n", (unsigned long long)tsf);
+	mutex_unlock(&rtwdev->mutex);
+	return 0;
+}
+
+static ssize_t rtw_debugfs_set_tsf(struct file *filp,
+				   const char __user *buffer,
+				   size_t count, loff_t *loff)
+{
+	struct seq_file *seqpriv = (struct seq_file *)filp->private_data;
+	struct rtw_debugfs_priv *debugfs_priv = seqpriv->private;
+	struct rtw_dev *rtwdev = debugfs_priv->rtwdev;
+	char buf[32];
+	u64 tsf;
+	int ret;
+
+	if (count >= sizeof(buf))
+		return -EINVAL;
+
+	if (copy_from_user(buf, buffer, count))
+		return -EFAULT;
+
+	buf[count] = '\0';
+
+	mutex_lock(&rtwdev->mutex);
+
+	/* Check for reset command */
+	if (strncmp(buf, "reset", 5) == 0) {
+		rtw_info(rtwdev, "Debugfs TSF reset called\n");
+		/* Reset TSF by writing 0 to CORRECT TSF registers */
+		rtw_write32(rtwdev, 0x0560, 0);
+		rtw_write32(rtwdev, 0x0564, 0);
+		mutex_unlock(&rtwdev->mutex);
+		return count;
+	}
+
+	/* Parse TSF value */
+	ret = kstrtoull(buf, 0, &tsf);
+	if (ret) {
+		rtw_info(rtwdev, "Debugfs TSF write parse error: %d\n", ret);
+		mutex_unlock(&rtwdev->mutex);
+		return ret;
+	}
+
+	rtw_info(rtwdev, "Debugfs TSF set called with: 0x%016llx\n", (unsigned long long)tsf);
+	
+	/* Set TSF by writing to the CORRECT registers */
+	rtw_write32(rtwdev, 0x0560, (u32)(tsf & 0xFFFFFFFF));
+	rtw_write32(rtwdev, 0x0564, (u32)(tsf >> 32));
+
+	mutex_unlock(&rtwdev->mutex);
+	return count;
+}
 
 static int rtw_debugfs_single_show(struct seq_file *m, void *v)
 {
@@ -1239,6 +1306,7 @@ static const struct rtw_debugfs rtw_debugfs_templ = {
 	.fw_crash = rtw_debug_priv_set_and_get(fw_crash),
 	.force_lowest_basic_rate = rtw_debug_priv_set_and_get(force_lowest_basic_rate),
 	.dm_cap = rtw_debug_priv_set_and_get(dm_cap),
+	.tsf = rtw_debug_priv_set_and_get(tsf),
 };
 
 #define rtw_debugfs_add_core(name, mode, fopname, parent)		\
@@ -1279,6 +1347,7 @@ void rtw_debugfs_add_basic(struct rtw_dev *rtwdev, struct dentry *debugfs_topdir
 	rtw_debugfs_add_rw(fw_crash);
 	rtw_debugfs_add_rw(force_lowest_basic_rate);
 	rtw_debugfs_add_rw(dm_cap);
+	rtw_debugfs_add_rw(tsf);
 }
 
 static
