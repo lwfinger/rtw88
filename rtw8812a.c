@@ -895,7 +895,17 @@ static void rtw8812a_coex_cfg_init(struct rtw_dev *rtwdev)
 {
 }
 
+static void rtw8812a_coex_cfg_ant_switch(struct rtw_dev *rtwdev, u8 ctrl_type,
+					 u8 pos_type)
+{
+	/* TODO */
+}
+
 static void rtw8812a_coex_cfg_gnt_fix(struct rtw_dev *rtwdev)
+{
+}
+
+static void rtw8812a_coex_cfg_gnt_debug(struct rtw_dev *rtwdev)
 {
 }
 
@@ -937,9 +947,9 @@ static const struct rtw_chip_ops rtw8812a_ops = {
 	.led_set		= rtw8812a_led_set,
 	.fill_txdesc_checksum	= rtw8812a_fill_txdesc_checksum,
 	.coex_set_init		= rtw8812a_coex_cfg_init,
-	.coex_set_ant_switch	= NULL,
+	.coex_set_ant_switch	= rtw8812a_coex_cfg_ant_switch,
 	.coex_set_gnt_fix	= rtw8812a_coex_cfg_gnt_fix,
-	.coex_set_gnt_debug	= NULL,
+	.coex_set_gnt_debug	= rtw8812a_coex_cfg_gnt_debug,
 	.coex_set_rfe_type	= rtw8821a_coex_cfg_rfe_type,
 	.coex_set_wl_tx_power	= rtw8821a_coex_cfg_wl_tx_power,
 	.coex_set_wl_rx_gain	= rtw8821a_coex_cfg_wl_rx_gain,
