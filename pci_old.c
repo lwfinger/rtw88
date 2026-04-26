@@ -292,7 +292,7 @@ static void rtw_pci_old_tx_isr(struct rtw_dev *rtwdev,
 		if (dma != tx_data->dma)
 			rtw_err(rtwdev,
 				"dma from tx_data %#llx != dma from tx_desc %#llx\n",
-				tx_data->dma, dma);
+				(u64)tx_data->dma, (u64)dma);
 
 		dma_unmap_single(&rtwpci->pdev->dev, dma, skb->len,
 				 DMA_TO_DEVICE);
