@@ -125,21 +125,81 @@ static void rtw_pci_old_reset_buf_desc(struct rtw_dev *rtwdev)
 	rtw_write8(rtwdev, REG_MISC_CTRL, BIT_DIS_SECOND_CCA);
 }
 
-static int rtw_pci_old_reset(struct rtw_dev *rtwdev)
+static void rtw_pci_old_reset_dma(struct rtw_dev *rtwdev)
 {
-	u8 trx_hang;
+	u8 mac_power_on, trx_hang, pcie_dma_pause;
+	u32 rxdma;
 
-	rtw_pci_old_reset_buf_desc(rtwdev);
+	mac_power_on = rtw_read8(rtwdev, REG_CR);
+	if (mac_power_on == 0xea)
+		mac_power_on = 0;
 
-	/// _rtl8821ae_check_pcie_dma_hang and _rtl8821ae_reset_pcie_interface_dma might go here
 	if (!rtw_read8_mask(rtwdev, REG_DBI_CTRL + 3, BIT(2))) {
 		rtw_write8_set(rtwdev, REG_DBI_CTRL + 3, BIT(2));
 		msleep(100);
 	}
 
 	trx_hang = rtw_read8_mask(rtwdev, REG_DBI_CTRL + 3, GENMASK(1, 0));
-	if (trx_hang)
-		rtw_warn(rtwdev, "%s: trx hang: %#x\n", __func__, trx_hang);
+
+	if (!trx_hang)
+		return;
+
+	if (trx_hang & BIT(0))
+		rtw_warn(rtwdev, "PCIe TX hang detected, resetting\n");
+
+	if (trx_hang & BIT(1))
+		rtw_warn(rtwdev, "PCIe RX hang detected, resetting\n");
+
+	/* 1. Disable register write lock. */
+	rtw_write8_clr(rtwdev, REG_RSV_CTRL, BIT(1));
+	if (rtwdev->chip->id != RTW_CHIP_TYPE_8812A)
+		rtw_write8_set(rtwdev, REG_PMC_DBG_CTRL2, BIT(2));
+
+	/* 2. Check and pause TRX DMA */
+	rxdma = rtw_read32(rtwdev, REG_RXPKT_NUM);
+	if (!(rxdma & BIT_RW_RELEASE))
+		rtw_write32(rtwdev, REG_RXPKT_NUM, rxdma | BIT_RW_RELEASE);
+
+	pcie_dma_pause = rtw_read8(rtwdev, RTK_PCI_CTRL + 1);
+	if (pcie_dma_pause != 0xFF)
+		rtw_write8(rtwdev, RTK_PCI_CTRL + 1, 0xFF);
+
+	if (mac_power_on)
+		/* 3. reset TRX function */
+		rtw_write8(rtwdev, REG_CR, 0);
+
+	/* 4. Reset PCIe DMA. */
+	rtw_write16_clr(rtwdev, REG_SYS_FUNC_EN, BIT_FEN_PCIED);
+
+	/* 5. Enable PCIe DMA. */
+	rtw_write16_set(rtwdev, REG_SYS_FUNC_EN, BIT_FEN_PCIED);
+
+	if (mac_power_on)
+		/* 6. enable TRX function */
+		rtw_write8(rtwdev, REG_CR, 0xFF);
+
+	/* 7. Restore PCIe autoload down bit. 8812AE does not have
+	 * the definition.
+	 */
+	if (rtwdev->chip->id != RTW_CHIP_TYPE_8812A)
+		rtw_write8_set(rtwdev, REG_SYS_STATUS2 + 2, BIT(1));
+
+	/* 8. release TRX DMA */
+	if (!(rxdma & BIT_RW_RELEASE))
+		rtw_write32_clr(rtwdev, REG_RXPKT_NUM, BIT_RW_RELEASE);
+
+	rtw_write8(rtwdev, RTK_PCI_CTRL + 1, pcie_dma_pause);
+
+	/* 9. lock system register */
+	if (rtwdev->chip->id != RTW_CHIP_TYPE_8812A)
+		rtw_write8_clr(rtwdev, REG_PMC_DBG_CTRL2, BIT(2));
+}
+
+static int rtw_pci_old_reset(struct rtw_dev *rtwdev)
+{
+	rtw_pci_old_reset_dma(rtwdev);
+
+	rtw_pci_old_reset_buf_desc(rtwdev);
 
 	return 0;
 }
