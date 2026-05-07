@@ -659,31 +659,19 @@ static int rtw_txq_push_skb(struct rtw_dev *rtwdev,
 	return 0;
 }
 
-static struct sk_buff *rtw_txq_dequeue(struct rtw_dev *rtwdev,
-				       struct rtw_txq *rtwtxq)
-{
-	struct ieee80211_txq *txq = rtwtxq_to_txq(rtwtxq);
-	struct sk_buff *skb;
-
-	skb = ieee80211_tx_dequeue(rtwdev->hw, txq);
-	if (!skb)
-		return NULL;
-
-	return skb;
-}
-
 static void rtw_txq_push(struct rtw_dev *rtwdev,
 			 struct rtw_txq *rtwtxq,
 			 unsigned long frames)
 {
+	struct ieee80211_txq *txq = rtwtxq_to_txq(rtwtxq);
 	struct sk_buff *skb;
+	unsigned long i;
 	int ret;
-	int i;
 
 	rcu_read_lock();
 
 	for (i = 0; i < frames; i++) {
-		skb = rtw_txq_dequeue(rtwdev, rtwtxq);
+		skb = ieee80211_tx_dequeue(rtwdev->hw, txq);
 		if (!skb)
 			break;
 
