@@ -636,9 +636,9 @@ static void rtw_usb_rx_handler(unsigned long shut_up_gcc)
 	u32 max_skb_len = pkt_desc_sz + PHY_STATUS_SIZE * 8 +
 			  IEEE80211_MAX_MPDU_LEN_VHT_11454;
 	u32 pkt_offset, next_pkt, skb_len;
+	int limit, ret;
 	u8 *rx_desc;
 	u8 *rx_buf;
-	int limit;
 
 	for (limit = 0; limit < 200; limit++) {
 		rx_skb = skb_dequeue(&rtwusb->rx_queue);
@@ -655,8 +655,11 @@ static void rtw_usb_rx_handler(unsigned long shut_up_gcc)
 
 		do {
 			rx_buf = rx_desc + pkt_desc_sz;
-			rtw_rx_query_rx_desc(rtwdev, rx_desc, rx_buf,
-					     &pkt_stat, &rx_status);
+			ret = rtw_rx_query_rx_desc(rtwdev, rx_desc, rx_buf,
+						   &pkt_stat, &rx_status);
+			if (ret)
+				break;
+
 			pkt_offset = pkt_desc_sz + pkt_stat.drv_info_sz +
 				     pkt_stat.shift;
 

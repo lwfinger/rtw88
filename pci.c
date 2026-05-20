@@ -1048,21 +1048,22 @@ static int rtw_pci_get_hw_rx_ring_nr(struct rtw_dev *rtwdev,
 static u32 rtw_pci_rx_napi(struct rtw_dev *rtwdev, struct rtw_pci *rtwpci,
 			   u8 hw_queue, u32 limit)
 {
+	struct rtw_pci_rx_ring *ring = &rtwpci->rx_rings[RTW_RX_QUEUE_MPDU];
 	const struct rtw_chip_info *chip = rtwdev->chip;
 	struct napi_struct *napi = &rtwpci->napi;
-	struct rtw_pci_rx_ring *ring = &rtwpci->rx_rings[RTW_RX_QUEUE_MPDU];
-	struct rtw_rx_pkt_stat pkt_stat;
+	u32 pkt_desc_sz = chip->rx_pkt_desc_sz;
+	u32 buf_desc_sz = chip->rx_buf_desc_sz;
 	struct ieee80211_rx_status rx_status;
+	struct rtw_rx_pkt_stat pkt_stat;
 	struct sk_buff *skb, *new;
 	u32 cur_rp = ring->r.rp;
 	u32 count, rx_done = 0;
 	u32 pkt_offset;
-	u32 pkt_desc_sz = chip->rx_pkt_desc_sz;
-	u32 buf_desc_sz = chip->rx_buf_desc_sz;
+	dma_addr_t dma;
 	u32 new_len;
 	u8 *rx_desc;
 	u8 *rx_buf;
-	dma_addr_t dma;
+	int ret;
 
 	count = rtw_pci_get_hw_rx_ring_nr(rtwdev, rtwpci);
 	count = min(count, limit);
@@ -1075,8 +1076,10 @@ static u32 rtw_pci_rx_napi(struct rtw_dev *rtwdev, struct rtw_pci *rtwpci,
 					DMA_FROM_DEVICE);
 		rx_desc = skb->data;
 		rx_buf = rx_desc + pkt_desc_sz;
-		rtw_rx_query_rx_desc(rtwdev, rx_desc, rx_buf,
-				     &pkt_stat, &rx_status);
+		ret = rtw_rx_query_rx_desc(rtwdev, rx_desc, rx_buf,
+					   &pkt_stat, &rx_status);
+		if (ret)
+			goto next_rp;
 
 		/* offset from rx_desc to payload */
 		pkt_offset = pkt_desc_sz + pkt_stat.drv_info_sz +
