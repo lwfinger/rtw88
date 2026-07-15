@@ -97,6 +97,7 @@ struct rtw_debugfs {
 	struct rtw_debugfs_priv fw_crash;
 	struct rtw_debugfs_priv force_lowest_basic_rate;
 	struct rtw_debugfs_priv dm_cap;
+	struct rtw_debugfs_priv monitor_channel;
 };
 
 static const char * const rtw_dm_cap_strs[] = {
@@ -1185,6 +1186,62 @@ static int rtw_debugfs_get_dm_cap(struct seq_file *m, void *v)
 	.cb_read = rtw_debugfs_get_ ##name,			\
 }
 
+static ssize_t rtw_debugfs_set_monitor_channel(struct file *filp,
+					       const char __user *buffer,
+					       size_t count, loff_t *loff)
+{
+	struct seq_file *seqpriv = (struct seq_file *)filp->private_data;
+	struct rtw_debugfs_priv *debugfs_priv = seqpriv->private;
+	struct rtw_dev *rtwdev = debugfs_priv->rtwdev;
+	u8 channel;
+	int ret;
+
+	ret = kstrtou8_from_user(buffer, count, 0, &channel);
+	if (ret)
+		return ret;
+
+	if (channel) {
+		enum nl80211_band band = channel <= 14 ?
+			NL80211_BAND_2GHZ : NL80211_BAND_5GHZ;
+		int freq = ieee80211_channel_to_frequency(channel, band);
+		struct ieee80211_channel *chan =
+			ieee80211_get_channel(rtwdev->hw->wiphy, freq);
+
+		if (!chan || chan->flags & IEEE80211_CHAN_DISABLED) {
+			rtw_warn(rtwdev, "monitor_channel: channel %u not available\n",
+				 channel);
+			return -EINVAL;
+		}
+	}
+
+	mutex_lock(&rtwdev->mutex);
+	rtwdev->mon_chan = channel;
+	rtw_leave_lps_deep(rtwdev);
+	rtw_set_channel(rtwdev);
+	mutex_unlock(&rtwdev->mutex);
+
+	rtw_dbg(rtwdev, RTW_DBG_DEBUGFS,
+		"forced monitor channel set to %u (0 = mac80211 controlled)\n",
+		channel);
+
+	return count;
+}
+
+static int rtw_debugfs_get_monitor_channel(struct seq_file *m, void *v)
+{
+	struct rtw_debugfs_priv *debugfs_priv = m->private;
+	struct rtw_dev *rtwdev = debugfs_priv->rtwdev;
+
+	if (rtwdev->mon_chan)
+		seq_printf(m, "forced channel %u (20 MHz); hw channel %u\n",
+			   rtwdev->mon_chan, rtwdev->hal.current_channel);
+	else
+		seq_printf(m, "off (mac80211 controlled); hw channel %u\n",
+			   rtwdev->hal.current_channel);
+
+	return 0;
+}
+
 static const struct rtw_debugfs rtw_debugfs_templ = {
 	.mac_0 = rtw_debug_priv_mac(0x0000),
 	.mac_1 = rtw_debug_priv_mac(0x0100),
@@ -1239,6 +1296,7 @@ static const struct rtw_debugfs rtw_debugfs_templ = {
 	.fw_crash = rtw_debug_priv_set_and_get(fw_crash),
 	.force_lowest_basic_rate = rtw_debug_priv_set_and_get(force_lowest_basic_rate),
 	.dm_cap = rtw_debug_priv_set_and_get(dm_cap),
+	.monitor_channel = rtw_debug_priv_set_and_get(monitor_channel),
 };
 
 #define rtw_debugfs_add_core(name, mode, fopname, parent)		\
@@ -1279,6 +1337,7 @@ void rtw_debugfs_add_basic(struct rtw_dev *rtwdev, struct dentry *debugfs_topdir
 	rtw_debugfs_add_rw(fw_crash);
 	rtw_debugfs_add_rw(force_lowest_basic_rate);
 	rtw_debugfs_add_rw(dm_cap);
+	rtw_debugfs_add_rw(monitor_channel);
 }
 
 static
