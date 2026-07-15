@@ -2289,6 +2289,14 @@ struct rtw_dev {
 	char led_name[32];
 	struct led_classdev led_cdev;
 
+	/* Force the RF to a fixed channel for monitor-mode frame injection,
+	 * bypassing mac80211's channel arbitration. On kernels >= 6.9 an up
+	 * non-monitor vif otherwise pins the hardware to channel 1 and blocks
+	 * monitor channel changes. 0 = mac80211 controlled, always 20 MHz.
+	 * Controlled via the "monitor_channel" debugfs file.
+	 */
+	u8 mon_chan;
+
 	/* hci related data, must be last */
 	u8 priv[] __aligned(sizeof(void *));
 };
