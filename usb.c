@@ -389,6 +389,71 @@ static int rtw_usb_write_port(struct rtw_dev *rtwdev, u8 qsel, struct sk_buff *s
 	return ret;
 }
 
+struct rtw_usb_write_data_sync_cb {
+	struct completion done;
+	int status;
+};
+
+static void rtw_usb_write_port_sync_complete(struct urb *urb)
+{
+	struct rtw_usb_write_data_sync_cb *cb = urb->context;
+
+	cb->status = urb->status;
+	complete(&cb->done);
+}
+
+/* Synchronous bulk-out that returns only after the data has actually been
+ * transferred to the device. Required for the reserved-page / beacon
+ * download: the caller polls the hardware BCN_VALID bit immediately after
+ * this returns, so the bytes must be on the chip by then. The normal async
+ * TX path races that poll, which shows up as intermittent
+ * "error beacon valid" / "failed to download drv rsvd page" in AP mode,
+ * more often on 5 GHz where the larger beacon takes longer to transfer.
+ */
+static int rtw_usb_write_port_sync(struct rtw_dev *rtwdev, u8 qsel,
+				   struct sk_buff *skb)
+{
+	struct rtw_usb *rtwusb = rtw_get_usb_priv(rtwdev);
+	struct usb_device *usbd = rtwusb->udev;
+	struct rtw_usb_write_data_sync_cb cb;
+	int ep = qsel_to_ep(rtwusb, qsel);
+	unsigned int pipe;
+	struct urb *urb;
+	int ret;
+
+	if (ep < 0)
+		return ep;
+
+	urb = usb_alloc_urb(0, GFP_KERNEL);
+	if (!urb)
+		return -ENOMEM;
+
+	init_completion(&cb.done);
+	cb.status = -EINPROGRESS;
+
+	pipe = usb_sndbulkpipe(usbd, rtwusb->out_ep[ep]);
+	usb_fill_bulk_urb(urb, usbd, pipe, skb->data, skb->len,
+			  rtw_usb_write_port_sync_complete, &cb);
+	urb->transfer_flags |= URB_ZERO_PACKET;
+
+	ret = usb_submit_urb(urb, GFP_KERNEL);
+	if (ret)
+		goto out;
+
+	/* 5 s matches the vendor driver's bulk-out timeout */
+	if (!wait_for_completion_timeout(&cb.done, msecs_to_jiffies(5000))) {
+		usb_kill_urb(urb);
+		ret = -ETIMEDOUT;
+	} else {
+		ret = cb.status;
+	}
+
+out:
+	usb_free_urb(urb);
+
+	return ret;
+}
+
 static bool rtw_usb_tx_agg_skb(struct rtw_usb *rtwusb, struct sk_buff_head *list)
 {
 	struct rtw_dev *rtwdev = rtwusb->rtwdev;
@@ -540,13 +605,38 @@ static int rtw_usb_write_data_rsvd_page(struct rtw_dev *rtwdev, u8 *buf,
 {
 	const struct rtw_chip_info *chip = rtwdev->chip;
 	struct rtw_tx_pkt_info pkt_info = {0};
+	struct rtw_tx_desc *pkt_desc;
+	struct sk_buff *skb;
+	int ret;
 
 	pkt_info.tx_pkt_size = size;
 	pkt_info.qsel = TX_DESC_QSEL_BEACON;
 	pkt_info.offset = chip->tx_pkt_desc_sz;
 	pkt_info.ls = true;
 
-	return rtw_usb_write_data(rtwdev, &pkt_info, buf);
+	skb = dev_alloc_skb(chip->tx_pkt_desc_sz + size);
+	if (!skb)
+		return -ENOMEM;
+
+	skb_reserve(skb, chip->tx_pkt_desc_sz);
+	skb_put_data(skb, buf, size);
+	pkt_desc = skb_push(skb, chip->tx_pkt_desc_sz);
+	memset(pkt_desc, 0, chip->tx_pkt_desc_sz);
+	rtw_tx_fill_tx_desc(rtwdev, &pkt_info, pkt_desc);
+	rtw_tx_fill_txdesc_checksum(rtwdev, &pkt_info, pkt_desc);
+
+	/* Download the beacon/reserved page synchronously so that the caller's
+	 * subsequent BCN_VALID poll observes the completed transfer instead of
+	 * racing the async TX path.
+	 */
+	ret = rtw_usb_write_port_sync(rtwdev, pkt_info.qsel, skb);
+	if (ret)
+		rtw_err(rtwdev, "failed to download rsvd page over USB, ret=%d\n",
+			ret);
+
+	dev_kfree_skb_any(skb);
+
+	return ret;
 }
 
 static int rtw_usb_write_data_h2c(struct rtw_dev *rtwdev, u8 *buf, u32 size)
