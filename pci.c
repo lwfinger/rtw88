@@ -1843,6 +1843,15 @@ static const struct dmi_system_id rtw_pci_quirks[] = {
 		.driver_data = (void *)(BIT(QUIRK_DIS_CAP_PCI_ASPM) |
 					BIT(QUIRK_DIS_CAP_LPS_DEEP)),
 	},
+	{
+		.callback = rtw_pci_disable_caps,
+		.ident = "Lenovo IdeaPad S340-14IWL",
+		.matches = {
+			DMI_MATCH(DMI_SYS_VENDOR, "LENOVO"),
+			DMI_MATCH(DMI_PRODUCT_NAME, "81N4"),
+		},
+		.driver_data = (void *)BIT(QUIRK_DIS_CAP_PCI_ASPM),
+	},
 	{}
 };
 
