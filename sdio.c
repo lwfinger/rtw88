@@ -20,6 +20,7 @@
 #include "tx.h"
 
 #define RTW_SDIO_INDIRECT_RW_RETRIES			50
+#define RTW_SDIO_OQT_TIMEOUT_MS				1000
 
 static bool rtw_sdio_is_bus_addr(u32 addr)
 {
@@ -548,12 +549,149 @@ static int rtw_sdio_read_port(struct rtw_dev *rtwdev, u8 *buf, size_t count)
 	return ret;
 }
 
+/*
+ * The counters are atomic_t because rtw_sdio_start() seeds them outside
+ * tx_credit_lock, which the transmit paths hold while using them.
+ */
+static void rtw_sdio_8723bs_store_free_txpg(struct rtw_dev *rtwdev,
+					    u32 free_txpg)
+{
+	struct rtw_sdio *rtwsdio = (struct rtw_sdio *)rtwdev->priv;
+
+	atomic_set(&rtwsdio->free_pg_high,
+		   u32_get_bits(free_txpg, BIT_FREE_TXPG_HIGH));
+	atomic_set(&rtwsdio->free_pg_normal,
+		   u32_get_bits(free_txpg, BIT_FREE_TXPG_NORMAL));
+	atomic_set(&rtwsdio->free_pg_low,
+		   u32_get_bits(free_txpg, BIT_FREE_TXPG_LOW));
+	atomic_set(&rtwsdio->free_pg_pub,
+		   u32_get_bits(free_txpg, BIT_FREE_TXPG_PUB));
+}
+
+static bool rtw_sdio_8723bs_sync_free_txpg(struct rtw_dev *rtwdev)
+{
+	u32 free_txpg = rtw_read32(rtwdev, REG_SDIO_FREE_TXPG);
+
+	if (!free_txpg)
+		return false;
+
+	rtw_sdio_8723bs_store_free_txpg(rtwdev, free_txpg);
+
+	return true;
+}
+
+static int rtw_sdio_8723bs_pubq_num(struct rtw_dev *rtwdev, u16 *pubq_num)
+{
+	const struct rtw_page_table *pg_tbl = &rtwdev->chip->page_table[0];
+	u16 acq_pg_num = rtwdev->fifo.acq_pg_num;
+	u16 reserved_num;
+
+	reserved_num = pg_tbl->hq_num + pg_tbl->lq_num + pg_tbl->nq_num +
+		       pg_tbl->exq_num + pg_tbl->gapq_num;
+	if (acq_pg_num <= reserved_num) {
+		rtw_err(rtwdev,
+			"no transmit pages left for the public queue: %u of %u reserved\n",
+			reserved_num, acq_pg_num);
+		return -EINVAL;
+	}
+
+	*pubq_num = acq_pg_num - reserved_num;
+
+	return 0;
+}
+
+static int rtw_sdio_8723bs_init_free_txpg(struct rtw_dev *rtwdev)
+{
+	struct rtw_sdio *rtwsdio = (struct rtw_sdio *)rtwdev->priv;
+	const struct rtw_page_table *pg_tbl;
+	u16 pubq_num;
+	int ret;
+
+	/* Seed from the page table when the chip has nothing to report yet. */
+	if (!rtw_sdio_8723bs_sync_free_txpg(rtwdev)) {
+		ret = rtw_sdio_8723bs_pubq_num(rtwdev, &pubq_num);
+		if (ret)
+			return ret;
+
+		pg_tbl = &rtwdev->chip->page_table[0];
+		atomic_set(&rtwsdio->free_pg_high, pg_tbl->hq_num);
+		atomic_set(&rtwsdio->free_pg_normal, pg_tbl->nq_num);
+		atomic_set(&rtwsdio->free_pg_low, pg_tbl->lq_num);
+		atomic_set(&rtwsdio->free_pg_pub, pubq_num);
+	}
+
+	atomic_set(&rtwsdio->tx_oqt_free,
+		   rtw_read8(rtwdev, REG_SDIO_OQT_FREE_PG));
+
+	return 0;
+}
+
+/*
+ * Clamped at zero: a lost update against rtw_sdio_8723bs_consume_txpg() can
+ * briefly drive a counter negative, and wrapping would hide the shortage
+ * instead of triggering a resync from the chip.
+ */
+static unsigned int rtw_sdio_8723bs_pages_free(struct rtw_dev *rtwdev,
+					       atomic_t *dedicated)
+{
+	struct rtw_sdio *rtwsdio = (struct rtw_sdio *)rtwdev->priv;
+	int free;
+
+	free = atomic_read(dedicated) + atomic_read(&rtwsdio->free_pg_pub);
+
+	return free > 0 ? free : 0;
+}
+
+/*
+ * The pool a queue draws from follows the transmit FIFO that
+ * rtw_sdio_get_tx_addr() writes into, since that is the one the chip charges.
+ * RTW_TX_QUEUE_MGMT is the exception: it goes to the extra FIFO, which
+ * REG_SDIO_FREE_TXPG has no counter for and this chip allocates no pages to,
+ * so it is accounted against the high pool and served from the public one.
+ */
+static atomic_t *rtw_sdio_8723bs_free_txpg(struct rtw_dev *rtwdev, u8 queue)
+{
+	struct rtw_sdio *rtwsdio = (struct rtw_sdio *)rtwdev->priv;
+
+	switch (queue) {
+	case RTW_TX_QUEUE_VI:
+	case RTW_TX_QUEUE_VO:
+		return &rtwsdio->free_pg_normal;
+	case RTW_TX_QUEUE_BE:
+	case RTW_TX_QUEUE_BK:
+		return &rtwsdio->free_pg_low;
+	case RTW_TX_QUEUE_BCN:
+	case RTW_TX_QUEUE_H2C:
+	case RTW_TX_QUEUE_HI0:
+	case RTW_TX_QUEUE_MGMT:
+		return &rtwsdio->free_pg_high;
+	default:
+		return NULL;
+	}
+}
+
 static int rtw_sdio_check_free_txpg(struct rtw_dev *rtwdev, u8 queue,
 				    size_t count)
 {
 	unsigned int pages_free, pages_needed;
 
-	if (rtw_chip_wcpu_8051(rtwdev)) {
+	if (rtw_is_8723bs(rtwdev)) {
+		atomic_t *dedicated;
+
+		dedicated = rtw_sdio_8723bs_free_txpg(rtwdev, queue);
+		if (!dedicated) {
+			rtw_warn(rtwdev, "Unknown mapping for queue %u\n", queue);
+			return -EINVAL;
+		}
+
+		pages_free = rtw_sdio_8723bs_pages_free(rtwdev, dedicated);
+		pages_needed = DIV_ROUND_UP(count, rtwdev->chip->page_size);
+		if (pages_needed <= pages_free)
+			return 0;
+
+		rtw_sdio_8723bs_sync_free_txpg(rtwdev);
+		pages_free = rtw_sdio_8723bs_pages_free(rtwdev, dedicated);
+	} else if (rtw_chip_wcpu_8051(rtwdev)) {
 		u32 free_txpg;
 
 		free_txpg = rtw_sdio_read32(rtwdev, REG_SDIO_FREE_TXPG);
@@ -632,13 +770,140 @@ static int rtw_sdio_check_free_txpg(struct rtw_dev *rtwdev, u8 queue,
 	return 0;
 }
 
+static int rtw_sdio_8723bs_wait_tx_oqt(struct rtw_dev *rtwdev)
+{
+	struct rtw_sdio *rtwsdio = (struct rtw_sdio *)rtwdev->priv;
+	unsigned long deadline;
+	u8 free;
+
+	lockdep_assert_held(&rtwsdio->tx_credit_lock);
+
+	if (atomic_add_unless(&rtwsdio->tx_oqt_free, -1, 0))
+		return 0;
+
+	deadline = jiffies + msecs_to_jiffies(RTW_SDIO_OQT_TIMEOUT_MS);
+	do {
+		free = rtw_read8(rtwdev, REG_SDIO_OQT_FREE_PG);
+		if (free) {
+			atomic_set(&rtwsdio->tx_oqt_free, free - 1);
+			return 0;
+		}
+		usleep_range(1000, 2000);
+	} while (time_before(jiffies, deadline));
+
+	return -EBUSY;
+}
+
+static void rtw_sdio_8723bs_consume_txpg(struct rtw_dev *rtwdev, u8 queue,
+					 unsigned int pages)
+{
+	struct rtw_sdio *rtwsdio = (struct rtw_sdio *)rtwdev->priv;
+	atomic_t *dedicated;
+	unsigned int taken;
+	int free;
+
+	lockdep_assert_held(&rtwsdio->tx_credit_lock);
+
+	dedicated = rtw_sdio_8723bs_free_txpg(rtwdev, queue);
+	if (!dedicated)
+		return;
+
+	free = atomic_read(dedicated);
+	taken = min_t(unsigned int, pages, free > 0 ? free : 0);
+	atomic_sub(taken, dedicated);
+
+	pages -= taken;
+	if (pages && atomic_sub_return(pages, &rtwsdio->free_pg_pub) < 0)
+		atomic_set(&rtwsdio->free_pg_pub, 0);
+}
+
+static int rtw_sdio_write_to_port(struct rtw_dev *rtwdev, struct sk_buff *skb,
+				  enum rtw_tx_queue_type queue, u32 txaddr,
+				  size_t write_size)
+{
+	struct rtw_sdio *rtwsdio = (struct rtw_sdio *)rtwdev->priv;
+	bool bus_claim;
+	int ret;
+
+	if (!IS_ALIGNED((unsigned long)skb->data, RTW_SDIO_DATA_PTR_ALIGN))
+		rtw_warn(rtwdev, "Got unaligned SKB in %s() for queue %u\n",
+			 __func__, queue);
+
+	bus_claim = rtw_sdio_bus_claim_needed(rtwsdio);
+
+	if (bus_claim)
+		sdio_claim_host(rtwsdio->sdio_func);
+
+	ret = sdio_memcpy_toio(rtwsdio->sdio_func, txaddr, skb->data,
+			       write_size);
+
+	if (bus_claim)
+		sdio_release_host(rtwsdio->sdio_func);
+
+	if (ret)
+		rtw_warn(rtwdev,
+			 "Failed to write %zu byte(s) to SDIO port 0x%08x",
+			 write_size, txaddr);
+
+	return ret;
+}
+
+static int rtw_sdio_write_port_8723bs(struct rtw_dev *rtwdev,
+				      struct sk_buff *skb,
+				      enum rtw_tx_queue_type queue, u32 txaddr,
+				      size_t write_size)
+{
+	struct rtw_sdio *rtwsdio = (struct rtw_sdio *)rtwdev->priv;
+	unsigned int pages;
+	size_t txsize;
+	int ret;
+
+	/* the chip charges pages by frame length, not by the padded transfer */
+	txsize = round_up(skb->len, 4);
+
+	guard(mutex)(&rtwsdio->tx_credit_lock);
+
+	ret = rtw_sdio_check_free_txpg(rtwdev, queue, txsize);
+	if (ret)
+		return ret;
+
+	ret = rtw_sdio_8723bs_wait_tx_oqt(rtwdev);
+	if (ret)
+		return ret;
+
+	ret = rtw_sdio_write_to_port(rtwdev, skb, queue, txaddr, write_size);
+	if (ret) {
+		/* nothing was queued, so hand the output queue entry back */
+		atomic_inc(&rtwsdio->tx_oqt_free);
+		return ret;
+	}
+
+	pages = DIV_ROUND_UP(txsize, rtwdev->chip->page_size);
+	rtw_sdio_8723bs_consume_txpg(rtwdev, queue, pages);
+
+	return 0;
+}
+
+static int rtw_sdio_write_port_generic(struct rtw_dev *rtwdev,
+				       struct sk_buff *skb,
+				       enum rtw_tx_queue_type queue, u32 txaddr,
+				       size_t write_size)
+{
+	int ret;
+
+	ret = rtw_sdio_check_free_txpg(rtwdev, queue, write_size);
+	if (ret)
+		return ret;
+
+	return rtw_sdio_write_to_port(rtwdev, skb, queue, txaddr, write_size);
+}
+
 static int rtw_sdio_write_port(struct rtw_dev *rtwdev, struct sk_buff *skb,
 			       enum rtw_tx_queue_type queue)
 {
 	struct rtw_sdio *rtwsdio = (struct rtw_sdio *)rtwdev->priv;
+	size_t write_size;
 	size_t pad_size;
-	bool bus_claim;
-	size_t txsize;
 	u32 txaddr;
 	int ret;
 
@@ -646,8 +911,8 @@ static int rtw_sdio_write_port(struct rtw_dev *rtwdev, struct sk_buff *skb,
 	if (!txaddr)
 		return -EINVAL;
 
-	txsize = sdio_align_size(rtwsdio->sdio_func, skb->len);
-	pad_size = txsize - skb->len;
+	write_size = sdio_align_size(rtwsdio->sdio_func, skb->len);
+	pad_size = write_size - skb->len;
 
 	if (pad_size > 0) {
 		/*
@@ -659,30 +924,12 @@ static int rtw_sdio_write_port(struct rtw_dev *rtwdev, struct sk_buff *skb,
 			return ret;
 	}
 
-	ret = rtw_sdio_check_free_txpg(rtwdev, queue, txsize);
-	if (ret)
-		return ret;
+	if (rtw_is_8723bs(rtwdev))
+		return rtw_sdio_write_port_8723bs(rtwdev, skb, queue, txaddr,
+						  write_size);
 
-	if (!IS_ALIGNED((unsigned long)skb->data, RTW_SDIO_DATA_PTR_ALIGN))
-		rtw_warn(rtwdev, "Got unaligned SKB in %s() for queue %u\n",
-			 __func__, queue);
-
-	bus_claim = rtw_sdio_bus_claim_needed(rtwsdio);
-
-	if (bus_claim)
-		sdio_claim_host(rtwsdio->sdio_func);
-
-	ret = sdio_memcpy_toio(rtwsdio->sdio_func, txaddr, skb->data, txsize);
-
-	if (bus_claim)
-		sdio_release_host(rtwsdio->sdio_func);
-
-	if (ret)
-		rtw_warn(rtwdev,
-			 "Failed to write %zu byte(s) to SDIO port 0x%08x",
-			 txsize, txaddr);
-
-	return ret;
+	return rtw_sdio_write_port_generic(rtwdev, skb, queue, txaddr,
+					   write_size);
 }
 
 static void rtw_sdio_init(struct rtw_dev *rtwdev)
@@ -761,8 +1008,51 @@ static int rtw_sdio_setup(struct rtw_dev *rtwdev)
 	return 0;
 }
 
+/*
+ * Reprogram the queue page allocation if the chip came up with none. This is
+ * a repair path, not part of the normal start sequence: a non-zero free page
+ * count means the allocation latched during power on and must be left alone,
+ * and without a transmit page pool there is nothing to divide up either.
+ */
+static int rtw_sdio_8723bs_check_rqpn(struct rtw_dev *rtwdev)
+{
+	const struct rtw_chip_info *chip = rtwdev->chip;
+	struct rtw_fifo_conf *fifo = &rtwdev->fifo;
+	const struct rtw_page_table *pg_tbl;
+	u32 free_txpg;
+	u16 pubq_num;
+	int ret;
+
+	free_txpg = rtw_read32(rtwdev, REG_SDIO_FREE_TXPG);
+	if (free_txpg || !fifo->acq_pg_num)
+		return 0;
+
+	ret = rtw_sdio_8723bs_pubq_num(rtwdev, &pubq_num);
+	if (ret)
+		return ret;
+
+	pg_tbl = &chip->page_table[0];
+	rtw_write32(rtwdev, REG_RQPN_NPQ,
+		    BIT_RQPN_NE(pg_tbl->nq_num, pg_tbl->exq_num));
+	rtw_write32(rtwdev, REG_RQPN,
+		    BIT_RQPN_HLP(pg_tbl->hq_num, pg_tbl->lq_num, pubq_num));
+
+	return 0;
+}
+
 static int rtw_sdio_start(struct rtw_dev *rtwdev)
 {
+	if (rtw_is_8723bs(rtwdev)) {
+		int ret = rtw_sdio_8723bs_check_rqpn(rtwdev);
+
+		if (ret)
+			return ret;
+
+		ret = rtw_sdio_8723bs_init_free_txpg(rtwdev);
+		if (ret)
+			return ret;
+	}
+
 	rtw_sdio_enable_rx_aggregation(rtwdev);
 	rtw_sdio_enable_interrupt(rtwdev);
 
@@ -1308,6 +1598,8 @@ static int rtw_sdio_init_tx(struct rtw_dev *rtwdev)
 		return -ENOMEM;
 	}
 
+	mutex_init(&rtwsdio->tx_credit_lock);
+
 	for (i = 0; i < RTK_MAX_TX_QUEUE_NUM; i++)
 		skb_queue_head_init(&rtwsdio->tx_queue[i]);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 0, 0)
@@ -1325,6 +1617,7 @@ static int rtw_sdio_init_tx(struct rtw_dev *rtwdev)
 	return 0;
 
 err_destroy_wq:
+	mutex_destroy(&rtwsdio->tx_credit_lock);
 	destroy_workqueue(rtwsdio->txwq);
 	return -ENOMEM;
 }
@@ -1346,6 +1639,8 @@ static void rtw_sdio_deinit_tx(struct rtw_dev *rtwdev)
 	for (i = 0; i < RTK_MAX_TX_QUEUE_NUM; i++)
 		ieee80211_purge_tx_queue(rtwdev->hw, &rtwsdio->tx_queue[i]);
 #endif
+
+	mutex_destroy(&rtwsdio->tx_credit_lock);
 }
 
 int rtw_sdio_probe(struct sdio_func *sdio_func,

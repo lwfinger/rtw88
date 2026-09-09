@@ -86,6 +86,10 @@
 #define REG_SDIO_OQT_FREE_PG			(SDIO_LOCAL_OFFSET + 0x001E)
 /* Free Tx Buffer Page */
 #define REG_SDIO_FREE_TXPG			(SDIO_LOCAL_OFFSET + 0x0020)
+#define BIT_FREE_TXPG_HIGH			GENMASK(7, 0)
+#define BIT_FREE_TXPG_NORMAL			GENMASK(15, 8)
+#define BIT_FREE_TXPG_LOW			GENMASK(23, 16)
+#define BIT_FREE_TXPG_PUB			GENMASK(31, 24)
 /* HCI Current Power Mode 1 */
 #define REG_SDIO_HCPWM1				(SDIO_LOCAL_OFFSET + 0x0024)
 /* HCI Current Power Mode 2 */
@@ -159,6 +163,14 @@ struct rtw_sdio {
 	struct workqueue_struct *txwq;
 	struct rtw_sdio_work_data *tx_handler_data;
 	struct sk_buff_head tx_queue[RTK_MAX_TX_QUEUE_NUM];
+
+	atomic_t free_pg_high;
+	atomic_t free_pg_normal;
+	atomic_t free_pg_low;
+	atomic_t free_pg_pub;
+	atomic_t tx_oqt_free;
+	/* one writer at a time between the credit check and the accounting */
+	struct mutex tx_credit_lock;
 };
 
 extern const struct dev_pm_ops rtw_sdio_pm_ops;
