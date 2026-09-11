@@ -15,6 +15,9 @@
 #include "debug.h"
 #include "bf.h"
 #include "regd.h"
+#if IS_ENABLED(CONFIG_PCI)
+#include <linux/pci.h>
+#endif
 
 static const s8 lna_gain_table_0[8] = {22, 8, -6, -22, -31, -40, -46, -52};
 static const s8 lna_gain_table_1[16] = {10, 6, 2, -2, -6, -10, -14, -17,
@@ -56,6 +59,21 @@ static int rtw8821c_read_efuse(struct rtw_dev *rtwdev, u8 *log_map)
 
 	efuse->rfe_option = map->rfe_option & 0x1f;
 	efuse->rfe_option_full = map->rfe_option;
+
+#if IS_ENABLED(CONFIG_PCI)
+	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_PCIE && dev_is_pci(rtwdev->dev)) {
+		struct pci_dev *pdev = to_pci_dev(rtwdev->dev);
+
+		if (pdev->vendor == PCI_VENDOR_ID_REALTEK &&
+		    pdev->device == 0xc821 &&
+		    pdev->subsystem_vendor == 0x103c &&
+		    pdev->subsystem_device == 0x831a) {
+			efuse->rfe_option = 4;
+			efuse->rfe_option_full = 4;
+			rtw_info(rtwdev, "HP quirk auto-detected (10ec:c821 [103c:831a]): forced RFE option 4 (Aux antenna S1)\n");
+		}
+	}
+#endif
 	efuse->rf_board_option = map->rf_board_option;
 	efuse->crystal_cap = map->xtal_k;
 	efuse->pa_type_2g = map->pa_type;
