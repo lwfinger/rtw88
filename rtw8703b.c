@@ -441,7 +441,7 @@ static const struct rtw_pwr_seq_cmd trans_act_to_reset_mcu_8703b[] = {
 static const struct rtw_pwr_seq_cmd trans_act_to_lps_8703b[] = {
 	{0x0301,
 	 RTW_PWR_CUT_ALL_MSK,
-	 RTW_PWR_INTF_ALL_MSK,
+	 RTW_PWR_INTF_PCI_MSK,
 	 RTW_PWR_ADDR_MAC,
 	 RTW_PWR_CMD_WRITE, 0xff, 0xff},
 	{0x0522,
