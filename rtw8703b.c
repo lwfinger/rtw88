@@ -188,11 +188,39 @@ static const struct rtw_pwr_seq_cmd trans_pre_enable_8703b[] = {
 };
 
 static const struct rtw_pwr_seq_cmd trans_carddis_to_cardemu_8703b[] = {
+	/* clear WL suspend enable and HW power down enable */
 	{0x0005,
 	 RTW_PWR_CUT_ALL_MSK,
 	 RTW_PWR_INTF_ALL_MSK,
 	 RTW_PWR_ADDR_MAC,
-	 RTW_PWR_CMD_WRITE, BIT(7), 0},
+	 RTW_PWR_CMD_WRITE, BIT(3) | BIT(7), 0},
+	/* withdraw the SDIO suspend request */
+	{0x0086,
+	 RTW_PWR_CUT_ALL_MSK,
+	 RTW_PWR_INTF_SDIO_MSK,
+	 RTW_PWR_ADDR_SDIO,
+	 RTW_PWR_CMD_WRITE, BIT(0), 0},
+	/* and wait for the interface to leave the suspended state */
+	{0x0086,
+	 RTW_PWR_CUT_ALL_MSK,
+	 RTW_PWR_INTF_SDIO_MSK,
+	 RTW_PWR_ADDR_SDIO,
+	 RTW_PWR_CMD_POLLING, BIT(1), BIT(1)},
+	/* disable WL suspend */
+	{0x0005,
+	 RTW_PWR_CUT_ALL_MSK,
+	 RTW_PWR_INTF_ALL_MSK,
+	 RTW_PWR_ADDR_MAC,
+	 RTW_PWR_CMD_WRITE, BIT(3) | BIT(4), 0},
+	/*
+	 * take the 12H LDO back out of sleep mode, which the card-disable
+	 * transition put it into
+	 */
+	{0x0023,
+	 RTW_PWR_CUT_ALL_MSK,
+	 RTW_PWR_INTF_SDIO_MSK,
+	 RTW_PWR_ADDR_MAC,
+	 RTW_PWR_CMD_WRITE, BIT(4), 0},
 	{TRANS_SEQ_END},
 };
 
