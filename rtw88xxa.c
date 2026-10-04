@@ -177,7 +177,7 @@ static void rtw88xxa_fill_hw_cap(struct rtw_dev *rtwdev)
 			   BIT(RTW_CHANNEL_WIDTH_80);
 	efuse->hw_cap.ptcl = EFUSE_HW_CAP_PTCL_VHT;
 
-	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A)
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8821A || efuse->btcoex)
 		efuse->hw_cap.nss = 1;
 	else
 		efuse->hw_cap.nss = 2;
@@ -241,14 +241,14 @@ int rtw88xxa_read_efuse(struct rtw_dev *rtwdev, u8 *log_map)
 	efuse->tx_bb_swing_setting_2g = map->tx_bb_swing_setting_2g;
 	efuse->tx_bb_swing_setting_5g = map->tx_bb_swing_setting_5g;
 
-	rtw88xxa_fill_hw_cap(rtwdev);
-
 	if (chip->id == RTW_CHIP_TYPE_8821A)
 		efuse->btcoex = rtw_read32_mask(rtwdev, REG_WL_BT_PWR_CTRL,
 						BIT_BT_FUNC_EN);
 	else
 		efuse->btcoex = (map->rf_board_option & 0xe0) == 0x20;
 	efuse->share_ant = !!(efuse->bt_setting & BIT(0));
+
+	rtw88xxa_fill_hw_cap(rtwdev);
 
 	/* No antenna diversity because it's disabled in the vendor driver */
 	efuse->ant_div_cfg = 0;
@@ -1190,7 +1190,7 @@ int rtw88xxa_power_on(struct rtw_dev *rtwdev)
 	rtw88xxa_phy_bb_config(rtwdev);
 	rtw88xxa_phy_rf_config(rtwdev);
 
-	if (chip->id == RTW_CHIP_TYPE_8812A && hal->rf_path_num == 1)
+	if (chip->id == RTW_CHIP_TYPE_8812A && efuse->hw_cap.nss == 1)
 		rtw8812a_config_1t(rtwdev);
 
 	rtw88xxa_switch_band(rtwdev, RTW_BAND_2G, RTW_CHANNEL_WIDTH_20);
