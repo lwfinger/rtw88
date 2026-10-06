@@ -73,6 +73,14 @@ obj-m		+= rtw_8723cs.o
 rtw_8723cs-objs	:= rtw8723cs.o
 endif
 
+obj-m		+= rtw_8723b.o
+rtw_8723b-objs	:= rtw8723b.o rtw8723b_table.o
+
+ifneq ($(CONFIG_MMC), )
+obj-m		+= rtw_8723bs.o
+rtw_8723bs-objs	:= rtw8723bs.o
+endif
+
 obj-m		+= rtw_8723d.o
 rtw_8723d-objs	:= rtw8723d.o rtw8723d_table.o
 
