@@ -945,7 +945,7 @@ static s8 get_cck_rx_pwr(struct rtw_dev *rtwdev, u8 lna_idx, u8 vga_idx)
 static void query_phy_status_cck(struct rtw_dev *rtwdev, u8 *phy_raw,
 				 struct rtw_rx_pkt_stat *pkt_stat)
 {
-	struct phy_status_8703b *phy_status = (struct phy_status_8703b *)phy_raw;
+	struct phy_status_8723x *phy_status = (struct phy_status_8723x *)phy_raw;
 	u8 vga_idx = phy_status->cck_agc_rpt_ofdm_cfosho_a & VGA_BITS;
 	u8 lna_idx = phy_status->cck_agc_rpt_ofdm_cfosho_a & LNA_L_BITS;
 	s8 rx_power;
@@ -967,7 +967,7 @@ static void query_phy_status_cck(struct rtw_dev *rtwdev, u8 *phy_raw,
 static void query_phy_status_ofdm(struct rtw_dev *rtwdev, u8 *phy_raw,
 				  struct rtw_rx_pkt_stat *pkt_stat)
 {
-	struct phy_status_8703b *phy_status = (struct phy_status_8703b *)phy_raw;
+	struct phy_status_8723x *phy_status = (struct phy_status_8723x *)phy_raw;
 	struct rtw_dm_info *dm_info = &rtwdev->dm_info;
 	s8 val_s8;
 
