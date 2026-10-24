@@ -144,6 +144,8 @@
 /* IMR 3 */
 #define IMR_H2CDOK		BIT(16)
 
+extern bool rtw_pci_disable_aspm;
+
 enum rtw_pci_flags {
 	RTW_PCI_FLAG_NAPI_RUNNING,
 

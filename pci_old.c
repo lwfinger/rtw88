@@ -12,8 +12,6 @@
 #include "rx.h"
 #include "tx.h"
 
-extern bool rtw_pci_disable_aspm;
-
 static int rtw_pci_old_init_tx_ring(struct rtw_dev *rtwdev,
 				    struct rtw_pci_tx_ring *tx_ring,
 				    u8 desc_size, u32 len)
