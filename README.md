@@ -1,12 +1,6 @@
 # rtw88 downstream 🐧
 ### This is a downstream repo with a primary purpose of supporting development, testing and maintenance for the Realtek rtw88 series of WiFi 5 drivers in the Linux kernel.
 
-The most recent addition to this repo is the driver for the RTL8814AU chipset. Testing is needed so if you have an adapter based on the RTL8814AU chipset, please test and report.
-
-Update: There is now also a driver for RTL8814AE PCIe cards, ID 10ec:8813. lspci may call it RTL8813AE, same thing. Please test and report if you still have this card.
-
-Update: RTL8812AE and RTL8821AE are supported now. Please report if it works/doesn't work.
-
 🌟 The code in this repo stays in sync with the `wireless-next` repository, with additional changes to accommodate kernel API changes over time.
 
 📌 **Note**: The `wireless-next` repo contains the code set for the ***next*** kernel version. If kernel 6.X is out, kernel mainline repo is on 6.X+1-rcY, and `wireless-next` targets kernel 6.X+2 material.
@@ -19,7 +13,7 @@ Compatible with **Linux kernel versions 5.4 and newer** as long as your distro h
 
 #### Supported Chipsets
 - **PCIe**: RTL8723DE, RTL8812AE, RTL8814AE, RTL8821AE, RTL8821CE, RTL8822BE, RTL8822CE
-- **SDIO**: RTL8723CS, RTL8723DS, RTL8821CS, RTL8822BS, RTL8822CS
+- **SDIO**: RTL8723BS, RTL8723CS, RTL8723DS, RTL8821CS, RTL8822BS, RTL8822CS
 - **USB** : RTL8723DU, RTL8811AU, RTL8811CU, RTL8812AU, RTL8812BU, RTL8812CU
 - **USB** : RTL8814AU, RTL8821AU, RTL8821CU, RTL8822BU, RTL8822CU
 
