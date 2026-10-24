@@ -409,6 +409,7 @@ static u32 rtw_pci_old_rx_napi(struct rtw_dev *rtwdev,
 	u32 pkt_offset;
 	u32 new_len;
 	u8 *rx_buf;
+	int ret;
 
 	rx_desc = (struct rtw_rx_desc_pci_old *)ring->r.head;
 
@@ -425,8 +426,10 @@ static u32 rtw_pci_old_rx_napi(struct rtw_dev *rtwdev,
 					DMA_FROM_DEVICE);
 
 		rx_buf = skb->data;
-		rtw_rx_query_rx_desc(rtwdev, &rx_desc[cur_rp].w0_5,
-				     rx_buf, &pkt_stat, &rx_status);
+		ret = rtw_rx_query_rx_desc(rtwdev, &rx_desc[cur_rp].w0_5,
+					   rx_buf, &pkt_stat, &rx_status);
+		if (ret)
+			goto next_rp;
 
 		pkt_offset = pkt_stat.shift + pkt_stat.drv_info_sz;
 
