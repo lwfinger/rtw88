@@ -1204,6 +1204,12 @@ int rtw88xxa_power_on(struct rtw_dev *rtwdev)
 	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_USB)
 		rtw_write8_clr(rtwdev, REG_GPIO_MUXCFG, BIT_BT_PTA_EN);
 
+	/* Init BT hw config. */
+	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_PCIE &&
+	    chip->id == RTW_CHIP_TYPE_8812A &&
+	    (efuse->rfe_option == 1 || efuse->rfe_option == 5))
+		rtw_write32_mask(rtwdev, REG_ANTSEL_SW, 0x303, 0x302);
+
 	rtw_phy_init(rtwdev);
 
 	rtw88xxa_pwrtrack_init(rtwdev);
