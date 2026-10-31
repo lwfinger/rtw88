@@ -1815,6 +1815,16 @@ static const struct dmi_system_id rtw_pci_quirks[] = {
 	},
 	{
 		.callback = rtw_pci_disable_caps,
+		.ident = "HP Laptop 15s-fr5xxx",
+		.matches = {
+			DMI_MATCH(DMI_SYS_VENDOR, "HP"),
+			DMI_MATCH(DMI_PRODUCT_NAME, "HP Laptop 15s-fr5xxx"),
+		},
+		.driver_data = (void *)(BIT(QUIRK_DIS_CAP_PCI_ASPM) |
+					BIT(QUIRK_DIS_CAP_LPS_DEEP)),
+	},
+	{
+		.callback = rtw_pci_disable_caps,
 		.ident = "ASUS TUF Gaming A15 FA506II",
 		.matches = {
 			DMI_MATCH(DMI_SYS_VENDOR, "ASUSTeK COMPUTER INC."),
