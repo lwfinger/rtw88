@@ -828,11 +828,12 @@ void rtw_fw_c2h_cmd_rx_irqsafe(struct rtw_dev *rtwdev, u32 pkt_offset,
 void rtw_fw_c2h_cmd_handle(struct rtw_dev *rtwdev, struct sk_buff *skb);
 void rtw_fw_send_general_info(struct rtw_dev *rtwdev);
 void rtw_fw_send_phydm_info(struct rtw_dev *rtwdev);
+void rtw_fw_send_h2c_command(struct rtw_dev *rtwdev, u8 *h2c);
 void rtw_fw_default_port(struct rtw_dev *rtwdev, struct rtw_vif *rtwvif);
 
 void rtw_fw_do_iqk(struct rtw_dev *rtwdev, struct rtw_iqk_para *para);
 void rtw_fw_inform_rfk_status(struct rtw_dev *rtwdev, bool start);
-void rtw_fw_set_pwr_mode(struct rtw_dev *rtwdev);
+int rtw_fw_set_pwr_mode(struct rtw_dev *rtwdev);
 void rtw_fw_set_pg_info(struct rtw_dev *rtwdev);
 void rtw_fw_query_bt_info(struct rtw_dev *rtwdev);
 void rtw_fw_wl_ch_info(struct rtw_dev *rtwdev, u8 link, u8 ch, u8 bw);
@@ -845,6 +846,7 @@ void rtw_fw_coex_tdma_type(struct rtw_dev *rtwdev,
 void rtw_fw_coex_query_hid_info(struct rtw_dev *rtwdev, u8 sub_id, u8 data);
 
 void rtw_fw_bt_wifi_control(struct rtw_dev *rtwdev, u8 op_code, u8 *data);
+void rtw_update_sta_ra_report(struct rtw_sta_info *si, u8 rate, bool sgi, u8 bw);
 void rtw_fw_send_rssi_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
 void rtw_fw_send_ra_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si,

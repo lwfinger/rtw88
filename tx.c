@@ -38,6 +38,11 @@ void rtw_tx_fill_tx_desc(struct rtw_dev *rtwdev,
 {
 	bool more_data = false;
 
+	if (rtwdev->chip->ops->fill_tx_desc) {
+		rtwdev->chip->ops->fill_tx_desc(rtwdev, pkt_info, tx_desc);
+		return;
+	}
+
 	if (pkt_info->qsel == TX_DESC_QSEL_HIGH)
 		more_data = true;
 
@@ -258,14 +263,30 @@ static void rtw_tx_report_tx_status(struct rtw_dev *rtwdev,
 	ieee80211_tx_status_irqsafe(rtwdev->hw, skb);
 }
 
-void rtw_tx_report_handle(struct rtw_dev *rtwdev, struct sk_buff *skb, int src)
+void rtw_tx_report_complete(struct rtw_dev *rtwdev, u8 sn, bool acked)
 {
 	struct rtw_tx_report *tx_report = &rtwdev->tx_report;
-	struct rtw_c2h_cmd *c2h;
 	struct sk_buff *cur, *tmp;
 	unsigned long flags;
-	u8 sn, st;
 	u8 *n;
+
+	spin_lock_irqsave(&tx_report->q_lock, flags);
+	skb_queue_walk_safe(&tx_report->queue, cur, tmp) {
+		n = (u8 *)IEEE80211_SKB_CB(cur)->status.status_driver_data;
+		if (*n == sn) {
+			__skb_unlink(cur, &tx_report->queue);
+			rtw_tx_report_tx_status(rtwdev, cur, acked);
+			break;
+		}
+	}
+	spin_unlock_irqrestore(&tx_report->q_lock, flags);
+}
+EXPORT_SYMBOL(rtw_tx_report_complete);
+
+void rtw_tx_report_handle(struct rtw_dev *rtwdev, struct sk_buff *skb, int src)
+{
+	struct rtw_c2h_cmd *c2h;
+	u8 sn, st;
 
 	c2h = get_c2h_from_skb(skb);
 
@@ -277,16 +298,7 @@ void rtw_tx_report_handle(struct rtw_dev *rtwdev, struct sk_buff *skb, int src)
 		st = GET_CCX_REPORT_STATUS_V1(c2h->payload);
 	}
 
-	spin_lock_irqsave(&tx_report->q_lock, flags);
-	skb_queue_walk_safe(&tx_report->queue, cur, tmp) {
-		n = (u8 *)IEEE80211_SKB_CB(cur)->status.status_driver_data;
-		if (*n == sn) {
-			__skb_unlink(cur, &tx_report->queue);
-			rtw_tx_report_tx_status(rtwdev, cur, st == 0);
-			break;
-		}
-	}
-	spin_unlock_irqrestore(&tx_report->q_lock, flags);
+	rtw_tx_report_complete(rtwdev, sn, st == 0);
 }
 
 static u8 rtw_get_mgmt_rate(struct rtw_dev *rtwdev, struct sk_buff *skb,
@@ -302,10 +314,10 @@ static u8 rtw_get_mgmt_rate(struct rtw_dev *rtwdev, struct sk_buff *skb,
 	return __ffs(vif->bss_conf.basic_rates) + lowest_rate;
 }
 
-static void rtw_tx_pkt_info_update_rate(struct rtw_dev *rtwdev,
-					struct rtw_tx_pkt_info *pkt_info,
-					struct sk_buff *skb,
-					bool ignore_rate)
+void rtw_tx_pkt_info_update_rate(struct rtw_dev *rtwdev,
+				 struct rtw_tx_pkt_info *pkt_info,
+				 struct sk_buff *skb,
+				 bool ignore_rate)
 {
 	if (rtwdev->hal.current_band_type == RTW_BAND_2G) {
 		pkt_info->rate_id = RTW_RATEID_B_20M;
@@ -320,6 +332,7 @@ static void rtw_tx_pkt_info_update_rate(struct rtw_dev *rtwdev,
 	pkt_info->use_rate = true;
 	pkt_info->dis_rate_fallback = true;
 }
+EXPORT_SYMBOL(rtw_tx_pkt_info_update_rate);
 
 static void rtw_tx_pkt_info_update_sec(struct rtw_dev *rtwdev,
 				       struct rtw_tx_pkt_info *pkt_info,
@@ -485,6 +498,9 @@ void rtw_tx_pkt_info_update(struct rtw_dev *rtwdev,
 	pkt_info->qsel = skb->priority;
 	pkt_info->ls = true;
 
+	if (chip->ops->tx_prepare)
+		chip->ops->tx_prepare(rtwdev, pkt_info, sta, skb);
+
 	/* maybe merge with tx status ? */
 	rtw_tx_stats(rtwdev, vif, skb);
 }
@@ -539,6 +555,7 @@ void rtw_tx_rsvd_page_pkt_info_update(struct rtw_dev *rtwdev,
 
 	/* TODO: need to change hw port and hw ssn sel for multiple vifs */
 }
+EXPORT_SYMBOL(rtw_tx_rsvd_page_pkt_info_update);
 
 struct sk_buff *
 rtw_tx_write_data_rsvd_page_get(struct rtw_dev *rtwdev,

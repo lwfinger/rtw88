@@ -199,6 +199,7 @@ extern const struct ieee80211_ops rtw_ops;
 struct rtw_dev;
 struct rtw_debugfs;
 struct rtw_tx_desc;
+struct rtw_rsvd_page;
 
 enum rtw_hci_type {
 	RTW_HCI_TYPE_PCIE,
@@ -346,6 +347,7 @@ enum rtw_chip_type {
 	RTW_CHIP_TYPE_8821A,
 	RTW_CHIP_TYPE_8812A,
 	RTW_CHIP_TYPE_8814A,
+	RTW_CHIP_TYPE_8188E,
 };
 
 enum rtw_tx_queue_type {
@@ -785,6 +787,9 @@ struct rtw_tx_pkt_info {
 	u8 hw_ssn_sel;
 	bool nav_use_hdr;
 	bool bt_null;
+	u8 tx_power_offset;
+	u8 rts_rate;
+	u8 port_id;
 };
 
 struct rtw_rx_pkt_stat {
@@ -940,6 +945,9 @@ struct rtw_sta_info {
 	struct cfg80211_bitrate_mask *mask;
 
 	struct work_struct rc_work;
+
+	/* Optional chip-specific per-station state. */
+	u8 priv[] __aligned(sizeof(void *));
 };
 
 enum rtw_bfee_role {
@@ -1010,10 +1018,27 @@ struct rtw_regd {
 };
 
 struct rtw_chip_ops {
+	int (*chip_info_setup)(struct rtw_dev *rtwdev);
 	int (*power_on)(struct rtw_dev *rtwdev);
 	void (*power_off)(struct rtw_dev *rtwdev);
 	int (*mac_init)(struct rtw_dev *rtwdev);
 	int (*mac_postinit)(struct rtw_dev *rtwdev);
+	int (*llt_init)(struct rtw_dev *rtwdev);
+	/* vif is NULL when stopping all beacons during device shutdown. */
+	void (*config_bcn)(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
+			   bool enable);
+	struct sk_buff *(*get_rsvd_beacon)(struct rtw_dev *rtwdev,
+					   struct ieee80211_vif *vif, u16 *tim_offset);
+	void (*update_beacon)(struct rtw_dev *rtwdev);
+	void (*set_default_port)(struct rtw_dev *rtwdev, struct rtw_vif *rtwvif);
+	int (*set_pwr_mode)(struct rtw_dev *rtwdev);
+	void (*set_macid_link)(struct rtw_dev *rtwdev, u8 mac_id, bool connected);
+	void (*sta_add)(struct rtw_dev *rtwdev, struct rtw_sta_info *si);
+	void (*sta_remove)(struct rtw_dev *rtwdev, struct rtw_sta_info *si);
+	/* Host RA consumes the rate mask and driver statistics directly. */
+	void (*host_ra_update)(struct rtw_dev *rtwdev, struct rtw_sta_info *si);
+	void (*tx_prepare)(struct rtw_dev *rtwdev, struct rtw_tx_pkt_info *pkt_info,
+			   struct ieee80211_sta *sta, struct sk_buff *skb);
 	int (*dump_fw_crash)(struct rtw_dev *rtwdev);
 	void (*shutdown)(struct rtw_dev *rtwdev);
 	int (*read_efuse)(struct rtw_dev *rtwdev, u8 *map);
@@ -1022,6 +1047,8 @@ struct rtw_chip_ops {
 			    u8 bandwidth, u8 primary_chan_idx);
 	void (*query_phy_status)(struct rtw_dev *rtwdev, u8 *phy_status,
 				 struct rtw_rx_pkt_stat *pkt_stat);
+	void (*query_rx_desc)(struct rtw_dev *rtwdev, const void *desc,
+			      struct rtw_rx_pkt_stat *pkt_stat);
 	u32 (*read_rf)(struct rtw_dev *rtwdev, enum rtw_rf_path rf_path,
 		       u32 addr, u32 mask);
 	bool (*write_rf)(struct rtw_dev *rtwdev, enum rtw_rf_path rf_path,
@@ -1029,6 +1056,11 @@ struct rtw_chip_ops {
 	void (*set_tx_power_index)(struct rtw_dev *rtwdev);
 	int (*rsvd_page_dump)(struct rtw_dev *rtwdev, u8 *buf, u32 offset,
 			      u32 size);
+	int (*write_rsvd_page)(struct rtw_dev *rtwdev, u16 page,
+			       u8 *buf, u32 size);
+	void (*fill_rsvd_page_desc)(struct rtw_dev *rtwdev,
+				    struct rtw_rsvd_page *page,
+				    struct sk_buff *skb);
 	int (*set_antenna)(struct rtw_dev *rtwdev,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
 			   int radio_idx,
@@ -1039,6 +1071,7 @@ struct rtw_chip_ops {
 	void (*efuse_grant)(struct rtw_dev *rtwdev, bool enable);
 	void (*set_ampdu_factor)(struct rtw_dev *rtwdev, u8 factor);
 	void (*false_alarm_statistics)(struct rtw_dev *rtwdev);
+	void (*dig_get_boundary)(struct rtw_dev *rtwdev, u8 *upper, u8 *lower);
 	void (*phy_calibration)(struct rtw_dev *rtwdev);
 	void (*dpk_track)(struct rtw_dev *rtwdev);
 	void (*cck_pd_set)(struct rtw_dev *rtwdev, u8 level);
@@ -1062,9 +1095,18 @@ struct rtw_chip_ops {
 				 u8 rx_path, bool is_tx2_path);
 	void (*led_set)(struct led_classdev *led, enum led_brightness brightness);
 	/* for USB/SDIO only */
+	void (*fill_tx_desc)(struct rtw_dev *rtwdev,
+			     struct rtw_tx_pkt_info *pkt_info,
+			     struct rtw_tx_desc *txdesc);
 	void (*fill_txdesc_checksum)(struct rtw_dev *rtwdev,
 				     struct rtw_tx_pkt_info *pkt_info,
 				     struct rtw_tx_desc *txdesc);
+
+	/* for SDIO only */
+	void (*sdio_irq_handler)(struct rtw_dev *rtwdev, u32 status);
+	void (*config_rx_aggregation)(struct rtw_dev *rtwdev);
+	/* Bytes consumed for a report, zero for an MPDU, or a negative error. */
+	int (*rx_report_handle)(struct rtw_dev *rtwdev, const u8 *buf, u32 len);
 
 	/* for coex */
 	void (*coex_set_init)(struct rtw_dev *rtwdev);
@@ -1359,6 +1401,7 @@ enum rtw_fwcd_item {
 /* hardware configuration for each IC */
 struct rtw_chip_info {
 	const struct rtw_chip_ops *ops;
+	u16 sta_priv_size;
 	u8 id;
 
 	const char *fw_name;
@@ -2219,6 +2262,8 @@ struct rtw_dev {
 
 	struct rtw_hw_scan_info scan_info;
 	const struct rtw_chip_info *chip;
+	/* Private state managed by the chip's setup callback. */
+	void *chip_priv;
 	struct rtw_hal hal;
 	struct rtw_fifo_conf fifo;
 	struct rtw_fw_state fw;
@@ -2348,6 +2393,12 @@ static inline bool rtw_chip_has_tx_stbc(struct rtw_dev *rtwdev)
 	return rtwdev->chip->tx_stbc;
 }
 
+static inline bool rtw_is_8189es(struct rtw_dev *rtwdev)
+{
+	return rtwdev->chip->id == RTW_CHIP_TYPE_8188E &&
+	       rtwdev->hci.type == RTW_HCI_TYPE_SDIO;
+}
+
 static inline bool rtw_is_8723bs(struct rtw_dev *rtwdev)
 {
 	return rtwdev->chip->id == RTW_CHIP_TYPE_8723B &&
@@ -2406,6 +2457,7 @@ void rtw_set_channel(struct rtw_dev *rtwdev);
 void rtw_chip_prepare_tx(struct rtw_dev *rtwdev);
 void rtw_vif_port_config(struct rtw_dev *rtwdev, struct rtw_vif *rtwvif,
 			 u32 config);
+void rtw_vif_port_select(struct rtw_vif *rtwvif, u8 port);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
 void rtw_tx_report_purge_timer(void *ctx);
 #else

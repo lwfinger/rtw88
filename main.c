@@ -372,6 +372,8 @@ int rtw_sta_add(struct rtw_dev *rtwdev, struct ieee80211_sta *sta,
 		rtw_txq_init(rtwdev, sta->txq[i]);
 	INIT_WORK(&si->rc_work, rtw_sta_rc_work);
 
+	if (rtwdev->chip->ops->sta_add)
+		rtwdev->chip->ops->sta_add(rtwdev, si);
 	rtw_update_sta_info(rtwdev, si, true);
 	rtw_fw_media_status_report(rtwdev, si->mac_id, true);
 
@@ -392,6 +394,8 @@ void rtw_sta_remove(struct rtw_dev *rtwdev, struct ieee80211_sta *sta,
 
 	cancel_work_sync(&si->rc_work);
 
+	if (rtwdev->chip->ops->sta_remove)
+		rtwdev->chip->ops->sta_remove(rtwdev, si);
 	if (vif->type != NL80211_IFTYPE_STATION || sta->tdls)
 		rtw_release_macid(rtwdev, si->mac_id);
 	if (fw_exist)
@@ -971,6 +975,7 @@ void rtw_vif_port_config(struct rtw_dev *rtwdev,
 		rtw_write8_mask(rtwdev, addr, mask, rtwvif->bcn_ctrl);
 	}
 }
+EXPORT_SYMBOL(rtw_vif_port_config);
 
 static u8 hw_bw_cap_to_bitamp(u8 bw_cap)
 {
@@ -1645,6 +1650,8 @@ void rtw_core_stop(struct rtw_dev *rtwdev)
 
 	clear_bit(RTW_FLAG_RUNNING, rtwdev->flags);
 	clear_bit(RTW_FLAG_FW_RUNNING, rtwdev->flags);
+	if (rtwdev->chip->ops->config_bcn)
+		rtwdev->chip->ops->config_bcn(rtwdev, NULL, false);
 
 	mutex_unlock(&rtwdev->mutex);
 
@@ -2020,6 +2027,9 @@ static int rtw_chip_parameter_setup(struct rtw_dev *rtwdev)
 
 	hal->bfee_sts_cap = 3;
 
+	if (chip->ops->chip_info_setup)
+		return chip->ops->chip_info_setup(rtwdev);
+
 	return 0;
 }
 
@@ -2386,7 +2396,7 @@ int rtw_register_hw(struct rtw_dev *rtwdev, struct ieee80211_hw *hw)
 	hw->extra_tx_headroom = max_tx_headroom;
 	hw->queues = IEEE80211_NUM_ACS;
 	hw->txq_data_size = sizeof(struct rtw_txq);
-	hw->sta_data_size = sizeof(struct rtw_sta_info);
+	hw->sta_data_size = sizeof(struct rtw_sta_info) + rtwdev->chip->sta_priv_size;
 	hw->vif_data_size = sizeof(struct rtw_vif);
 
 	ieee80211_hw_set(hw, SIGNAL_DBM);

@@ -325,6 +325,9 @@ int rtw_rx_query_rx_desc(struct rtw_dev *rtwdev, void *rx_desc8,
 
 	pkt_stat->tsf_low = le32_get_bits(rx_desc->w5, RTW_RX_DESC_W5_TSFL);
 
+	if (rtwdev->chip->ops->query_rx_desc)
+		rtwdev->chip->ops->query_rx_desc(rtwdev, rx_desc, pkt_stat);
+
 	if (unlikely(pkt_stat->rate >= DESC_RATE_MAX))
 		return -EINVAL;
 

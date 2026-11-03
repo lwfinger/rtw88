@@ -479,6 +479,8 @@ static void rtw_phy_dig_get_boundary(struct rtw_dev *rtwdev,
 
 	*lower = clamp_t(u8, min_rssi, dig_min, dig_mid);
 	*upper = clamp_t(u8, *lower + DIG_RSSI_GAIN_OFFSET, dig_min, dig_max);
+	if (rtwdev->chip->ops->dig_get_boundary)
+		rtwdev->chip->ops->dig_get_boundary(rtwdev, upper, lower);
 }
 
 static void rtw_phy_dig_get_threshold(struct rtw_dm_info *dm_info,
@@ -1171,7 +1173,8 @@ void rtw_phy_setup_phy_cond(struct rtw_dev *rtwdev, u32 pkg)
 	}
 
 	if (rtwdev->chip->id == RTW_CHIP_TYPE_8812A ||
-	    rtwdev->chip->id == RTW_CHIP_TYPE_8821A) {
+	    rtwdev->chip->id == RTW_CHIP_TYPE_8821A ||
+	    rtwdev->chip->id == RTW_CHIP_TYPE_8188E) {
 		cond.rfe = 0;
 		cond.rfe |= efuse->ext_lna_2g;
 		cond.rfe |= efuse->ext_pa_2g  << 1;
@@ -1209,7 +1212,8 @@ static bool check_positive(struct rtw_dev *rtwdev, struct rtw_phy_cond cond,
 		return false;
 
 	if (rtwdev->chip->id == RTW_CHIP_TYPE_8812A ||
-	    rtwdev->chip->id == RTW_CHIP_TYPE_8821A) {
+	    rtwdev->chip->id == RTW_CHIP_TYPE_8821A ||
+	    rtwdev->chip->id == RTW_CHIP_TYPE_8188E) {
 		if (!(cond.rfe & 0x0f))
 			return true;
 

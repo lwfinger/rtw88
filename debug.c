@@ -1272,8 +1272,10 @@ void rtw_debugfs_add_basic(struct rtw_dev *rtwdev, struct dentry *debugfs_topdir
 	rtw_debugfs_add_rw(dump_cam);
 	rtw_debugfs_add_rw(rsvd_page);
 	rtw_debugfs_add_r(phy_info);
-	rtw_debugfs_add_r(coex_info);
-	rtw_debugfs_add_rw(coex_enable);
+	if (rtwdev->chip->id != RTW_CHIP_TYPE_8188E) {
+		rtw_debugfs_add_r(coex_info);
+		rtw_debugfs_add_rw(coex_enable);
+	}
 	rtw_debugfs_add_w(h2c);
 	rtw_debugfs_add_r(rf_dump);
 	rtw_debugfs_add_r(tx_pwr_tbl);
