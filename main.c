@@ -884,10 +884,32 @@ void rtw_set_channel(struct rtw_dev *rtwdev)
 	const struct rtw_chip_info *chip = rtwdev->chip;
 	struct ieee80211_hw *hw = rtwdev->hw;
 	struct rtw_hal *hal = &rtwdev->hal;
+	struct cfg80211_chan_def *chandef = &hw->conf.chandef;
+	struct cfg80211_chan_def mon_chandef = {};
 	struct rtw_channel_params ch_param;
 	u8 center_chan, primary_chan, bandwidth, band;
 
-	rtw_get_channel_params(&hw->conf.chandef, &ch_param);
+	/* When a monitor channel is forced via debugfs, ignore whatever
+	 * channel mac80211 asks for (e.g. the channel 1 it programs when an
+	 * unassociated station vif is brought up on kernels >= 6.9) and pin
+	 * the RF to the requested 20 MHz channel instead.
+	 */
+	if (rtwdev->mon_chan) {
+		enum nl80211_band nl_band = rtwdev->mon_chan <= 14 ?
+			NL80211_BAND_2GHZ : NL80211_BAND_5GHZ;
+		int freq = ieee80211_channel_to_frequency(rtwdev->mon_chan,
+							  nl_band);
+		struct ieee80211_channel *chan =
+			ieee80211_get_channel(hw->wiphy, freq);
+
+		if (chan && !(chan->flags & IEEE80211_CHAN_DISABLED)) {
+			cfg80211_chandef_create(&mon_chandef, chan,
+						NL80211_CHAN_NO_HT);
+			chandef = &mon_chandef;
+		}
+	}
+
+	rtw_get_channel_params(chandef, &ch_param);
 	if (WARN(ch_param.center_chan == 0, "Invalid channel\n"))
 		return;
 
