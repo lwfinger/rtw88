@@ -101,6 +101,7 @@
 #define BIT_FREE_TXPG_PUB			GENMASK(31, 24)
 /* HCI Current Power Mode 1 */
 #define REG_SDIO_HCPWM1				(SDIO_LOCAL_OFFSET + 0x0024)
+#define REG_SDIO_OQT_FREE_PG_8188E		(SDIO_LOCAL_OFFSET + 0x0025)
 /* HCI Current Power Mode 2 */
 #define REG_SDIO_HCPWM2				(SDIO_LOCAL_OFFSET + 0x0026)
 /* Free Tx Page Sequence */
@@ -147,9 +148,11 @@
 #define RTW_SDIO_ADDR_RX_RX0FF_GEN(_id)		(0x0e000 | ((_id) & 0x3))
 
 #define RTW_SDIO_DATA_PTR_ALIGN			8
+#define RTW8188E_RX_ALIGN				128
 
 struct sdio_func;
 struct sdio_device_id;
+struct rtw_dev;
 
 struct rtw_sdio_tx_data {
 	u8 sn;
@@ -158,6 +161,7 @@ struct rtw_sdio_tx_data {
 struct rtw_sdio_work_data {
 	struct delayed_work work;
 	struct rtw_dev *rtwdev;
+	bool waiting_for_irq;
 };
 
 struct rtw_sdio {
