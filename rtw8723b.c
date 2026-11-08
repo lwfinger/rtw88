@@ -1068,6 +1068,10 @@ static void rtw8723b_inform_rfk_status(struct rtw_dev *rtwdev, bool start)
 		rtw_warn(rtwdev, "failed to poll firmware RFK start ack\n");
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 3, 0)
+#define FIELD_PREP_CONST FIELD_PREP
+#endif
+
 static void rtw8723b_phy_set_param(struct rtw_dev *rtwdev)
 {
 	const struct rtw_chip_info *chip = rtwdev->chip;

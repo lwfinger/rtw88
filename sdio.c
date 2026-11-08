@@ -9,6 +9,8 @@
 #include <linux/module.h>
 #include <linux/mmc/host.h>
 #include <linux/mmc/sdio_func.h>
+#include <linux/mutex.h>
+#include <linux/spinlock.h>
 #include "main.h"
 #include "mac.h"
 #include "debug.h"
@@ -866,27 +868,29 @@ static int rtw_sdio_write_port_8723bs(struct rtw_dev *rtwdev,
 	/* the chip charges pages by frame length, not by the padded transfer */
 	txsize = round_up(skb->len, 4);
 
-	guard(mutex)(&rtwsdio->tx_credit_lock);
+	mutex_lock(&rtwsdio->tx_credit_lock);
 
 	ret = rtw_sdio_check_free_txpg(rtwdev, queue, txsize);
 	if (ret)
-		return ret;
+		goto out_unlock;
 
 	ret = rtw_sdio_8723bs_wait_tx_oqt(rtwdev);
 	if (ret)
-		return ret;
+		goto out_unlock;
 
 	ret = rtw_sdio_write_to_port(rtwdev, skb, queue, txaddr, write_size);
 	if (ret) {
 		/* nothing was queued, so hand the output queue entry back */
 		atomic_inc(&rtwsdio->tx_oqt_free);
-		return ret;
+		goto out_unlock;
 	}
 
 	pages = DIV_ROUND_UP(txsize, rtwdev->chip->page_size);
 	rtw_sdio_8723bs_consume_txpg(rtwdev, queue, pages);
 
-	return 0;
+out_unlock:
+	mutex_unlock(&rtwsdio->tx_credit_lock);
+	return ret;
 }
 
 static int rtw_sdio_write_port_generic(struct rtw_dev *rtwdev,
@@ -1262,20 +1266,24 @@ static void rtw_sdio_8723bs_stop_tx_queue(struct rtw_dev *rtwdev,
 					  u16 q_map)
 {
 	struct rtw_sdio *rtwsdio = (struct rtw_sdio *)rtwdev->priv;
+	unsigned long flags;
 
 	if (!rtw_is_8723bs(rtwdev) || queue >= RTW_TX_QUEUE_BCN)
 		return;
 
-	guard(spinlock_irqsave)(&rtwsdio->tx_queue[queue].lock);
+	spin_lock_irqsave(&rtwsdio->tx_queue[queue].lock, flags);
 
 	if (rtwsdio->tx_queue_stopped[queue])
-		return;
+		goto out_unlock;
 
 	if (skb_queue_len(&rtwsdio->tx_queue[queue]) < RTW_SDIO_TX_FIFO_HIWATER)
-		return;
+		goto out_unlock;
 
 	rtwsdio->tx_queue_stopped[queue] = true;
 	ieee80211_stop_queue(rtwdev->hw, q_map);
+
+out_unlock:
+	spin_unlock_irqrestore(&rtwsdio->tx_queue[queue].lock, flags);
 }
 
 static void rtw_sdio_8723bs_wake_tx_queue(struct rtw_dev *rtwdev,
@@ -1283,20 +1291,24 @@ static void rtw_sdio_8723bs_wake_tx_queue(struct rtw_dev *rtwdev,
 					  u16 q_map)
 {
 	struct rtw_sdio *rtwsdio = (struct rtw_sdio *)rtwdev->priv;
+	unsigned long flags;
 
 	if (!rtw_is_8723bs(rtwdev) || queue >= RTW_TX_QUEUE_BCN)
 		return;
 
-	guard(spinlock_irqsave)(&rtwsdio->tx_queue[queue].lock);
+	spin_lock_irqsave(&rtwsdio->tx_queue[queue].lock, flags);
 
 	if (!rtwsdio->tx_queue_stopped[queue])
-		return;
+		goto out_unlock;
 
 	if (skb_queue_len(&rtwsdio->tx_queue[queue]) > RTW_SDIO_TX_FIFO_LOWATER)
-		return;
+		goto out_unlock;
 
 	rtwsdio->tx_queue_stopped[queue] = false;
 	ieee80211_wake_queue(rtwdev->hw, q_map);
+
+out_unlock:
+	spin_unlock_irqrestore(&rtwsdio->tx_queue[queue].lock, flags);
 }
 
 static int rtw_sdio_tx_write(struct rtw_dev *rtwdev,

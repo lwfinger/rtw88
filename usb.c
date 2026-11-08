@@ -396,6 +396,15 @@ static int rtw_usb_write_port(struct rtw_dev *rtwdev, u8 qsel, struct sk_buff *s
 	return ret;
 }
 
+static void rtw_purge_tx_queue(struct ieee80211_hw *hw,
+			      struct sk_buff_head *skbs)
+{
+	struct sk_buff *skb;
+
+	while ((skb = __skb_dequeue(skbs)))
+		ieee80211_free_txskb(hw, skb);
+}
+
 static bool rtw_usb_tx_agg_skb(struct rtw_usb *rtwusb, struct sk_buff_head *list)
 {
 	struct rtw_dev *rtwdev = rtwusb->rtwdev;
@@ -471,7 +480,7 @@ queue:
 	ret = rtw_usb_write_port(rtwdev, qsel, skb_head,
 				 rtw_usb_write_port_tx_complete, txcb);
 	if (ret) {
-		ieee80211_purge_tx_queue(rtwdev->hw, &txcb->tx_ack_queue);
+		rtw_purge_tx_queue(rtwdev->hw, &txcb->tx_ack_queue);
 		kfree(txcb);
 		return false;
 	}
@@ -496,17 +505,11 @@ static void rtw_usb_tx_handler(struct work_struct *work)
 
 static void rtw_usb_tx_queue_purge(struct rtw_usb *rtwusb)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 13, 0)
 	struct rtw_dev *rtwdev = rtwusb->rtwdev;
-#endif
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(rtwusb->tx_queue); i++)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 13, 0)
-		ieee80211_purge_tx_queue(rtwdev->hw, &rtwusb->tx_queue[i]);
-#else
-		skb_queue_purge(&rtwusb->tx_queue[i]);
-#endif
+		rtw_purge_tx_queue(rtwdev->hw, &rtwusb->tx_queue[i]);
 }
 
 static void rtw_usb_write_port_complete(struct urb *urb)

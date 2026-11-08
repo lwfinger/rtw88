@@ -2,6 +2,7 @@
 /* Copyright(c) 2018-2019  Realtek Corporation
  */
 
+#include <linux/property.h>
 #include <linux/devcoredump.h>
 
 #include "main.h"
@@ -2167,7 +2168,11 @@ static int rtw_chip_efuse_info_setup(struct rtw_dev *rtwdev)
 	efuse->ext_lna_5g = efuse->lna_type_5g & BIT(3) ? 1 : 0;
 
 	if (!is_valid_ether_addr(efuse->addr)) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0)
 		if (device_get_mac_address(rtwdev->dev, efuse->addr)) {
+#else
+		if (!device_get_mac_address(rtwdev->dev, efuse->addr, ETH_ALEN)) {
+#endif
 			eth_random_addr(efuse->addr);
 			dev_warn(rtwdev->dev,
 				 "failed to get valid MAC address, using random\n");
