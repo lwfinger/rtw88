@@ -439,9 +439,14 @@ static bool check_firmware_size(const u8 *data, u32 size)
 
 static void wlan_cpu_enable(struct rtw_dev *rtwdev, bool enable)
 {
+	/* RTL8812A enables the MCU IO wrapper with bit 3 of REG_RSV_CTRL+1,
+	 * all other chips use BIT_WLMCU_IOIF (bit 0).
+	 */
+	u8 ioif = rtwdev->chip->id == RTW_CHIP_TYPE_8812A ? BIT(3) : BIT_WLMCU_IOIF;
+
 	if (enable) {
 		/* cpu io interface enable */
-		rtw_write8_set(rtwdev, REG_RSV_CTRL + 1, BIT_WLMCU_IOIF);
+		rtw_write8_set(rtwdev, REG_RSV_CTRL + 1, ioif);
 
 		/* cpu enable */
 		rtw_write8_set(rtwdev, REG_SYS_FUNC_EN + 1, BIT_FEN_CPUEN);
@@ -450,7 +455,7 @@ static void wlan_cpu_enable(struct rtw_dev *rtwdev, bool enable)
 		rtw_write8_clr(rtwdev, REG_SYS_FUNC_EN + 1, BIT_FEN_CPUEN);
 
 		/* cpu disable */
-		rtw_write8_clr(rtwdev, REG_RSV_CTRL + 1, BIT_WLMCU_IOIF);
+		rtw_write8_clr(rtwdev, REG_RSV_CTRL + 1, ioif);
 	}
 }
 
