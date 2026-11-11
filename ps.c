@@ -237,7 +237,12 @@ static void rtw_enter_lps_core(struct rtw_dev *rtwdev)
 
 	rtw_coex_lps_notify(rtwdev, COEX_LPS_ENABLE);
 
-	rtw_fw_set_pwr_mode(rtwdev);
+	if (rtw_fw_set_pwr_mode(rtwdev)) {
+		conf->mode = RTW_MODE_ACTIVE;
+		conf->state = RTW_ALL_ON;
+		rtw_coex_lps_notify(rtwdev, COEX_LPS_DISABLE);
+		return;
+	}
 	rtw_hci_link_ps(rtwdev, true);
 
 	set_bit(RTW_FLAG_LEISURE_PS, rtwdev->flags);
@@ -292,6 +297,7 @@ void rtw_leave_lps(struct rtw_dev *rtwdev)
 	__rtw_leave_lps_deep(rtwdev);
 	__rtw_leave_lps(rtwdev);
 }
+EXPORT_SYMBOL(rtw_leave_lps);
 
 void rtw_leave_lps_deep(struct rtw_dev *rtwdev)
 {

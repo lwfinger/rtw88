@@ -214,3 +214,4 @@ void rtw_iterate_vifs(struct rtw_dev *rtwdev,
 		kfree(vif_entry);
 	}
 }
+EXPORT_SYMBOL(rtw_iterate_vifs);

@@ -2555,7 +2555,8 @@ static void rtw_coex_run_coex(struct rtw_dev *rtwdev, u8 reason)
 
 	lockdep_assert_held(&rtwdev->mutex);
 
-	if (!test_bit(RTW_FLAG_RUNNING, rtwdev->flags))
+	if (chip->id == RTW_CHIP_TYPE_8188E ||
+	    !test_bit(RTW_FLAG_RUNNING, rtwdev->flags))
 		return;
 
 	coex_dm->reason = reason;
@@ -2770,6 +2771,11 @@ void rtw_coex_power_on_setting(struct rtw_dev *rtwdev)
 	coex->stop_dm = true;
 	coex->wl_rf_off = false;
 
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8188E) {
+		coex->stat.bt_disabled = true;
+		return;
+	}
+
 	/* enable BB, we can write 0x948 */
 	rtw_write8_set(rtwdev, REG_SYS_FUNC_EN,
 		       BIT_FEN_BB_GLB_RST | BIT_FEN_BB_RSTB);
@@ -2791,12 +2797,18 @@ EXPORT_SYMBOL(rtw_coex_power_on_setting);
 
 void rtw_coex_power_off_setting(struct rtw_dev *rtwdev)
 {
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8188E)
+		return;
+
 	rtw_write16(rtwdev, REG_WIFI_BT_INFO, BIT_BT_INT_EN);
 }
 EXPORT_SYMBOL(rtw_coex_power_off_setting);
 
 void rtw_coex_init_hw_config(struct rtw_dev *rtwdev, bool wifi_only)
 {
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8188E)
+		return;
+
 	__rtw_coex_init_hw_config(rtwdev, wifi_only);
 }
 EXPORT_SYMBOL(rtw_coex_init_hw_config);
@@ -3459,6 +3471,9 @@ void rtw_coex_wl_status_change_notify(struct rtw_dev *rtwdev, u32 type)
 void rtw_coex_wl_status_check(struct rtw_dev *rtwdev)
 {
 	struct rtw_coex_stat *coex_stat = &rtwdev->coex.stat;
+
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8188E)
+		return;
 
 	if ((coex_stat->wl_under_lps && !coex_stat->wl_force_lps_ctrl) ||
 	    coex_stat->wl_under_ips)

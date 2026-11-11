@@ -153,6 +153,13 @@ static const struct rtw_vif_port rtw_vif_port[] = {
 	},
 };
 
+void rtw_vif_port_select(struct rtw_vif *rtwvif, u8 port)
+{
+	rtwvif->port = port;
+	rtwvif->conf = &rtw_vif_port[port];
+}
+EXPORT_SYMBOL(rtw_vif_port_select);
+
 static int rtw_ops_add_interface(struct ieee80211_hw *hw,
 				 struct ieee80211_vif *vif)
 {
@@ -468,6 +475,9 @@ static void rtw_ops_bss_info_changed(struct ieee80211_hw *hw,
 		else
 			rtw_write32_clr(rtwdev, REG_FWHW_TXQ_CTRL,
 					BIT_EN_BCNQ_DL);
+		if (rtwdev->chip->ops->config_bcn)
+			rtwdev->chip->ops->config_bcn(rtwdev, vif,
+						      conf->enable_beacon);
 	}
 	if (changed & BSS_CHANGED_CQM)
 		rtw_fw_beacon_filter_config(rtwdev, true, vif);
@@ -521,7 +531,12 @@ static void rtw_ops_stop_ap(struct ieee80211_hw *hw,
 
 	mutex_lock(&rtwdev->mutex);
 	rtw_write32_clr(rtwdev, REG_TCR, BIT_TCR_UPDATE_HGQMD);
-	rtw_write16(rtwdev, REG_ATIMWND, ATIMWND_DEFAULT);
+	/* Shortening the port 0 ATIM window during AP stop can leave
+	 * RTL8188E's port 1 TX queue stalled.
+	 */
+	if (rtwdev->chip->id != RTW_CHIP_TYPE_8188E ||
+	    !test_bit(RTW_PORT_1, rtwdev->hw_port))
+		rtw_write16(rtwdev, REG_ATIMWND, ATIMWND_DEFAULT);
 	rtwdev->ap_active = false;
 	if (!rtw_core_check_sta_active(rtwdev))
 		rtw_clear_op_chan(rtwdev);

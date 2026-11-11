@@ -354,7 +354,14 @@ static int __rtw_mac_init_system_cfg(struct rtw_dev *rtwdev)
 
 static int __rtw_mac_init_system_cfg_legacy(struct rtw_dev *rtwdev)
 {
-	rtw_write8(rtwdev, REG_CR, 0xff);
+	u16 cr = 0x2ff;
+
+	/* Keep RTL8188E MAC TX/RX off until the RX FIFO boundary is set. */
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8188E)
+		cr = (MAC_TRX_ENABLE & ~(BIT_MACTXEN | BIT_MACRXEN)) |
+		     BIT_MAC_SEC_EN | BIT_32K_CAL_TMR_EN;
+
+	rtw_write8(rtwdev, REG_CR, cr);
 	mdelay(2);
 	rtw_write8(rtwdev, REG_HWSEQ_CTRL, 0x7f);
 	mdelay(2);
@@ -362,7 +369,7 @@ static int __rtw_mac_init_system_cfg_legacy(struct rtw_dev *rtwdev)
 	rtw_write8_set(rtwdev, REG_SYS_CLKR, BIT_WAKEPAD_EN);
 	rtw_write16_clr(rtwdev, REG_GPIO_MUXCFG, BIT_EN_SIC);
 
-	rtw_write16(rtwdev, REG_CR, 0x2ff);
+	rtw_write16(rtwdev, REG_CR, cr);
 
 	return 0;
 }
@@ -1097,6 +1104,7 @@ static int txdma_queue_mapping(struct rtw_dev *rtwdev)
 	const struct rtw_chip_info *chip = rtwdev->chip;
 	const struct rtw_rqpn *rqpn = NULL;
 	u16 txdma_pq_map = 0;
+	u8 cr = MAC_TRX_ENABLE;
 
 	switch (rtw_hci_type(rtwdev)) {
 	case RTW_HCI_TYPE_PCIE:
@@ -1128,8 +1136,11 @@ static int txdma_queue_mapping(struct rtw_dev *rtwdev)
 	txdma_pq_map |= BIT_TXDMA_VOQ_MAP(rqpn->dma_map_vo);
 	rtw_write16(rtwdev, REG_TXDMA_PQ_MAP, txdma_pq_map);
 
+	if (chip->id == RTW_CHIP_TYPE_8188E)
+		cr &= ~(BIT_MACTXEN | BIT_MACRXEN);
+
 	rtw_write8(rtwdev, REG_CR, 0);
-	rtw_write8(rtwdev, REG_CR, MAC_TRX_ENABLE);
+	rtw_write8(rtwdev, REG_CR, cr);
 	if (rtw_chip_wcpu_3081(rtwdev))
 		rtw_write32(rtwdev, REG_H2CQ_CSR, BIT_H2CQ_FULL);
 
@@ -1256,6 +1267,9 @@ static int __priority_queue_cfg_legacy(struct rtw_dev *rtwdev,
 	rtw_write8(rtwdev, REG_BCNQ_BDNY, fifo->rsvd_boundary);
 	rtw_write8(rtwdev, REG_MGQ_BDNY, fifo->rsvd_boundary);
 	rtw_write8(rtwdev, REG_WMAC_LBK_BF_HD, fifo->rsvd_boundary);
+
+	if (chip->ops->llt_init)
+		return chip->ops->llt_init(rtwdev);
 
 	rtw_write32_set(rtwdev, REG_AUTO_LLT, BIT_AUTO_INIT_LLT);
 

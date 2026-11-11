@@ -27,6 +27,18 @@
 #define RTW_SDIO_TX_FIFO_LOWATER			8
 #define RTW_SDIO_TX_RETRY_DELAY			msecs_to_jiffies(1)
 
+static void rtw_sdio_indicate_tx_status(struct rtw_dev *rtwdev,
+					struct sk_buff *skb);
+
+static bool rtw_sdio_tx_status_early(struct rtw_dev *rtwdev,
+				     enum rtw_tx_queue_type queue,
+				     struct sk_buff *skb)
+{
+	return rtw_is_8189es(rtwdev) &&
+	       queue != RTW_TX_QUEUE_BCN && queue != RTW_TX_QUEUE_H2C &&
+	       (IEEE80211_SKB_CB(skb)->flags & IEEE80211_TX_CTL_REQ_TX_STATUS);
+}
+
 static bool rtw_sdio_is_bus_addr(u32 addr)
 {
 	return !!(addr & RTW_SDIO_BUS_MSK);
@@ -842,6 +854,10 @@ static int rtw_sdio_write_to_port(struct rtw_dev *rtwdev, struct sk_buff *skb,
 	ret = sdio_memcpy_toio(rtwsdio->sdio_func, txaddr, skb->data,
 			       write_size);
 
+	/* RX reports can arrive as soon as the host is released. */
+	if (!ret && rtw_sdio_tx_status_early(rtwdev, queue, skb))
+		rtw_sdio_indicate_tx_status(rtwdev, skb);
+
 	if (bus_claim)
 		sdio_release_host(rtwsdio->sdio_func);
 
@@ -894,13 +910,26 @@ static int rtw_sdio_write_port_generic(struct rtw_dev *rtwdev,
 				       enum rtw_tx_queue_type queue, u32 txaddr,
 				       size_t write_size)
 {
+	struct rtw_sdio *rtwsdio = (struct rtw_sdio *)rtwdev->priv;
+	bool is_8189es = rtw_is_8189es(rtwdev);
 	int ret;
 
-	ret = rtw_sdio_check_free_txpg(rtwdev, queue, write_size);
+	if (is_8189es)
+		mutex_lock(&rtwsdio->tx_credit_lock);
+	ret = rtw_sdio_check_free_txpg(rtwdev, queue,
+				       is_8189es ? skb->len : write_size);
 	if (ret)
-		return ret;
+		goto out;
+	if (is_8189es && !rtw_read8(rtwdev, REG_SDIO_OQT_FREE_PG_8188E)) {
+		ret = -EBUSY;
+		goto out;
+	}
 
-	return rtw_sdio_write_to_port(rtwdev, skb, queue, txaddr, write_size);
+	ret = rtw_sdio_write_to_port(rtwdev, skb, queue, txaddr, write_size);
+out:
+	if (is_8189es)
+		mutex_unlock(&rtwsdio->tx_credit_lock);
+	return ret;
 }
 
 static int rtw_sdio_write_port(struct rtw_dev *rtwdev, struct sk_buff *skb,
@@ -912,6 +941,8 @@ static int rtw_sdio_write_port(struct rtw_dev *rtwdev, struct sk_buff *skb,
 	u32 txaddr;
 	int ret;
 
+	if (queue == RTW_TX_QUEUE_MGMT && rtw_is_8189es(rtwdev))
+		queue = RTW_TX_QUEUE_HI0;
 	txaddr = rtw_sdio_get_tx_addr(rtwdev, skb->len, queue);
 	if (!txaddr)
 		return -EINVAL;
@@ -950,7 +981,13 @@ static void rtw_sdio_init(struct rtw_dev *rtwdev)
 
 static void rtw_sdio_enable_rx_aggregation(struct rtw_dev *rtwdev)
 {
+	const struct rtw_chip_ops *ops = rtwdev->chip->ops;
 	u8 size, timeout;
+
+	if (ops->config_rx_aggregation) {
+		ops->config_rx_aggregation(rtwdev);
+		return;
+	}
 
 	switch (rtwdev->chip->id) {
 	case RTW_CHIP_TYPE_8723B:
@@ -1263,7 +1300,8 @@ static void rtw_sdio_8723bs_stop_tx_queue(struct rtw_dev *rtwdev,
 {
 	struct rtw_sdio *rtwsdio = (struct rtw_sdio *)rtwdev->priv;
 
-	if (!rtw_is_8723bs(rtwdev) || queue >= RTW_TX_QUEUE_BCN)
+	if ((!rtw_is_8723bs(rtwdev) && !rtw_is_8189es(rtwdev)) ||
+	    queue >= RTW_TX_QUEUE_BCN)
 		return;
 
 	guard(spinlock_irqsave)(&rtwsdio->tx_queue[queue].lock);
@@ -1284,7 +1322,8 @@ static void rtw_sdio_8723bs_wake_tx_queue(struct rtw_dev *rtwdev,
 {
 	struct rtw_sdio *rtwsdio = (struct rtw_sdio *)rtwdev->priv;
 
-	if (!rtw_is_8723bs(rtwdev) || queue >= RTW_TX_QUEUE_BCN)
+	if ((!rtw_is_8723bs(rtwdev) && !rtw_is_8189es(rtwdev)) ||
+	    queue >= RTW_TX_QUEUE_BCN)
 		return;
 
 	guard(spinlock_irqsave)(&rtwsdio->tx_queue[queue].lock);
@@ -1353,7 +1392,10 @@ static void rtw_sdio_rxfifo_recv(struct rtw_dev *rtwdev, u32 rx_len)
 {
 	struct rtw_sdio *rtwsdio = (struct rtw_sdio *)rtwdev->priv;
 	const struct rtw_chip_info *chip = rtwdev->chip;
+	const struct rtw_chip_ops *ops = chip->ops;
 	u32 pkt_desc_sz = chip->rx_pkt_desc_sz;
+	u32 pkt_align = rtw_is_8189es(rtwdev) ?
+		       RTW8188E_RX_ALIGN : RTW_SDIO_DATA_PTR_ALIGN;
 	struct ieee80211_rx_status rx_status;
 	struct rtw_rx_pkt_stat pkt_stat;
 	struct sk_buff *skb, *split_skb;
@@ -1377,19 +1419,29 @@ static void rtw_sdio_rxfifo_recv(struct rtw_dev *rtwdev, u32 rx_len)
 
 	while (true) {
 		rx_desc = skb->data;
+		if (ops->rx_report_handle) {
+			ret = ops->rx_report_handle(rtwdev, rx_desc, rx_len);
+			if (ret < 0)
+				goto free;
+			if (ret) {
+				if (ret >= rx_len)
+					goto free;
+				skb_reserve(skb, ret);
+				rx_len -= ret;
+				continue;
+			}
+		}
 		rx_buf = rx_desc + pkt_desc_sz;
 		ret = rtw_rx_query_rx_desc(rtwdev, rx_desc, rx_buf,
 					   &pkt_stat, &rx_status);
-		if (ret) {
-			dev_kfree_skb_any(skb);
-			return;
-		}
+		if (ret)
+			goto free;
 
 		pkt_offset = pkt_desc_sz + pkt_stat.drv_info_sz +
 			     pkt_stat.shift;
 
 		curr_pkt_len = ALIGN(pkt_offset + pkt_stat.pkt_len,
-				     RTW_SDIO_DATA_PTR_ALIGN);
+				     pkt_align);
 
 		if ((curr_pkt_len + pkt_desc_sz) >= rx_len) {
 			/* Use the original skb (with it's adjusted offset)
@@ -1418,6 +1470,10 @@ static void rtw_sdio_rxfifo_recv(struct rtw_dev *rtwdev, u32 rx_len)
 		skb_reserve(skb, curr_pkt_len);
 		rx_len -= curr_pkt_len;
 	}
+	return;
+
+free:
+	dev_kfree_skb_any(skb);
 }
 
 static void rtw_sdio_rx_isr(struct rtw_dev *rtwdev)
@@ -1460,16 +1516,21 @@ static void rtw_sdio_rx_isr(struct rtw_dev *rtwdev)
 static void rtw_sdio_handle_interrupt(struct sdio_func *sdio_func)
 {
 	struct ieee80211_hw *hw = sdio_get_drvdata(sdio_func);
+	const struct rtw_chip_ops *ops;
 	struct rtw_sdio *rtwsdio;
 	struct rtw_dev *rtwdev;
 	u32 hisr;
 
 	rtwdev = hw->priv;
+	ops = rtwdev->chip->ops;
 	rtwsdio = (struct rtw_sdio *)rtwdev->priv;
 
 	rtwsdio->irq_thread = current;
 
 	hisr = rtw_read32(rtwdev, REG_SDIO_HISR);
+
+	if (ops->sdio_irq_handler)
+		ops->sdio_irq_handler(rtwdev, hisr);
 
 	if (hisr & REG_SDIO_HISR_TXERR)
 		rtw_sdio_tx_err_isr(rtwdev);
@@ -1489,6 +1550,10 @@ static void rtw_sdio_handle_interrupt(struct sdio_func *sdio_func)
 	rtw_write32(rtwdev, REG_SDIO_HISR, hisr);
 
 	rtwsdio->irq_thread = NULL;
+
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8188E &&
+	    xchg(&rtwsdio->tx_handler_data->waiting_for_irq, false))
+		rtw_sdio_tx_kick_off(rtwdev);
 }
 
 static int __maybe_unused rtw_sdio_suspend(struct device *dev)
@@ -1603,8 +1668,15 @@ static void rtw_sdio_indicate_tx_status(struct rtw_dev *rtwdev,
 	struct rtw_sdio_tx_data *tx_data = rtw_sdio_get_tx_data(skb);
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 	struct ieee80211_hw *hw = rtwdev->hw;
+	u8 offset = rtwdev->chip->tx_pkt_desc_sz;
 
-	skb_pull(skb, rtwdev->chip->tx_pkt_desc_sz);
+	if (rtw_is_8189es(rtwdev)) {
+		struct rtw_tx_desc *txdesc = (struct rtw_tx_desc *)skb->data;
+
+		/* Include the SDIO alignment padding before the frame header. */
+		offset = le32_get_bits(txdesc->w0, RTW_TX_DESC_W0_OFFSET);
+	}
+	skb_pull(skb, offset);
 
 	/* enqueue to wait for tx report */
 	if (info->flags & IEEE80211_TX_CTL_REQ_TX_STATUS) {
@@ -1632,6 +1704,7 @@ static int rtw_sdio_process_tx_queue(struct rtw_dev *rtwdev,
 {
 	struct rtw_sdio *rtwsdio = (struct rtw_sdio *)rtwdev->priv;
 	struct sk_buff *skb;
+	bool early_report;
 	u16 q_map;
 	int ret;
 
@@ -1639,16 +1712,16 @@ static int rtw_sdio_process_tx_queue(struct rtw_dev *rtwdev,
 	if (!skb)
 		return 1;
 
+	q_map = skb_get_queue_mapping(skb);
+	early_report = rtw_sdio_tx_status_early(rtwdev, queue, skb);
 	ret = rtw_sdio_write_port(rtwdev, skb, queue);
 	if (ret) {
 		skb_queue_head(&rtwsdio->tx_queue[queue], skb);
 		return ret;
 	}
 
-	/* rtw_sdio_indicate_tx_status() consumes the skb, so read this first */
-	q_map = skb_get_queue_mapping(skb);
-
-	rtw_sdio_indicate_tx_status(rtwdev, skb);
+	if (!early_report)
+		rtw_sdio_indicate_tx_status(rtwdev, skb);
 
 	rtw_sdio_8723bs_wake_tx_queue(rtwdev, queue, q_map);
 
@@ -1673,7 +1746,7 @@ static bool rtw_sdio_8723bs_reschedule_tx(struct rtw_dev *rtwdev,
 	struct rtw_sdio *rtwsdio = (struct rtw_sdio *)rtwdev->priv;
 	unsigned long delay;
 
-	if (!rtw_is_8723bs(rtwdev))
+	if (!rtw_is_8723bs(rtwdev) && !rtw_is_8189es(rtwdev))
 		return false;
 
 	if (ret == -EBUSY || ret == -ENOMEM)
@@ -1695,16 +1768,36 @@ static void rtw_sdio_tx_handler(struct work_struct *work)
 			     work);
 	struct rtw_sdio *rtwsdio;
 	struct rtw_dev *rtwdev;
+	struct mmc_host *host;
+	bool yield_to_irq;
 	int limit, queue, ret;
 
 	rtwdev = work_data->rtwdev;
 	rtwsdio = (struct rtw_sdio *)rtwdev->priv;
+	host = rtwsdio->sdio_func->card->host;
+	yield_to_irq = rtwdev->chip->id == RTW_CHIP_TYPE_8188E;
+	/* The retry or a new frame can restart TX before the IRQ handler. */
+	if (yield_to_irq)
+		WRITE_ONCE(work_data->waiting_for_irq, false);
 
 	if (!rtw_fw_feature_check(&rtwdev->fw, FW_FEATURE_TX_WAKE))
 		rtw_sdio_deep_ps_leave(rtwdev);
 
 	for (queue = RTK_MAX_TX_QUEUE_NUM - 1; queue >= 0; queue--) {
 		for (limit = 0; limit < 1000; limit++) {
+			/* Let the SDIO IRQ worker claim the host before more TX. */
+			if (yield_to_irq && READ_ONCE(host->sdio_irq_pending)) {
+				/* The IRQ can finish while we arm the retry. */
+				smp_store_mb(work_data->waiting_for_irq, true);
+				if (READ_ONCE(host->sdio_irq_pending)) {
+					queue_delayed_work(rtwsdio->txwq,
+							   &work_data->work,
+							   RTW_SDIO_TX_RETRY_DELAY);
+					return;
+				}
+				WRITE_ONCE(work_data->waiting_for_irq, false);
+			}
+
 			ret = rtw_sdio_process_tx_queue(rtwdev, queue);
 			if (ret > 0)
 				break;
@@ -1754,6 +1847,7 @@ static int rtw_sdio_init_tx(struct rtw_dev *rtwdev)
 		goto err_destroy_wq;
 
 	rtwsdio->tx_handler_data->rtwdev = rtwdev;
+	rtwsdio->tx_handler_data->waiting_for_irq = false;
 	INIT_DELAYED_WORK(&rtwsdio->tx_handler_data->work, rtw_sdio_tx_handler);
 
 	return 0;

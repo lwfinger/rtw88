@@ -104,7 +104,11 @@ void rtw_tx_pkt_info_update(struct rtw_dev *rtwdev,
 void rtw_tx_fill_tx_desc(struct rtw_dev *rtwdev,
 			 struct rtw_tx_pkt_info *pkt_info,
 			 struct rtw_tx_desc *tx_desc);
+void rtw_tx_pkt_info_update_rate(struct rtw_dev *rtwdev,
+				 struct rtw_tx_pkt_info *pkt_info,
+				 struct sk_buff *skb, bool ignore_rate);
 void rtw_tx_report_enqueue(struct rtw_dev *rtwdev, struct sk_buff *skb, u8 sn);
+void rtw_tx_report_complete(struct rtw_dev *rtwdev, u8 sn, bool acked);
 void rtw_tx_report_handle(struct rtw_dev *rtwdev, struct sk_buff *skb, int src);
 void rtw_tx_rsvd_page_pkt_info_update(struct rtw_dev *rtwdev,
 				      struct rtw_tx_pkt_info *pkt_info,

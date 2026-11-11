@@ -142,27 +142,13 @@ struct rtw_fw_iter_ra_data {
 	u8 length;
 };
 
-static void rtw_fw_ra_report_iter(void *data, struct ieee80211_sta *sta)
+void rtw_update_sta_ra_report(struct rtw_sta_info *si, u8 rate, bool sgi, u8 bw)
 {
-	struct rtw_fw_iter_ra_data *ra_data = data;
-	struct rtw_c2h_ra_rpt *ra_rpt = (struct rtw_c2h_ra_rpt *)ra_data->payload;
-	struct rtw_sta_info *si = (struct rtw_sta_info *)sta->drv_priv;
-	u8 mac_id, rate, sgi, bw;
+	struct ieee80211_sta *sta = si->sta;
 	u8 mcs, nss;
 	u32 bit_rate;
 
-	mac_id = ra_rpt->mac_id;
-	if (si->mac_id != mac_id)
-		return;
-
 	si->ra_report.txrate.flags = 0;
-
-	rate = u8_get_bits(ra_rpt->rate_sgi, RTW_C2H_RA_RPT_RATE);
-	sgi = u8_get_bits(ra_rpt->rate_sgi, RTW_C2H_RA_RPT_SGI);
-	if (ra_data->length >= offsetofend(typeof(*ra_rpt), bw))
-		bw = ra_rpt->bw;
-	else
-		bw = si->bw_mode;
 
 	if (rate < DESC_RATEMCS0) {
 		si->ra_report.txrate.legacy = rtw_desc_to_bitrate(rate);
@@ -201,6 +187,28 @@ legacy:
 #else
 	sta->max_rc_amsdu_len = get_max_amsdu_len(bit_rate);
 #endif
+}
+EXPORT_SYMBOL(rtw_update_sta_ra_report);
+
+static void rtw_fw_ra_report_iter(void *data, struct ieee80211_sta *sta)
+{
+	struct rtw_fw_iter_ra_data *ra_data = data;
+	struct rtw_c2h_ra_rpt *ra_rpt = (struct rtw_c2h_ra_rpt *)ra_data->payload;
+	struct rtw_sta_info *si = (struct rtw_sta_info *)sta->drv_priv;
+	u8 mac_id, rate, sgi, bw;
+
+	mac_id = ra_rpt->mac_id;
+	if (si->mac_id != mac_id)
+		return;
+
+	rate = u8_get_bits(ra_rpt->rate_sgi, RTW_C2H_RA_RPT_RATE);
+	sgi = u8_get_bits(ra_rpt->rate_sgi, RTW_C2H_RA_RPT_SGI);
+	if (ra_data->length >= offsetofend(typeof(*ra_rpt), bw))
+		bw = ra_rpt->bw;
+	else
+		bw = si->bw_mode;
+
+	rtw_update_sta_ra_report(si, rate, sgi, bw);
 }
 
 static void rtw_fw_ra_report_handle(struct rtw_dev *rtwdev, u8 *payload,
@@ -448,8 +456,7 @@ static void rtw_fw_send_h2c_command_register(struct rtw_dev *rtwdev,
 		rtwdev->h2c.last_box_num = 0;
 }
 
-static void rtw_fw_send_h2c_command(struct rtw_dev *rtwdev,
-				    u8 *h2c)
+void rtw_fw_send_h2c_command(struct rtw_dev *rtwdev, u8 *h2c)
 {
 	struct rtw_h2c_cmd *h2c_cmd = (struct rtw_h2c_cmd *)h2c;
 	u8 box;
@@ -502,6 +509,7 @@ static void rtw_fw_send_h2c_command(struct rtw_dev *rtwdev,
 	if (++rtwdev->h2c.last_box_num >= 4)
 		rtwdev->h2c.last_box_num = 0;
 }
+EXPORT_SYMBOL(rtw_fw_send_h2c_command);
 
 void rtw_fw_h2c_cmd_dbg(struct rtw_dev *rtwdev, u8 *h2c)
 {
@@ -617,6 +625,10 @@ void rtw_fw_default_port(struct rtw_dev *rtwdev, struct rtw_vif *rtwvif)
 
 	/* Leave LPS before default port H2C so FW timer is correct */
 	rtw_leave_lps(rtwdev);
+	if (rtwdev->chip->ops->set_default_port) {
+		rtwdev->chip->ops->set_default_port(rtwdev, rtwvif);
+		return;
+	}
 
 	h2c.w0 = u32_encode_bits(H2C_CMD_DEFAULT_PORT, RTW_H2C_W0_CMDID) |
 		 u32_encode_bits(rtwvif->port, RTW_H2C_DEFAULT_PORT_W0_PORTID) |
@@ -728,6 +740,10 @@ void rtw_fw_send_rssi_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si)
 	u8 rssi = ewma_rssi_read(&si->avg_rssi);
 	bool stbc_en = si->stbc_en ? true : false;
 
+	/* RTL8188E T firmware has no RSSI command; host RA reads avg_rssi. */
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8188E)
+		return;
+
 	SET_H2C_CMD_ID_CLASS(h2c_pkt, H2C_CMD_RSSI_MONITOR);
 
 	SET_RSSI_INFO_MACID(h2c_pkt, si->mac_id);
@@ -750,6 +766,12 @@ void rtw_fw_send_ra_info(struct rtw_dev *rtwdev, struct rtw_sta_info *si)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
 	bool reset_ra_mask = true;
 #endif
+
+	if (rtwdev->chip->ops->host_ra_update) {
+		rtwdev->chip->ops->host_ra_update(rtwdev, si);
+		si->init_ra_lv = 0;
+		return;
+	}
 
 	SET_H2C_CMD_ID_CLASS(h2c_pkt, H2C_CMD_RA_INFO);
 
@@ -795,13 +817,20 @@ void rtw_fw_media_status_report(struct rtw_dev *rtwdev, u8 mac_id, bool connect)
 	MEDIA_STATUS_RPT_SET_MACID(h2c_pkt, mac_id);
 
 	rtw_fw_send_h2c_command(rtwdev, h2c_pkt);
+	if (rtwdev->chip->ops->set_macid_link)
+		rtwdev->chip->ops->set_macid_link(rtwdev, mac_id, connect);
 }
+EXPORT_SYMBOL(rtw_fw_media_status_report);
 
 void rtw_fw_update_wl_phy_info(struct rtw_dev *rtwdev)
 {
 	struct rtw_traffic_stats *stats = &rtwdev->stats;
 	struct rtw_dm_info *dm_info = &rtwdev->dm_info;
 	u8 h2c_pkt[H2C_PKT_SIZE] = {0};
+
+	/* RTL8188E T firmware has no WL_PHY_INFO command. */
+	if (rtwdev->chip->id == RTW_CHIP_TYPE_8188E)
+		return;
 
 	SET_H2C_CMD_ID_CLASS(h2c_pkt, H2C_CMD_WL_PHY_INFO);
 	SET_WL_PHY_INFO_TX_TP(h2c_pkt, stats->tx_throughput);
@@ -861,10 +890,13 @@ void rtw_fw_beacon_filter_config(struct rtw_dev *rtwdev, bool connect,
 	rtw_fw_send_h2c_command(rtwdev, h2c_pkt);
 }
 
-void rtw_fw_set_pwr_mode(struct rtw_dev *rtwdev)
+int rtw_fw_set_pwr_mode(struct rtw_dev *rtwdev)
 {
 	struct rtw_lps_conf *conf = &rtwdev->lps_conf;
 	u8 h2c_pkt[H2C_PKT_SIZE] = {0};
+
+	if (rtwdev->chip->ops->set_pwr_mode)
+		return rtwdev->chip->ops->set_pwr_mode(rtwdev);
 
 	SET_H2C_CMD_ID_CLASS(h2c_pkt, H2C_CMD_SET_PWR_MODE);
 
@@ -876,6 +908,7 @@ void rtw_fw_set_pwr_mode(struct rtw_dev *rtwdev)
 	SET_PWR_MODE_SET_PWR_STATE(h2c_pkt, conf->state);
 
 	rtw_fw_send_h2c_command(rtwdev, h2c_pkt);
+	return 0;
 }
 
 void rtw_fw_set_keep_alive_cmd(struct rtw_dev *rtwdev, bool enable)
@@ -1090,6 +1123,7 @@ void rtw_send_rsvd_page_h2c(struct rtw_dev *rtwdev)
 
 	rtw_fw_send_h2c_command(rtwdev, h2c_pkt);
 }
+EXPORT_SYMBOL(rtw_send_rsvd_page_h2c);
 
 static struct sk_buff *rtw_nlo_info_get(struct ieee80211_hw *hw)
 {
@@ -1237,6 +1271,7 @@ static struct sk_buff *rtw_lps_pg_info_get(struct ieee80211_hw *hw)
 static struct sk_buff *rtw_get_rsvd_page_skb(struct ieee80211_hw *hw,
 					     struct rtw_rsvd_page *rsvd_pkt)
 {
+	struct rtw_dev *rtwdev = hw->priv;
 	struct ieee80211_vif *vif;
 	struct rtw_vif *rtwvif;
 	struct sk_buff *skb_new;
@@ -1260,11 +1295,16 @@ static struct sk_buff *rtw_get_rsvd_page_skb(struct ieee80211_hw *hw,
 
 	switch (rsvd_pkt->type) {
 	case RSVD_BEACON:
+		if (rtwdev->chip->ops->get_rsvd_beacon) {
+			skb_new = rtwdev->chip->ops->get_rsvd_beacon(rtwdev, vif,
+								 &tim_offset);
+		} else {
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
-		skb_new = ieee80211_beacon_get_tim(hw, vif, &tim_offset, NULL, 0);
+			skb_new = ieee80211_beacon_get_tim(hw, vif, &tim_offset, NULL, 0);
 #else
-		skb_new = ieee80211_beacon_get_tim(hw, vif, &tim_offset, NULL);
+			skb_new = ieee80211_beacon_get_tim(hw, vif, &tim_offset, NULL);
 #endif
+		}
 		rsvd_pkt->tim_offset = tim_offset;
 		break;
 	case RSVD_PS_POLL:
@@ -1516,6 +1556,9 @@ int rtw_fw_write_data_rsvd_page(struct rtw_dev *rtwdev, u16 pg_addr,
 	if (!size)
 		return -EINVAL;
 
+	if (rtwdev->chip->ops->write_rsvd_page)
+		return rtwdev->chip->ops->write_rsvd_page(rtwdev, pg_addr, buf, size);
+
 	bckp[2] = rtw_read8(rtwdev, REG_BCN_CTRL);
 
 	if (rtw_chip_wcpu_8051(rtwdev)) {
@@ -1690,8 +1733,13 @@ static u8 *rtw_build_rsvd_page(struct rtw_dev *rtwdev, u32 *size)
 		/* Fill the tx_desc for the rsvd pkt that requires one.
 		 * And iter->len will be added with size of tx_desc_sz.
 		 */
-		if (rsvd_pkt->add_txdesc)
-			rtw_fill_rsvd_page_desc(rtwdev, iter, rsvd_pkt->type);
+		if (rsvd_pkt->add_txdesc) {
+			if (chip->ops->fill_rsvd_page_desc)
+				chip->ops->fill_rsvd_page_desc(rtwdev, rsvd_pkt,
+							       iter);
+			else
+				rtw_fill_rsvd_page_desc(rtwdev, iter, rsvd_pkt->type);
+		}
 
 		rsvd_pkt->skb = iter;
 		rsvd_pkt->page = total_page;
@@ -1828,6 +1876,7 @@ free:
 
 	return ret;
 }
+EXPORT_SYMBOL(rtw_fw_download_rsvd_page);
 
 void rtw_fw_update_beacon_work(struct work_struct *work)
 {
@@ -1835,8 +1884,12 @@ void rtw_fw_update_beacon_work(struct work_struct *work)
 					      update_beacon_work);
 
 	mutex_lock(&rtwdev->mutex);
-	rtw_fw_download_rsvd_page(rtwdev);
-	rtw_send_rsvd_page_h2c(rtwdev);
+	if (rtwdev->chip->ops->update_beacon) {
+		rtwdev->chip->ops->update_beacon(rtwdev);
+	} else {
+		rtw_fw_download_rsvd_page(rtwdev);
+		rtw_send_rsvd_page_h2c(rtwdev);
+	}
 	mutex_unlock(&rtwdev->mutex);
 }
 
