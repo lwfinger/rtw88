@@ -278,6 +278,9 @@ void rtw_enter_lps(struct rtw_dev *rtwdev, u8 port_id)
 {
 	lockdep_assert_held(&rtwdev->mutex);
 
+	if (rtw_disable_lps_mode)
+		return;
+
 	if (rtwdev->coex.stat.wl_force_lps_ctrl)
 		return;
 
@@ -335,7 +338,7 @@ void rtw_recalc_lps(struct rtw_dev *rtwdev, struct ieee80211_vif *new_vif)
 	rtw_iterate_vifs(rtwdev, rtw_vif_recalc_lps_iter, &data);
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
-	if (data.count == 1 && data.found_vif->cfg.ps) {
+	if (data.count == 1 && data.found_vif->cfg.ps && !rtw_disable_lps_mode) {
 		rtwdev->ps_enabled = true;
 	} else {
 		rtwdev->ps_enabled = false;

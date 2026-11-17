@@ -23,6 +23,8 @@
 
 bool rtw_disable_lps_deep_mode;
 EXPORT_SYMBOL(rtw_disable_lps_deep_mode);
+bool rtw_disable_lps_mode = true;
+EXPORT_SYMBOL(rtw_disable_lps_mode);
 bool rtw_bf_support = true;
 unsigned int rtw_debug_mask;
 EXPORT_SYMBOL(rtw_debug_mask);
@@ -36,10 +38,14 @@ EXPORT_SYMBOL(rtw_debug_mask);
 bool rtw_edcca_enabled = true;
 
 module_param_named(disable_lps_deep, rtw_disable_lps_deep_mode, bool, 0644);
+module_param_named(disable_lps, rtw_disable_lps_mode, bool, 0644);
+module_param_named(edcca_enable, rtw_edcca_enabled, bool, 0644);
 module_param_named(support_bf, rtw_bf_support, bool, 0644);
 module_param_named(debug_mask, rtw_debug_mask, uint, 0644);
 
 MODULE_PARM_DESC(disable_lps_deep, "Set Y to disable Deep PS");
+MODULE_PARM_DESC(disable_lps, "Set Y to disable Low Power State (LPS) (default: Y)");
+MODULE_PARM_DESC(edcca_enable, "Set N to disable EDCCA (default: Y)");
 MODULE_PARM_DESC(support_bf, "Set Y to enable beamformee support");
 MODULE_PARM_DESC(debug_mask, "Debugging mask");
 

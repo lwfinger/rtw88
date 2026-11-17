@@ -974,8 +974,8 @@ static void rtw_usb_dynamic_rx_agg_v1(struct rtw_dev *rtwdev, bool enable)
 	rtw_write8_clr(rtwdev, REG_RXDMA_AGG_PG_TH + 3, BIT(7));
 
 	if (enable) {
-		size = 0x5;
-		timeout = 0x20;
+		size = 0x6;
+		timeout = 0x10;
 	} else {
 		size = 0x0;
 		timeout = 0x1;
@@ -1062,10 +1062,10 @@ static int rtw_usb_init_rx(struct rtw_dev *rtwdev)
 	int i;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0)
-	rtwusb->rxwq = alloc_workqueue("rtw88_usb: rx wq", WQ_BH | WQ_PERCPU,
+	rtwusb->rxwq = alloc_workqueue("rtw88_usb: rx wq", WQ_BH | WQ_PERCPU | WQ_HIGHPRI,
 				       0);
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
-	rtwusb->rxwq = alloc_workqueue("rtw88_usb: rx wq", WQ_BH, 0);
+	rtwusb->rxwq = alloc_workqueue("rtw88_usb: rx wq", WQ_BH | WQ_HIGHPRI, 0);
 #else
 	tasklet_init(&rtwusb->rx_tasklet, rtw_usb_rx_handler,
 		     (unsigned long)rtwusb);
@@ -1126,7 +1126,7 @@ static int rtw_usb_init_tx(struct rtw_dev *rtwdev)
 	rtwusb->hiq_budget = RTW_USB_HIQ_BUDGET_MAX;
 	rtwusb->hiq_refill = jiffies;
 
-	rtwusb->txwq = create_singlethread_workqueue("rtw88_usb: tx wq");
+	rtwusb->txwq = alloc_workqueue("rtw88_usb: tx wq", WQ_HIGHPRI | WQ_UNBOUND, 1);
 	if (!rtwusb->txwq) {
 		rtw_err(rtwdev, "failed to create TX work queue\n");
 		return -ENOMEM;
