@@ -211,8 +211,10 @@ static void rtw_rx_fill_rx_status(struct rtw_dev *rtwdev,
 	u8 path;
 
 	memset(rx_status, 0, sizeof(*rx_status));
-	rx_status->freq = hw->conf.chandef.chan->center_freq;
-	rx_status->band = hw->conf.chandef.chan->band;
+	if (hw->conf.chandef.chan) {
+		rx_status->freq = hw->conf.chandef.chan->center_freq;
+		rx_status->band = hw->conf.chandef.chan->band;
+	}
 	if (rtw_fw_feature_check(&rtwdev->fw, FW_FEATURE_SCAN_OFFLOAD) &&
 	    test_bit(RTW_FLAG_SCANNING, rtwdev->flags))
 		rtw_set_rx_freq_by_pktstat(pkt_stat, rx_status);

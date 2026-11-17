@@ -2287,6 +2287,8 @@ struct rtw_dev {
 	struct completion fw_scan_density;
 	bool ap_active;
 
+	struct ieee80211_vif *monitor_vif;
+
 	bool led_registered;
 	char led_name[32];
 	struct led_classdev led_cdev;
