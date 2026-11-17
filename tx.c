@@ -445,6 +445,84 @@ out:
 	}
 }
 
+static void rtw_tx_injected_pkt_info_update(struct rtw_dev *rtwdev,
+					    struct rtw_tx_pkt_info *pkt_info,
+					    struct sk_buff *skb)
+{
+	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+	__le16 fc = hdr->frame_control;
+	s8 rate_idx = info->control.rates[0].idx;
+	u32 rate_flags = info->control.rates[0].flags;
+	u8 rate;
+	u8 rate_id;
+	u8 bw = RTW_CHANNEL_WIDTH_20;
+
+	if (rate_flags & IEEE80211_TX_RC_80_MHZ_WIDTH)
+		bw = RTW_CHANNEL_WIDTH_80;
+	else if (rate_flags & IEEE80211_TX_RC_40_MHZ_WIDTH)
+		bw = RTW_CHANNEL_WIDTH_40;
+
+	if (rate_idx >= 0) {
+		if (rate_flags & IEEE80211_TX_RC_VHT_MCS) {
+			rate = DESC_RATEVHT1SS_MCS0 + min_t(s8, rate_idx, 9);
+			rate_id = RTW_RATEID_ARFR1_AC_1SS;
+		} else if (rate_flags & IEEE80211_TX_RC_MCS) {
+			rate = DESC_RATEMCS0 + min_t(s8, rate_idx, 15);
+			rate_id = RTW_RATEID_BGN_20M_1SS;
+		} else if (rtwdev->hal.current_band_type == RTW_BAND_5G) {
+			rate = DESC_RATE6M + min_t(s8, rate_idx, 7);
+			rate_id = RTW_RATEID_G;
+		} else {
+			rate = DESC_RATE1M + min_t(s8, rate_idx, 11);
+			rate_id = RTW_RATEID_B_20M;
+		}
+	} else {
+		if (rtwdev->hal.current_band_type == RTW_BAND_5G) {
+			rate = DESC_RATE6M;
+			rate_id = RTW_RATEID_G;
+		} else {
+			rate = DESC_RATE1M;
+			rate_id = RTW_RATEID_B_20M;
+		}
+	}
+
+	pkt_info->rate = rate;
+	pkt_info->rate_id = rate_id;
+	pkt_info->bw = bw;
+	pkt_info->short_gi = !!(rate_flags & IEEE80211_TX_RC_SHORT_GI);
+	pkt_info->use_rate = true;
+	pkt_info->dis_rate_fallback = true;
+
+	if ((rate_flags & IEEE80211_TX_RC_USE_RTS_CTS) &&
+	    !is_broadcast_ether_addr(hdr->addr1) &&
+	    !is_multicast_ether_addr(hdr->addr1))
+		pkt_info->rts = true;
+
+	if (ieee80211_is_ctl(fc)) {
+		pkt_info->dis_qselseq = true;
+		pkt_info->en_hwseq = false;
+		pkt_info->seq = 0;
+		pkt_info->qsel = TX_DESC_QSEL_MGMT;
+	} else if (info->flags & IEEE80211_TX_CTL_ASSIGN_SEQ) {
+		pkt_info->dis_qselseq = true;
+		pkt_info->en_hwseq = true;
+		pkt_info->hw_ssn_sel = 0;
+		if (ieee80211_is_mgmt(fc))
+			pkt_info->qsel = TX_DESC_QSEL_MGMT;
+	} else {
+		pkt_info->dis_qselseq = true;
+		pkt_info->en_hwseq = false;
+		if (skb->len >= 24)
+			pkt_info->seq = (le16_to_cpu(hdr->seq_ctrl) &
+					 IEEE80211_SCTL_SEQ) >> 4;
+		else
+			pkt_info->seq = 0;
+		if (ieee80211_is_mgmt(fc))
+			pkt_info->qsel = TX_DESC_QSEL_MGMT;
+	}
+}
+
 void rtw_tx_pkt_info_update(struct rtw_dev *rtwdev,
 			    struct rtw_tx_pkt_info *pkt_info,
 			    struct ieee80211_sta *sta,
@@ -465,12 +543,19 @@ void rtw_tx_pkt_info_update(struct rtw_dev *rtwdev,
 	} else if (vif) {
 		rtwvif = (struct rtw_vif *)vif->drv_priv;
 		pkt_info->mac_id = rtwvif->mac_id;
+	} else if (rtwdev->monitor_vif) {
+		rtwvif = (struct rtw_vif *)rtwdev->monitor_vif->drv_priv;
+		pkt_info->mac_id = rtwvif->mac_id;
 	}
 
-	if (ieee80211_is_mgmt(fc) || ieee80211_is_any_nullfunc(fc))
+	if (info->flags & IEEE80211_TX_CTL_INJECTED)
+		rtw_tx_injected_pkt_info_update(rtwdev, pkt_info, skb);
+	else if (ieee80211_is_mgmt(fc) || ieee80211_is_any_nullfunc(fc))
 		rtw_tx_mgmt_pkt_info_update(rtwdev, pkt_info, sta, skb);
 	else if (ieee80211_is_data(fc))
 		rtw_tx_data_pkt_info_update(rtwdev, pkt_info, sta, skb);
+	else if (ieee80211_is_ctl(fc))
+		rtw_tx_injected_pkt_info_update(rtwdev, pkt_info, skb);
 
 	bmc = is_broadcast_ether_addr(hdr->addr1) ||
 	      is_multicast_ether_addr(hdr->addr1);
@@ -654,7 +739,8 @@ static int rtw_txq_push_skb(struct rtw_dev *rtwdev,
 	struct rtw_tx_pkt_info pkt_info = {0};
 	int ret;
 
-	rtw_txq_check_agg(rtwdev, rtwtxq, skb);
+	if (!(IEEE80211_SKB_CB(skb)->flags & IEEE80211_TX_CTL_INJECTED))
+		rtw_txq_check_agg(rtwdev, rtwtxq, skb);
 
 	rtw_tx_pkt_info_update(rtwdev, &pkt_info, txq->sta, skb);
 	ret = rtw_hci_tx_write(rtwdev, &pkt_info, skb);

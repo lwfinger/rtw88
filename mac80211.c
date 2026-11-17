@@ -102,7 +102,22 @@ static int rtw_ops_config(struct ieee80211_hw *hw, u32 changed)
 		}
 	}
 
-	if (changed & IEEE80211_CONF_CHANGE_CHANNEL)
+	if (changed & IEEE80211_CONF_CHANGE_MONITOR) {
+		if (hw->conf.flags & IEEE80211_CONF_MONITOR) {
+			rtwdev->hal.rcr |= BIT_AAP;
+			rtwdev->hal.rcr &= ~(BIT_CBSSID_BCN | BIT_CBSSID_DATA);
+			rtw_write32(rtwdev, REG_RCR, rtwdev->hal.rcr);
+			rtw_write16(rtwdev, REG_RXFLTMAP1, 0xffff);
+		} else {
+			rtwdev->hal.rcr &= ~BIT_AAP;
+			rtw_write32(rtwdev, REG_RCR, rtwdev->hal.rcr);
+			rtw_write16(rtwdev, REG_RXFLTMAP1, rtwdev->hal.rxfltmap1);
+		}
+	}
+
+	if ((changed & IEEE80211_CONF_CHANGE_CHANNEL) ||
+	    ((changed & (IEEE80211_CONF_CHANGE_MONITOR | IEEE80211_CONF_CHANGE_IDLE)) &&
+	     (hw->conf.flags & IEEE80211_CONF_MONITOR)))
 		rtw_set_channel(rtwdev);
 
 	if ((changed & IEEE80211_CONF_CHANGE_IDLE) &&
@@ -195,6 +210,11 @@ static int rtw_ops_add_interface(struct ieee80211_hw *hw,
 	rtw_leave_lps_deep(rtwdev);
 
 	switch (vif->type) {
+	case NL80211_IFTYPE_MONITOR:
+		net_type = RTW_NET_NO_LINK;
+		bcn_ctrl = 0;
+		rtwdev->monitor_vif = vif;
+		break;
 	case NL80211_IFTYPE_AP:
 	case NL80211_IFTYPE_MESH_POINT:
 		rtw_add_rsvd_page_bcn(rtwdev, rtwvif);
@@ -246,6 +266,9 @@ static void rtw_ops_remove_interface(struct ieee80211_hw *hw,
 		vif->addr, rtwvif->mac_id, rtwvif->port);
 
 	mutex_lock(&rtwdev->mutex);
+
+	if (rtwdev->monitor_vif == vif)
+		rtwdev->monitor_vif = NULL;
 
 	rtw_leave_lps_deep(rtwdev);
 
