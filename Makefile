@@ -199,7 +199,11 @@ rtw_usb-objs	:= usb.o
 
 all: 
 	$(MAKE) -j$(JOBS) -C $(KSRC) M=$$PWD modules
-	
+	@for mod in *.ko; do \
+		if [ -f "$$mod" ]; then \
+			objcopy --remove-section .BTF --remove-section .BTF.base "$$mod" 2>/dev/null || true; \
+		fi; \
+	done
 install: all
 	@install -D -m 644 -t $(MODDESTDIR) *.ko
 

@@ -37,8 +37,8 @@
 #define RTW_USB_RXAGG_SIZE		6
 #define RTW_USB_RXAGG_TIMEOUT		10
 
-#define RTW_USB_RXCB_NUM		4
-#define RTW_USB_RX_SKB_NUM		8
+#define RTW_USB_RXCB_NUM		16
+#define RTW_USB_RX_SKB_NUM		32
 
 #define RTW_USB_EP_MAX			4
 
